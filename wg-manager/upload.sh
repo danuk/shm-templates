@@ -1,7 +1,7 @@
 #!/bin/bash
 
-HOST="https://admin.myshm.ru"
-PASS='srdp-yeu'
+HOST="https://admin.DOMAIN"
+PASS=''
 
 curl -u "admin:$PASS" \
      -X "POST" \
