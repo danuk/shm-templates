@@ -123,7 +123,7 @@ EOF
         echo "Upload user config to SHM: vpn_mrzb_{{ us.id }}"
         curl -s -XPUT \
             -H "session-id: $SESSION_ID" \
-            -H "Content-Type: text/plain" \
+            -H "Content-Type: application/json" \
             $API_URL/shm/v1/storage/manage/vpn_mrzb_{{ us.id }} \
             --data-binary "$USER_CFG"
         echo "done"
