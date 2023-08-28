@@ -230,7 +230,7 @@ install_command() {
         colorized_echo red "Marzban is already installed at $APP_DIR"
         colorized_echo red "If you want to reinstall it, please run: '$0 uninstall' before"
         colorized_echo red "Aborted installation"
-        exit 1
+        exit 0
     fi
     detect_os
     if ! command -v jq >/dev/null 2>&1; then
