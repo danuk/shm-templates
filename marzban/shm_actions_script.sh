@@ -75,7 +75,7 @@ case $EVENT in
 
         PAYLOAD="$(cat <<-EOF
         {
-          "username": "{{ us.id }}",
+          "username": "us_{{ us.id }}",
           "proxies": {
             "vmess": {},
             "vless": {"flow": ""},
@@ -133,7 +133,7 @@ EOF
 
         get_marzban_token
         curl -s -X 'PUT' \
-          "http://127.0.0.1:8000/api/user/{{ us.id }}" \
+          "http://127.0.0.1:8000/api/user/us_{{ us.id }}" \
           -H "Authorization: Bearer $TOKEN" \
           -H 'Content-Type: application/json' \
           -d '{"status":"active"}'
@@ -145,7 +145,7 @@ EOF
 
         get_marzban_token
         curl -s -X 'PUT' \
-          "http://127.0.0.1:8000/api/user/{{ us.id }}" \
+          "http://127.0.0.1:8000/api/user/us_{{ us.id }}" \
           -H "Authorization: Bearer $TOKEN" \
           -H 'Content-Type: application/json' \
           -d '{"status":"disabled"}'
@@ -157,7 +157,7 @@ EOF
 
         get_marzban_token
         curl -s -X 'DELETE' \
-          "http://127.0.0.1:8000/api/user/{{ us.id }}" \
+          "http://127.0.0.1:8000/api/user/us_{{ us.id }}" \
           -H "Authorization: Bearer $TOKEN"
 
         echo "Remove user key from SHM"
