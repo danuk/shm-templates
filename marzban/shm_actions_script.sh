@@ -20,6 +20,7 @@ get_marzban_token() {
 
         if [ -z "$TOKEN" ]; then
             echo 'Error: can not get TOKEN. Please check docker containers status'
+            exit 1
         fi
     else
         echo 'Error: Marzban has not been installed yet'
@@ -115,8 +116,8 @@ EOF
           -H 'Content-Type: application/json' \
           -d "$PAYLOAD")
 
-        if [ -z "$USER_CFG" ]; then
-            echo "Error: can't create a new user"
+        if [ -z $(echo "$USER_CFG" | jq -r '.username | select( . != null )') ]; then
+            echo "Error: $USER_CFG"
             exit 1
         fi
 
