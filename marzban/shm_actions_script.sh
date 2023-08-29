@@ -13,6 +13,9 @@ get_marzban_token() {
         export $(grep '^SUDO_USERNAME' /opt/marzban/.env | sed 's/ //g')
         export $(grep '^SUDO_PASSWORD' /opt/marzban/.env | sed 's/ //g')
 
+        [ -z "$SUDO_USERNAME" ] && echo 'Error: SUDO_USERNAME not defined in /opt/marzban/.env' && exit 1
+        [ -z "$SUDO_PASSWORD" ] && echo 'Error: SUDO_PASSWORD not defined in /opt/marzban/.env' && exit 1
+
         export TOKEN=$(curl -s -X 'POST' \
           "http://127.0.0.1:8000/api/admin/token" \
           -H 'Content-Type: application/x-www-form-urlencoded' \
