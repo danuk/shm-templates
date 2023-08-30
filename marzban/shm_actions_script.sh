@@ -7,7 +7,8 @@ EVENT="{{ event_name }}"
 SESSION_ID="{{ user.gen_session.id }}"
 API_URL="{{ config.api.url }}"
 
-echo "Marzban Template v1\n"
+echo "Marzban Template v1"
+echo
 echo "EVENT=$EVENT"
 
 get_marzban_token() {
@@ -16,7 +17,7 @@ get_marzban_token() {
         export $(grep '^SUDO_PASSWORD' /opt/marzban/.env | sed 's/ //g')
         export $(grep '^UVICORN_PORT' /opt/marzban/.env | sed 's/ //g')
 
-        if [ $(grep '^UVICORN_SSL_CERTFILE' /opt/marzban/.env) ]; then
+        if [[ $(grep '^UVICORN_SSL_CERTFILE' /opt/marzban/.env) ]]; then
             export MARZBAN_HOST="https://127.0.0.1:$UVICORN_PORT"
         else
             export MARZBAN_HOST="http://127.0.0.1:$UVICORN_PORT"
@@ -80,6 +81,7 @@ case $EVENT in
         export SUDO_PASSWORD=$(pwgen -n 16 -1)
         bash -c "$(curl -sL https://github.com/danuk/shm-templates/raw/main/marzban/marzban.sh)" @ install
         echo "done"
+        echo
 
         echo "Setup Marzban..."
         sleep 5
