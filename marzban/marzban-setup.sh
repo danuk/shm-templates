@@ -101,13 +101,6 @@ fi
 DIR=/var/lib/marzban/certs
 mkdir -p $DIR
 
-if [[ $(netstat -anp | grep '\:80\s') ]]; then
-    echo "ERROR: Port 80 is already in use!"
-    echo "Shutdown Ngnix or Apache before run this script."
-    echo "After running this script, you will be able to run Nginx or Apache again."
-    exit 1
-fi
-
 curl -s https://get.acme.sh | sh -s email=$EMAIL_FOR_CERTIFICATE_ISSUE
 
 ~/.acme.sh/acme.sh \
