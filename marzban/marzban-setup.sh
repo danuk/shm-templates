@@ -121,8 +121,9 @@ curl -s https://get.acme.sh | sh -s email=$EMAIL_FOR_CERTIFICATE_ISSUE
 
 echo 'UVICORN_SSL_CERTFILE = "/var/lib/marzban/certs/fullchain.pem"' >> /opt/marzban/.env
 echo 'UVICORN_SSL_KEYFILE = "/var/lib/marzban/certs/key.pem"' >> /opt/marzban/.env
-echo "XRAY_SUBSCRIPTION_URL_PREFIX = \"https://$SUBSCRIPTION_DOMAIN\":$UVICORN_PORT" >> /opt/marzban/.env
 
+sed -i 's/^UVICORN_PORT\s*=\s*8000/UVICORN_PORT = 443/' /opt/marzban/.env
+echo "XRAY_SUBSCRIPTION_URL_PREFIX = \"https://$SUBSCRIPTION_DOMAIN\"" >> /opt/marzban/.env
 
 export "$(grep '^XRAY_JSON' /opt/marzban/.env | sed 's/ //;s/"//g')"
 echo "Patching XRAY config: $XRAY_JSON ..."
