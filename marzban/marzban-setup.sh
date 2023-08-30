@@ -123,5 +123,18 @@ echo 'UVICORN_SSL_CERTFILE = "/var/lib/marzban/certs/fullchain.pem"' >> /opt/mar
 echo 'UVICORN_SSL_KEYFILE = "/var/lib/marzban/certs/key.pem"' >> /opt/marzban/.env
 echo "XRAY_SUBSCRIPTION_URL_PREFIX = \"https://$SUBSCRIPTION_DOMAIN\":$UVICORN_PORT" >> /opt/marzban/.env
 
+
+export "$(grep '^XRAY_JSON' /opt/marzban/.env | sed 's/ //;s/"//g')"
+echo "Patching XRAY config: $XRAY_JSON ..."
+TEMP_FILE=$(mktemp)
+
+jq '.inbounds[4].streamSettings.tlsSettings.certificates[0]={
+    "certificateFile": "/var/lib/marzban/certs/fullchain.pem",
+    "keyFile": "/var/lib/marzban/certs/key.pem"
+}' $XRAY_JSON > $TEMP_FILE
+
+mv $TEMP_FILE $XRAY_JSON
+echo "done"
+
 marzban restart -n
 
