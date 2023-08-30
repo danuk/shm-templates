@@ -173,7 +173,7 @@
                     {
                         "text": "Показать данные для подключения",
                         "web_app": {
-                            "url": "https://danuk.ru{{ storage.read('name','vpn_mrzb_' _ args.0 ).subscription_url }}"
+                            "url": "{{ storage.read('name','vpn_mrzb_' _ args.0 ).subscription_url }}"
                         }
                     }
                     {{ ELSE }}
