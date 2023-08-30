@@ -1,0 +1,263 @@
+<% SWITCH cmd %>
+<% CASE 'USER_NOT_FOUND' %>
+{
+    "sendMessage": {
+        "text": "Для работы с Telegram ботом укажите _Telegram логин_ в профиле личного кабинета.\n\n*Telegram логин*: {{ message.chat.username }}\n\n*Кабинет пользователя*: {{ config.cli.url }}",
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "Регистрация ✍",
+                        "callback_data": "/register"
+                    }
+                ]
+            ]
+        }
+    }
+}
+<% CASE '/register' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "shmRegister": {
+        "callback_data": "/menu",
+        "error": "ОШИБКА: Логин {{ message.chat.username }} или chat_id {{ message.chat.id }} уже существует"
+    }
+}
+<% CASE ['/start', '/menu'] %>
+{{ IF cmd == '/menu' }}
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{{ END }}
+{
+    "sendMessage": {
+        "text": "Создавайте и управляйте своими VPN ключами",
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "💰 Баланс",
+                        "callback_data": "/balance"
+                    }
+                ],
+                [
+                    {
+                        "text": "🗝  Ключи",
+                        "callback_data": "/list"
+                    }
+                ]
+            ]
+        }
+    }
+}
+<% CASE '/balance' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "sendMessage": {
+        "text": "💰 *Баланс*: {{ user.balance }}\n\nНеобходимо оплатить: * {{ user.pays.forecast.total }}*",
+        "reply_markup" : {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "✚ Пополнить баланс",
+                        "web_app": {
+                            "url": "https://yoomoney.ru/quickpay/shop-widget?writer=seller&targets=%D0%9E%D0%BF%D0%BB%D0%B0%D1%82%D0%B0%20%D0%BF%D0%BE%20%D0%B4%D0%BE%D0%B3%D0%BE%D0%B2%D0%BE%D1%80%D1%83%20{{ user.id }}&targets-hint=&default-sum={{ user.pays.forecast.total }}&label={{ user.id }}&button-text=12&payment-type-choice=on&hint=&successURL=&quickpay=shop&account={{ config.pay_systems.yoomoney.account }}"
+                        }
+                    }
+                ],
+                [
+                    {
+                        "text": "⇦ Назад",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+<% CASE '/list' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "sendMessage": {
+        "text": "🗝  Ключи",
+        "reply_markup" : {
+            "inline_keyboard": [
+                {{ FOR item IN ref( user.services.list_for_api( 'category', '%' ) ) }}
+                {{ SWITCH item.status }}
+                  {{ CASE 'ACTIVE' }}
+                  {{ status = '✅' }}
+                  {{ CASE 'BLOCK' }}
+                  {{ status = '❌' }}
+                  {{ CASE 'NOT PAID' }}
+                  {{ status = '💰' }}
+                  {{ CASE }}
+                  {{ status = '⏳' }}
+                {{ END }}
+                [
+                    {
+                        "text": "{{ status }} - {{ item.name }}",
+                        "callback_data": "/service {{ item.user_service_id }}"
+                    }
+                ],
+                {{ END }}
+                [
+                    {
+                        "text": "🛒 Новый ключ",
+                        "callback_data": "/pricelist"
+                    }
+                ],
+                [
+                    {
+                        "text": "⇦ Назад",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+<% CASE '/service' %>
+{{ us = user.services.list_for_api( 'usi', args.0 ) }}
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "sendMessage": {
+        "text": "*Ключ*: {{ us.name }}\n\n*Оплачен до*: {{ us.expire }}\n\n*Статус*: {{ us.status }}",
+        "reply_markup" : {
+            "inline_keyboard": [
+                {{ FOR item IN ref(user.services.list_for_api( 'parent', args.0 )) }}
+                {{ IF us.status == 'ACTIVE' }}
+                [
+                    {
+                        "text": "🗝  {{ item.name }} Скачать ключ",
+                        "callback_data": "/download_qr {{ item.user_service_id }}"
+                    },
+                    {
+                        "text": "👀 Показать QR код",
+                        "callback_data": "/show_qr {{ item.user_service_id }}"
+                    }
+                ],
+                {{ END }}
+                {{ END }}
+                {{ IF us.status != 'PROGRESS' }}
+                [
+                    {
+                        "text": "❌ Удалить услугу",
+                        "callback_data": "/delete {{ args.0 }}"
+                    }
+                ],
+                {{ END }}
+                [
+                    {
+                        "text": "⇦ Назад",
+                        "callback_data": "/list"
+                    }
+                ]
+            ]
+        }
+    }
+}
+<% CASE '/pricelist' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "sendMessage": {
+        "text": "☷ Выберите услугу для заказа",
+        "reply_markup" : {
+            "inline_keyboard": [
+                {{ FOR item IN ref(service.api_price_list) }}
+                [
+                    {
+                        "text": "🛒 {{ item.name }}. Период: {{ item.period_cost }}, Цена: {{ item.cost }}",
+                        "callback_data": "/serviceorder {{ item.service_id }}"
+                    }
+                ],
+                {{ END }}
+                [
+                    {
+                        "text": "⇦ Назад",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+<% CASE '/serviceorder' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "shmServiceOrder": {
+        "service_id": "{{ args.0 }}",
+        "callback_data": "/list",
+        "error": "ОШИБКА"
+    }
+}
+<% CASE '/download_qr' %>
+{
+    "uploadDocumentFromStorage": {
+        "name": "vpn{{ args.0 }}",
+        "filename": "vpn{{ args.0 }}.conf"
+    }
+}
+<% CASE '/show_qr' %>
+{
+    "uploadPhotoFromStorage": {
+        "name": "vpn{{ args.0 }}",
+        "format": "qr_code_png"
+    }
+}
+<% CASE '/delete' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "sendMessage": {
+        "text": "🤔 *Подтвердите удаление услуги. Услугу нельзя будет восстановить!*",
+        "reply_markup" : {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "🧨 ДА, УДАЛИТЬ! 🔥",
+                        "callback_data": "/delete_confirmed {{ args.0 }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "⇦ Назад",
+                        "callback_data": "/list"
+                    }
+                ]
+            ]
+        }
+    }
+}
+<% CASE '/delete_confirmed' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "shmServiceDelete": {
+        "usi": "{{ args.0 }}",
+        "callback_data": "/list",
+        "error": "ОШИБКА"
+    }
+}
+<% CASE '/info' %>
+{
+    "sendMessage": {
+        "parse_mode":"HTML",
+        "text": "<b>User-id</b>: {{ user.id }}\n<b>Login</b>: {{ user.login }}\n<b>Chat-id</b>: {{ message.chat.id }}\n<b>Chat-username</b>: {{ message.chat.username }}"
+    }
+}
+<% END %>
+
