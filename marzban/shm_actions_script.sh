@@ -1,23 +1,34 @@
 #!/bin/bash
 
-set -e
+export SUBSCRIPTION_DOMAIN=""
+export EMAIL_FOR_CERTIFICATE_ISSUE=""
 
 EVENT="{{ event_name }}"
 SESSION_ID="{{ user.gen_session.id }}"
 API_URL="{{ config.api.url }}"
 
+echo "Marzban Template v1\n"
 echo "EVENT=$EVENT"
 
 get_marzban_token() {
     if [ -f "/opt/marzban/.env" ]; then
         export $(grep '^SUDO_USERNAME' /opt/marzban/.env | sed 's/ //g')
         export $(grep '^SUDO_PASSWORD' /opt/marzban/.env | sed 's/ //g')
+        export $(grep '^UVICORN_PORT' /opt/marzban/.env | sed 's/ //g')
+
+        if [ $(grep '^UVICORN_SSL_CERTFILE' /opt/marzban/.env) ]; then
+            export MARZBAN_HOST="https://127.0.0.1:$UVICORN_PORT"
+        else
+            export MARZBAN_HOST="http://127.0.0.1:$UVICORN_PORT"
+        fi
+
+        echo "Marzban host: $MARZBAN_HOST"
 
         [ -z "$SUDO_USERNAME" ] && echo 'Error: SUDO_USERNAME not defined in /opt/marzban/.env' && exit 1
         [ -z "$SUDO_PASSWORD" ] && echo 'Error: SUDO_PASSWORD not defined in /opt/marzban/.env' && exit 1
 
-        export TOKEN=$(curl -s -X 'POST' \
-          "http://127.0.0.1:8000/api/admin/token" \
+        export TOKEN=$(curl -sk -XPOST \
+          "$MARZBAN_HOST/api/admin/token" \
           -H 'Content-Type: application/x-www-form-urlencoded' \
           -d "grant_type=password&username=$SUDO_USERNAME&password=$SUDO_PASSWORD" | jq -r .access_token)
 
@@ -44,11 +55,13 @@ case $EVENT in
         apt-get install -y \
             curl \
             pwgen \
+            net-tools \
+            socat \
             jq
 
         echo "Check SHM API host: $API_URL"
         set +e
-        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" $API_URL/shm/v1/test)
+        HTTP_CODE=$(curl -sk -o /dev/null -w "%{http_code}" $API_URL/shm/v1/test)
         RET_CODE=$?
         if [ $RET_CODE -ne 0 ]; then
             echo "Error: host $API_URL is incorrect."
@@ -113,8 +126,8 @@ EOF
         )"
 
         get_marzban_token
-        USER_CFG=$(curl -s -X 'POST' \
-          "http://127.0.0.1:8000/api/user" \
+        USER_CFG=$(curl -sk -XPOST \
+          "$MARZBAN_HOST/api/user" \
           -H "Authorization: Bearer $TOKEN" \
           -H 'Content-Type: application/json' \
           -d "$PAYLOAD")
@@ -125,7 +138,7 @@ EOF
         fi
 
         echo "Upload user config to SHM: vpn_mrzb_{{ us.id }}"
-        curl -s -XPUT \
+        curl -sk -XPUT \
             -H "session-id: $SESSION_ID" \
             -H "Content-Type: application/json" \
             $API_URL/shm/v1/storage/manage/vpn_mrzb_{{ us.id }} \
@@ -136,8 +149,8 @@ EOF
         echo "Activate user"
 
         get_marzban_token
-        curl -s -X 'PUT' \
-          "http://127.0.0.1:8000/api/user/us_{{ us.id }}" \
+        curl -sk -XPUT \
+          "$MARZBAN_HOST/api/user/us_{{ us.id }}" \
           -H "Authorization: Bearer $TOKEN" \
           -H 'Content-Type: application/json' \
           -d '{"status":"active"}'
@@ -148,8 +161,8 @@ EOF
         echo "Block user"
 
         get_marzban_token
-        curl -s -X 'PUT' \
-          "http://127.0.0.1:8000/api/user/us_{{ us.id }}" \
+        curl -sk -XPUT \
+          "$MARZBAN_HOST/api/user/us_{{ us.id }}" \
           -H "Authorization: Bearer $TOKEN" \
           -H 'Content-Type: application/json' \
           -d '{"status":"disabled"}'
@@ -160,12 +173,12 @@ EOF
         echo "Remove user"
 
         get_marzban_token
-        curl -s -X 'DELETE' \
-          "http://127.0.0.1:8000/api/user/us_{{ us.id }}" \
+        curl -sk -XDELETE \
+          "$MARZBAN_HOST/api/user/us_{{ us.id }}" \
           -H "Authorization: Bearer $TOKEN"
 
         echo "Remove user key from SHM"
-        curl -s -XDELETE \
+        curl -sk -XDELETE \
             -H "session-id: $SESSION_ID" \
             $API_URL/shm/v1/storage/manage/vpn_mrzb_{{ us.id }}
         echo "done"
