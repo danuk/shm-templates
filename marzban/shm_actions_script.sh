@@ -1,7 +1,7 @@
 #!/bin/bash
 
-export SUBSCRIPTION_DOMAIN=""
-export EMAIL_FOR_CERTIFICATE_ISSUE=""
+export SUBSCRIPTION_DOMAIN="{{ server.settings.domain }}"
+export EMAIL_FOR_CERTIFICATE_ISSUE="{{ config.acme.email_certificate_issue }}"
 
 EVENT="{{ event_name }}"
 SESSION_ID="{{ user.gen_session.id }}"
@@ -45,9 +45,9 @@ get_marzban_token() {
 
 case $EVENT in
     INIT)
-        export SERVER_HOST="{{ server.settings.host_name }}"
+        export SERVER_HOST="{{ server.host }}"
         if [ -z $SERVER_HOST ]; then
-            echo "ERROR: set variable 'host_name' to server settings"
+            echo "ERROR: can't get server host"
             exit 1
         fi
 

@@ -93,6 +93,10 @@ echo "done\n"
 
 
 echo "Configure certificates..."
+echo
+echo "SUBSCRIPTION_DOMAIN=$SUBSCRIPTION_DOMAIN"
+echo "EMAIL_FOR_CERTIFICATE_ISSUE=$EMAIL_FOR_CERTIFICATE_ISSUE"
+
 if [[ -z "$SUBSCRIPTION_DOMAIN" || -z "$EMAIL_FOR_CERTIFICATE_ISSUE" ]]; then
     echo "WARNING: Skipping the certificate installation due to the absence of a SUBSCRIPTION_DOMAIN or EMAIL_FOR_CERTIFICATE_ISSUE"
     exit 0
