@@ -99,6 +99,8 @@ echo "EMAIL_FOR_CERTIFICATE_ISSUE=$EMAIL_FOR_CERTIFICATE_ISSUE"
 
 if [[ -z "$SUBSCRIPTION_DOMAIN" || -z "$EMAIL_FOR_CERTIFICATE_ISSUE" ]]; then
     echo "WARNING: Skipping the certificate installation due to the absence of a SUBSCRIPTION_DOMAIN or EMAIL_FOR_CERTIFICATE_ISSUE"
+    echo "Set the SUBSCRIPTION_DOMAIN variable in the server settings (subscription_domain)"
+    echo "Set the EMAIL_FOR_CERTIFICATE_ISSUE variable in the config (acme.email_for_certificate_issue)"
     exit 0
 fi
 

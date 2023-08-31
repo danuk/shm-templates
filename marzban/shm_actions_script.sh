@@ -1,7 +1,7 @@
 #!/bin/bash
 
-export SUBSCRIPTION_DOMAIN="{{ server.settings.domain }}"
-export EMAIL_FOR_CERTIFICATE_ISSUE="{{ config.acme.email_certificate_issue }}"
+export SUBSCRIPTION_DOMAIN="{{ server.settings.subscription_domain }}"
+export EMAIL_FOR_CERTIFICATE_ISSUE="{{ config.acme.email_for_certificate_issue }}"
 
 EVENT="{{ event_name }}"
 SESSION_ID="{{ user.gen_session.id }}"
