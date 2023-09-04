@@ -26,12 +26,27 @@
         "error": "ОШИБКА: Логин {{ message.chat.username }} или chat_id {{ message.chat.id }} уже существует"
     }
 }
-<% CASE ['/start', '/menu'] %>
-{{ IF cmd == '/menu' }}
+<% CASE ['/start', '/menu', 'Меню'] %>
+{{ IF cmd == '/menu' OR cmd == 'Меню' }}
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
 {{ END }}
+{
+    "sendMessage": {
+        "text":"Меню",
+        "parse_mode": "HTML",
+        "reply_markup": {
+            "keyboard": [
+                [
+                    {"text": "Меню"}
+                ]
+            ],
+            "one_time_keyboard": false,
+            "resize_keyboard": true
+        }
+    }
+},
 {
     "sendMessage": {
         "text": "Создавайте и управляйте своими VPN ключами",
@@ -168,15 +183,34 @@
         "reply_markup" : {
             "inline_keyboard": [
                 {{ IF us.status == 'ACTIVE' }}
+                {{ subscription_url = storage.read('name','vpn_mrzb_' _ args.0 ).subscription_url }}
+
+                {{ IF us.category.grep('^vpn-mz-').first }}
+                {{ IF subscription_url.grep('^https:').first }}
                 [
-                    {{ IF us.category.grep('^vpn-mz-').first }}
                     {
                         "text": "Показать данные для подключения",
                         "web_app": {
-                            "url": "{{ storage.read('name','vpn_mrzb_' _ args.0 ).subscription_url }}"
+                            "url": "{{ subscription_url }}"
                         }
                     }
-                    {{ ELSE }}
+                ],
+                [
+                    {
+                        "text": "Показать ссылку подписки",
+                        "callback_data": "/show_mz_keys {{ args.0 }}"
+                    }
+                ],
+                {{ ELSE }}
+                [
+                    {
+                        "text": "ОШИБКА: настройте SSL для Marzban",
+                        "callback_data": "/menu"
+                    }
+                ],
+                {{ END }}
+                {{ ELSE }}
+                [
                     {
                         "text": "🗝  Скачать ключ",
                         "callback_data": "/download_qr {{ args.0 }}"
@@ -185,8 +219,9 @@
                         "text": "👀 Показать QR код",
                         "callback_data": "/show_qr {{ args.0 }}"
                     }
-                    {{ END }}
                 ],
+                {{ END }}
+
                 {{ END }}
                 {{ IF us.status == 'NOT PAID' || us.status == 'BLOCK' }}
                 [
@@ -372,18 +407,43 @@
     }
 }
 <% CASE '/show_mz_keys' %>
-{
-    "sendMessage": {
-        "text": "<b>Shadowsocks:</b>"
-    }
-},
-{{ data = storage.read('name','vpn_mrzb_' _ args.0 ).links.grep('^ss:') }}
+{{ subscription_url = storage.read('name','vpn_mrzb_' _ args.0 ).subscription_url }}
 {
     "printQrCode": {
-        "data": "{{ data.first }}",
+        "data": "{{ subscription_url }}",
         "parameters": {
             "parse_mode": "HTML",
-            "caption": "<b>Shadowsocks:</b>\n<code>{{ data.join('<br>') }}</code>"
+            "caption": "<b>Subscription URL:</b>\n<code>{{ subscription_url }}</code>"
+        }
+    }
+},
+{{ ss = storage.read('name','vpn_mrzb_' _ args.0 ).links.grep('^ss:').first }}
+{
+    "printQrCode": {
+        "data": "{{ ss }}",
+        "parameters": {
+            "parse_mode": "HTML",
+            "caption": "<b>ShadowSocks:</b>\n<code>{{ ss }}</code>"
+        }
+    }
+},
+{{ vless_tcp = storage.read('name','vpn_mrzb_' _ args.0 ).links.grep('^vless:').first }}
+{
+    "printQrCode": {
+        "data": "{{ vless_tcp }}",
+        "parameters": {
+            "parse_mode": "HTML",
+            "caption": "<b>VLESS TCP:</b>\n<code>{{ vless_tcp }}</code>"
+        }
+    }
+},
+{{ vless_grpc = storage.read('name','vpn_mrzb_' _ args.0 ).links.grep('^vless:').last }}
+{
+    "printQrCode": {
+        "data": "{{ vless_grpc }}",
+        "parameters": {
+            "parse_mode": "HTML",
+            "caption": "<b>VLESS GRPC:</b>\n<code>{{ vless_grpc }}</code>"
         }
     }
 }
