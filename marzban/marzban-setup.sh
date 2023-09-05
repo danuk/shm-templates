@@ -136,5 +136,11 @@ jq '.inbounds[4].streamSettings.tlsSettings.certificates[0]={
 mv $TEMP_FILE $XRAY_JSON
 echo "done"
 
+echo "Download template and docker-compose file with template..."
+cd /opt/marzban
+curl -sLO https://github.com/danuk/shm-templates/raw/main/marzban/docker-compose.yml
+curl -sLO https://github.com/danuk/shm-templates/raw/main/marzban/template_subscription_index.html
+echo "done"
+
 marzban restart -n
 
