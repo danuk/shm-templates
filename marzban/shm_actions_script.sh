@@ -185,6 +185,15 @@ EOF
             $API_URL/shm/v1/storage/manage/vpn_mrzb_{{ us.id }}
         echo "done"
         ;;
+    PROLONGATE)
+        echo "Reset user counters"
+
+        get_marzban_token
+        curl -sk -XPOST \
+          "$MARZBAN_HOST/api/user/us_{{ us.id }}/reset" \
+          -H "Authorization: Bearer $TOKEN"
+        echo "done"
+        ;;
     *)
         echo "Unknown event: $EVENT. Exit."
         exit 0
