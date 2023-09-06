@@ -60,22 +60,6 @@ case $EVENT in
             socat \
             jq
 
-        echo "Check SHM API host: $API_URL"
-        set +e
-        HTTP_CODE=$(curl -sk -o /dev/null -w "%{http_code}" $API_URL/shm/v1/test)
-        RET_CODE=$?
-        if [ $RET_CODE -ne 0 ]; then
-            echo "Error: host $API_URL is incorrect."
-            echo "Please set correct public host in SHM config. It must be accessible from the server."
-            exit 1
-        fi
-        if [ $HTTP_CODE -ne '200' ]; then
-            echo "ERROR: incorrect API URL: $API_URL"
-            echo "Got status: $HTTP_CODE"
-            exit 1
-        fi
-        set -e
-
         echo "Install Marzban..."
         export SUDO_USERNAME=admin
         export SUDO_PASSWORD=$(pwgen -n 16 -1)
@@ -88,6 +72,20 @@ case $EVENT in
         get_marzban_token
         bash -c "$(curl -sL https://github.com/danuk/shm-templates/raw/main/marzban/marzban-setup.sh)"
         echo "done"
+
+        echo "Check SHM API host: $API_URL"
+        HTTP_CODE=$(curl -sk -o /dev/null -w "%{http_code}" $API_URL/shm/v1/test)
+        RET_CODE=$?
+        if [ $RET_CODE -ne 0 ]; then
+            echo "Error: host $API_URL is incorrect."
+            echo "Please set correct public host in SHM config. It must be accessible from the server."
+            exit 1
+        fi
+        if [ $HTTP_CODE -ne '200' ]; then
+            echo "ERROR: incorrect API URL: $API_URL"
+            echo "Got status: $HTTP_CODE"
+            exit 1
+        fi
         ;;
     CREATE)
         echo "Create a new user"

@@ -118,25 +118,25 @@ if [[ ! -f "$DIR/fullchain.pem" ]]; then
         --key-file $DIR/key.pem \
         --fullchain-file $DIR/fullchain.pem \
         -d $SUBSCRIPTION_DOMAIN
+
+    echo 'UVICORN_SSL_CERTFILE = "/var/lib/marzban/certs/fullchain.pem"' >> /opt/marzban/.env
+    echo 'UVICORN_SSL_KEYFILE = "/var/lib/marzban/certs/key.pem"' >> /opt/marzban/.env
+
+    sed -i 's/^UVICORN_PORT\s*=\s*8000/UVICORN_PORT = 443/' /opt/marzban/.env
+    echo "XRAY_SUBSCRIPTION_URL_PREFIX = \"https://$SUBSCRIPTION_DOMAIN\"" >> /opt/marzban/.env
+
+    export "$(grep '^XRAY_JSON' /opt/marzban/.env | sed 's/ //;s/"//g')"
+    echo "Patching XRAY config: $XRAY_JSON ..."
+    TEMP_FILE=$(mktemp)
+
+    jq '.inbounds[4].streamSettings.tlsSettings.certificates[0]={
+        "certificateFile": "/var/lib/marzban/certs/fullchain.pem",
+        "keyFile": "/var/lib/marzban/certs/key.pem"
+    }' $XRAY_JSON > $TEMP_FILE
+
+    mv $TEMP_FILE $XRAY_JSON
+    echo "done"
 fi
-
-echo 'UVICORN_SSL_CERTFILE = "/var/lib/marzban/certs/fullchain.pem"' >> /opt/marzban/.env
-echo 'UVICORN_SSL_KEYFILE = "/var/lib/marzban/certs/key.pem"' >> /opt/marzban/.env
-
-sed -i 's/^UVICORN_PORT\s*=\s*8000/UVICORN_PORT = 443/' /opt/marzban/.env
-echo "XRAY_SUBSCRIPTION_URL_PREFIX = \"https://$SUBSCRIPTION_DOMAIN\"" >> /opt/marzban/.env
-
-export "$(grep '^XRAY_JSON' /opt/marzban/.env | sed 's/ //;s/"//g')"
-echo "Patching XRAY config: $XRAY_JSON ..."
-TEMP_FILE=$(mktemp)
-
-jq '.inbounds[4].streamSettings.tlsSettings.certificates[0]={
-    "certificateFile": "/var/lib/marzban/certs/fullchain.pem",
-    "keyFile": "/var/lib/marzban/certs/key.pem"
-}' $XRAY_JSON > $TEMP_FILE
-
-mv $TEMP_FILE $XRAY_JSON
-echo "done"
 
 echo "Download template and docker-compose file with template..."
 cd /opt/marzban
