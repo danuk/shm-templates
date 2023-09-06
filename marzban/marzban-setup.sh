@@ -107,16 +107,18 @@ fi
 DIR=/var/lib/marzban/certs
 mkdir -p $DIR
 
-curl -s https://get.acme.sh | sh -s email=$EMAIL_FOR_CERTIFICATE_ISSUE
+if [[ ! -f "$DIR/fullchain.pem" ]]; then
+    curl -s https://get.acme.sh | sh -s email=$EMAIL_FOR_CERTIFICATE_ISSUE
 
-~/.acme.sh/acme.sh \
-    --set-default-ca \
-    --server letsencrypt  \
-    --issue \
-    --standalone \
-    --key-file $DIR/key.pem \
-    --fullchain-file $DIR/fullchain.pem \
-    -d $SUBSCRIPTION_DOMAIN
+    ~/.acme.sh/acme.sh \
+        --set-default-ca \
+        --server letsencrypt  \
+        --issue \
+        --standalone \
+        --key-file $DIR/key.pem \
+        --fullchain-file $DIR/fullchain.pem \
+        -d $SUBSCRIPTION_DOMAIN
+fi
 
 echo 'UVICORN_SSL_CERTFILE = "/var/lib/marzban/certs/fullchain.pem"' >> /opt/marzban/.env
 echo 'UVICORN_SSL_KEYFILE = "/var/lib/marzban/certs/key.pem"' >> /opt/marzban/.env
