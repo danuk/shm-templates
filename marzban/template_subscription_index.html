@@ -106,7 +106,7 @@
   <div class="profile-card">
     <div class="profile-card__bio">
       <h4 class="profile-card__bio-title">
-        Трафик: {{ user.used_traffic }} GB / {% if not user.data_limit %}∞{% else %}{{ user.data_limit }}{% endif %}
+        Трафик: {{ user.used_traffic | bytesformat }} / {% if not user.data_limit %}∞{% else %}{{ user.data_limit | bytesformat }}{% endif %}
       </h4>
     </div>
     <div class="profile-card__links">
