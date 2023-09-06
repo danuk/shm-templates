@@ -45,7 +45,7 @@ get_marzban_token() {
 
 case $EVENT in
     INIT)
-        export SERVER_HOST="{{ server.host }}"
+        export SERVER_HOST="{{ server.host.remove('.*@') }}"
         if [ -z $SERVER_HOST ]; then
             echo "ERROR: can't get server host"
             exit 1
