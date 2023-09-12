@@ -13,9 +13,9 @@ echo "EVENT=$EVENT"
 
 get_marzban_token() {
     if [ -f "/opt/marzban/.env" ]; then
-        export $(grep '^SUDO_USERNAME' /opt/marzban/.env | sed 's/ //g')
-        export $(grep '^SUDO_PASSWORD' /opt/marzban/.env | sed 's/ //g')
-        export $(grep '^UVICORN_PORT' /opt/marzban/.env | sed 's/ //g')
+        export $(grep '^SUDO_USERNAME' /opt/marzban/.env | sed 's/ //g;s/"//g')
+        export $(grep '^SUDO_PASSWORD' /opt/marzban/.env | sed 's/ //g;s/"//g')
+        export $(grep '^UVICORN_PORT' /opt/marzban/.env | sed 's/ //g;s/"//g')
 
         if [[ $(grep '^UVICORN_SSL_CERTFILE' /opt/marzban/.env) ]]; then
             export MARZBAN_HOST="https://127.0.0.1:$UVICORN_PORT"
