@@ -26,8 +26,8 @@
         "error": "ОШИБКА: Логин {{ message.chat.username }} или chat_id {{ message.chat.id }} уже существует"
     }
 }
-<% CASE ['/start', '/menu', 'Меню'] %>
-{{ IF cmd == '/menu' OR cmd == 'Меню' }}
+<% CASE ['/start', '/menu', 'Лучшее Меню'] %>
+{{ IF cmd != '/start' }}
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
