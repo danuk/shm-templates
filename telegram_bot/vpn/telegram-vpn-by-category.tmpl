@@ -450,10 +450,11 @@
             "keyboard": [
                 [
                      {"text": "🖥 Чат поддержки"},
-                    {"text": "🖥 Инструкция Xray-Core"}
+                    {"text": "🖥 Инструкция Xray-Core/VLESS"}
                 ],
 				[
-                    {"text": "🖥 Инструкция SS"}
+                      {"text": "🖥 Инструкция SS"},
+                    {"text": "🔗 💻 Windows/MacOS"}
                 ],
                 [
                     {"text": "🌍 Главное Меню"}
@@ -466,7 +467,7 @@
 }
 
 
-<% CASE ['/xray', '🖥 Инструкция Xray-Core'] %>
+<% CASE ['/xray', '🖥 Инструкция Xray-Core/VLESS'] %>
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
@@ -477,22 +478,16 @@
         "parse_mode":"HTML",
         "caption": "Инструкция для Android:\n\n1️⃣ Нажми на ключ доступа (☝️ начинается с vless://)\n2️⃣ Установи приложение <a href=\"https://play.google.com/store/apps/details?id=com.v2ray.ang\">🌐V2rayNG Andriod</a>,<a href=\"https://apps.apple.com/us/app/v2rayng/id1661166628\">🌐 V2rayNG IOS</a>,\n3️⃣ Запусти программу Outline и вставь ключ\n4️⃣ Нажми <b>'Подключится'</b> и наслаждайся высокой скоростью и стабильностью ",
         "reply_markup" : {
-            "inline_keyboard": [
+            "keyboard": [
+                 [
+                     {"text": "🖥 Чат поддержки"}
+                ],
+				[
+                      {"text": "🖥 Инструкция SS"},
+                    {"text": "🔗 💻 Windows/MacOS"}
+                ],
                 [
-                    {
-                        "text": "🖥 Чат поддержки",
-                        "url": "https://t.me/supservru"
-                    },
-					{
-                        "text": "🚀 Список VPN ключей",
-                        "callback_data": "/list"
-                    }
-					],
-                [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/menu"
-                    }
+                    {"text": "🌍 Главное Меню"}
                 ]
             ]
         }
@@ -505,27 +500,49 @@
 },
 {
     "sendPhoto": {
-        "photo": "https://yt3.googleusercontent.com/ytc/AOPolaTkYCi7Pm1bLJyy9BHDPAZaOwrZhs0CiZZ6go-I=s900-c-k-c0x00ffffff-no-rj",
+        "photo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTrWE_1T5S0CxnVsQe9oUcuYgG7BOYV7n5ZdQ&usqp=CAU",
         "protect_content": "true",
         "parse_mode":"HTML",
         "caption": "1️⃣  Скачайте и установите приложение Outline к себе на устройство. Скачать для <a href=\"https://apps.apple.com/us/app/outline-app/id1356177741\">iPhone</a>, <a href=\"https://play.google.com/store/apps/details?id=org.outline.android.client\">Android</a>, <a href=\"https://apps.apple.com/us/app/wireguard/id1451685025\">Mac</a>.\n\n2️⃣ В разделе \"Ключи\" нажмите \"Новый ключ\" и выберите нужный вам.\n\n3️⃣  После оплаты скачайте файл настроек для приложения OutLine. Находясь в меню \"Ключи\" выберите нужный ключ, кликнув по нему. Далее скачайте файл ключа и добавьте его в приложение OutLine.",
         "reply_markup" : {
-            "inline_keyboard": [
+            "keyboard": [
+                 [
+                     {"text": "🖥 Чат поддержки"},
+                    {"text": "🖥 Инструкция Xray-Core/VLESS"}
+                ],
+				[
+                    {"text": "🔗 💻 Windows/MacOS"}
+                ],
                 [
-                    {
-                        "text": "🖥 Чат поддержки",
-                        "url": "https://t.me/supservru"
-                    },
-					{
-                        "text": "🚀 Список VPN ключей",
-                        "callback_data": "/list"
-                    }
-					],
+                    {"text": "🌍 Главное Меню"}
+                ]
+            ]
+        }
+    }
+}
+
+
+<% CASE ['/pc', '🔗 💻 Windows/MacOS'] %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "sendPhoto": {
+        "photo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTrWE_1T5S0CxnVsQe9oUcuYgG7BOYV7n5ZdQ&usqp=CAU",
+        "protect_content": "true",
+        "parse_mode":"HTML",
+        "caption": "1️⃣  Скачайте и установите приложение Outline к себе на устройство. Скачать для <a href=\"https://itunes.apple.com/app/outline-app/id1356178125\">🌐для Mac OS</a>, <a href=\"https://itunes.apple.com/app/outline-app/id1356178125\">🌐для Windows</a>\n\n2️⃣ В разделе \"Ключи\" нажмите \"Новый ключ\" и выберите нужный вам.\n\n3️⃣  После оплаты скачайте файл настроек для приложения OutLine. Находясь в меню \"Ключи\" выберите нужный ключ, кликнув по нему. Далее скачайте файл ключа и добавьте его в приложение OutLine.",
+        "reply_markup" : {
+            "keyboard": [
+                 [
+                     {"text": "🖥 Чат поддержки"},
+                    {"text": "🖥 Инструкция Xray-Core/VLESS"}
+                ],
+				[
+                      {"text": "🖥 Инструкция SS"}
+                ],
                 [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/menu"
-                    }
+                    {"text": "🌍 Главное Меню"}
                 ]
             ]
         }
@@ -601,7 +618,7 @@
                 [
                     {
                         "text": "✚ Купить новый ключ",
-                        "callback_data": "/pricelist"
+                        "callback_data": "/test"
                     }
                 ],
                 [
