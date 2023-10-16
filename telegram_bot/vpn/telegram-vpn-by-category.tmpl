@@ -26,8 +26,8 @@
         "error": "ОШИБКА: Логин {{ message.chat.username }} или chat_id {{ message.chat.id }} уже существует"
     }
 }
-<% CASE ['/start', '/menu', 'Лучшее Меню'] %>
-{{ IF cmd != '/start' }}
+<% CASE ['/start', '/menu', '🌍 Главное Меню'] %>
+{{ IF cmd == '/menu' OR cmd == 'Меню' }}
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
@@ -38,9 +38,23 @@
         "parse_mode": "HTML",
         "reply_markup": {
             "keyboard": [
+				[
+                    {"text": "🚀 Тестировать Услуги"}
+                ],
                 [
-                    {"text": "Меню"}
-                ]
+                    {"text": "💰 Баланс"},
+                    {"text": "🚀 Список VPN ключей"}
+                ],
+				[
+                    {"text": "🚀 О Сервисе"}
+                ],
+                [
+                    {"text": "🤝 Реферальная система"},
+                    {"text": "📡 Помощь"}
+                ],
+				 [
+				{"text": "🖥 Проверка скорости"}
+				]
             ],
             "one_time_keyboard": false,
             "resize_keyboard": true
@@ -49,38 +63,13 @@
 },
 {
     "sendMessage": {
-        "text": "Создавайте и управляйте своими VPN ключами",
+        "text": "👋🏽 <b>Добро пожаловать!</b> <b><u>{{ user.full_name }}</u></b> .\n           🌐             <b>Service RU VPN</b>           🌐          \n\n 🔥 <b><u>ВСТРЕЧАЙТЕ VPN НОВОГО ПОКОЛЕНИЯ! БЕЗОПАСНАЯ ТЕХНОЛОГИЯ ШИФРОВАНИЯ ТРАФИКА СДЕЛАЕТ ВАС НАСТОЯЩИМ ПРИВИДЕНИЕМ 👻</u></b>  🔥\n\n   *** <u> <i>Мы используем ShadowSocks  и XRAY-Core 'VLESS TCP' ПРОТОКОЛЫ</i> </u> ***\n\n 🤝 Партнёрская программа\n Приводи друзей и зарабатывай <b>{{ config.billing.partner.income_percent }}%</b>\n\n\n <b>Действует тестовая услуга 10/дней</b> 🤝\n\n\nVPN в частном облаке, чтобы у тебя была возможность свободно путешествовать и получать доступ к своим соц. сетям и банкам из любой страны, а также избавить тебя от:\n\n😥 зависающих видео в запрещённой сети\n😥 пропущенных новых сообщений\n😡 бесконечного просмотра рекламы\n😱 риска блокировки из-за частой смены IP-адреса\n🤬 утекающего заряда батареи на пробных VPN\n\n\n🔌<b>Подключишься -></b> и сразу оценишь преимущества НАШЕГО VPN! на своем устройстве",
         "reply_markup": {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "💰 Баланс",
-                        "callback_data": "/balance"
-                    }
-                ],
-                [
-                    {
-                        "text": "🗝 Список VPN ключей",
-                        "callback_data": "/list"
-                    }
-                ],
-                [
-                    {
-                        "text": "🤝 Реферальная система",
-                        "callback_data": "/referrals"
-                    }
-                ],
-                [
-                    {
-                        "text": "🗓 Помощь",
-                        "callback_data": "/help"
-                    }
-                ]
-            ]
+        
         }
     }
 }
-<% CASE '/balance' %>
+<% CASE ['/balance', '💰 Баланс'] %>
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
@@ -90,10 +79,19 @@
         "reply_markup" : {
             "inline_keyboard": [
                 [
-                    {
+					{
                         "text": "✚ Пополнить баланс",
-                        "url": "https://yoomoney.ru/quickpay/shop-widget?writer=seller&targets=%D0%9E%D0%BF%D0%BB%D0%B0%D1%82%D0%B0%20%D0%BF%D0%BE%20%D0%B4%D0%BE%D0%B3%D0%BE%D0%B2%D0%BE%D1%80%D1%83%20{{ user.id }}&targets-hint=&default-sum={{ user.pays.forecast.total }}&label={{ user.id }}&button-text=12&payment-type-choice=on&hint=&successURL=&quickpay=shop&account={{ config.pay_systems.yoomoney.account }}"
+                        "web_app": {
+                            "url": "https://yoomoney.ru/quickpay/shop-widget?writer=seller&targets=%D0%9E%D0%BF%D0%BB%D0%B0%D1%82%D0%B0%20%D0%BF%D0%BE%20%D0%B4%D0%BE%D0%B3%D0%BE%D0%B2%D0%BE%D1%80%D1%83%20{{ user.id }}&targets-hint=&default-sum={{ user.pays.forecast.total }}&label={{ user.id }}&button-text=12&payment-type-choice=on&hint=&successURL=&quickpay=shop&account={{ config.pay_systems.yoomoney.account }}&message_id={{ message.message_id + 1 }}"
+                        }
+                    },
+					{
+                        "text": "✚ Пополнить CryptoCloud",
+                        "web_app": {
+                            "url": "{{ config.api.url }}/shm/pay_systems/cryptocloud.cgi?user_id={{ user.id }}&action=create&amount={{ user.pays.forecast.total }}&message_id={{ message.message_id + 1 }}"
+                        }
                     }
+					
                 ],
                 [
                     {
@@ -111,13 +109,13 @@
         }
     }
 }
-<% CASE '/list' %>
+<% CASE ['/list', '🚀 Список VPN ключей'] %>
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
 {
     "sendMessage": {
-        "text": "🔑  Список VPN ключей",
+        "text": "🚀 <b>{{ user.full_name }}!</b> Вы хотите создать новый ключ или продлить один из имеющихся?",
         "reply_markup" : {
             "inline_keyboard": [
                 {{ FOR item IN ref( user.services.list_for_api( 'category', 'vpn-%' ) ) }}
@@ -137,7 +135,7 @@
                 {{ END }}
                 [
                     {
-                        "text": "{{ item.name }} - {{ icon }} {{ status }}",
+                        "text": "{{ item.name }} - {{ icon }} {{ status }} {{ end_date }}",
                         "callback_data": "/service {{ item.user_service_id }}"
                     }
                 ],
@@ -167,7 +165,7 @@
     "sendMessage": {
         {{ SWITCH us.status }}
           {{ CASE 'ACTIVE' }}
-          {{ icon = '✅' }}
+          {{ icon = '✅ ' }}
           {{ status = 'Работает' }}
           {{ CASE 'BLOCK' }}
           {{ icon = '❌' }}
@@ -178,8 +176,9 @@
           {{ CASE }}
           {{ icon = '⏳' }}
           {{ status = 'Обработка' }}
+            {{ end_date = 'до'  _ item.withdraw.end_date }}
         {{ END }}
-        "text": "<b>Услуга</b>: {{ us.name }}{{ IF us.expire }}\n\n<b>Оплачена до</b>: {{ us.expire }}{{ END }}\n\n<b>Статус</b>: {{ icon}} {{ status }}",
+        "text": "<b>Услуга</b>: <i>{{ us.name }}{{ IF us.expire }}</i>\n\n<b>Оплачена до</b>: {{ us.expire }}{{ END }}\n\n<b>Статус</b>: {{ icon}}  <b>{{ status }}</b>",
         "reply_markup" : {
             "inline_keyboard": [
                 {{ IF us.status == 'ACTIVE' }}
@@ -255,13 +254,13 @@
 },
 {
     "sendMessage": {
-        "text": "☷ Выберите услугу для заказа",
+        "text": "☷ Чтобы подключиться:\n\n1.Выбери нужный тариф\n2.Внеси платеж\n3.И получи ключ с простой инструкций для своего устройства 😉\n\n👍Пользователи говорят, что готовы платить за эту скорость🏎️ и удобство даже больше.\n▶️Жми на нужный тариф👇",
         "reply_markup" : {
             "inline_keyboard": [
                 {{ FOR item IN ref(service.api_price_list) }}
                 [
                     {
-                        "text": "{{ item.name }} - {{ item.cost }} руб/мес.",
+                        "text": "{{ item.name }} - {{ item.cost * (1 - 0.01 * user.discount) }} руб/мес.",
                         "callback_data": "/serviceorder {{ item.service_id }}"
                     }
                 ],
@@ -338,34 +337,6 @@
         "error": "ОШИБКА"
     }
 }
-<% CASE '/help' %>
-{
-    "deleteMessage": { "message_id": {{ message.message_id }} }
-},
-{
-    "sendPhoto": {
-        "photo": "https://media.tenor.com/5KHjsG1Aw1YAAAAi/photos-google-photos.gif",
-        "protect_content": "true",
-        "parse_mode":"HTML",
-        "caption": "1️⃣  Скачайте и установите приложение WireGuard к себе на устройство. Скачать для <a href=\"https://apps.apple.com/us/app/wireguard/id1441195209\">iPhone</a>, <a href=\"https://play.google.com/store/apps/details?id=com.wireguard.android\">Android</a>, <a href=\"https://apps.apple.com/us/app/wireguard/id1451685025\">Mac</a>.\n\n2️⃣ В разделе \"Ключи\" нажмите \"Новый ключ\" и выберите нужный вам.\n\n3️⃣  После оплаты скачайте файл настроек для приложения WireGuard. Находясь в меню \"Ключи\" выберите нужный ключ, кликнув по нему. Далее скачайте файл ключа и добавьте его в приложение WireGuard.",
-        "reply_markup" : {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "Чат поддержки",
-                        "url": "https://t.me/shm_billing"
-                    }
-                ],
-                [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}
 <% CASE '/pays' %>
 {
     "sendMessage": {
@@ -390,22 +361,8 @@
         }
     }
 }
-<% CASE '/referrals' %>
-{
-    "sendMessage": {
-        "text": "🤝 Партнёрская программа\n\nПриводи друзей и зарабатывай {{ config.billing.partner.income_percent }}% с их пополнений\n\n⬇️️ Твоя реферальная ссылка:\n└ https://t.me/NAME_bot?start={{ user.id }}\n\n🏅 Статистика:\n├ Приведено друзей: {{ user.referrals_count }}\n└ Доступно к выводу: {{ user.get_bonus }} ₽",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "Назад...",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}
+
+
 <% CASE '/show_mz_keys' %>
 {{ subscription_url = storage.read('name','vpn_mrzb_' _ args.0 ).subscription_url }}
 {
@@ -427,16 +384,6 @@
         }
     }
 },
-{{ vless_tcp = storage.read('name','vpn_mrzb_' _ args.0 ).links.grep('^vless:').first }}
-{
-    "printQrCode": {
-        "data": "{{ vless_tcp }}",
-        "parameters": {
-            "parse_mode": "HTML",
-            "caption": "<b>VLESS TCP:</b>\n<code>{{ vless_tcp }}</code>"
-        }
-    }
-},
 {{ vless_grpc = storage.read('name','vpn_mrzb_' _ args.0 ).links.grep('^vless:').last }}
 {
     "printQrCode": {
@@ -445,6 +392,329 @@
             "parse_mode": "HTML",
             "caption": "<b>VLESS GRPC:</b>\n<code>{{ vless_grpc }}</code>"
         }
+    }
+},
+{
+  "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+
+{
+  "sendMessage": {
+    "text": "Вернуться к услуге",
+    "reply_markup": {
+      "inline_keyboard": [
+        [
+          {
+            "text": " Назад",
+            "callback_data": "/service {{ args.0 }}"
+          }
+        ]
+      ]
+    }
+  }
+}
+
+<% CASE '/info' %>
+{
+    "sendMessage": {
+        "parse_mode":"HTML",
+        "text": "<b>User-id</b>: {{ user.id }}\n<b>Login</b>: {{ user.login }}\n<b>Chat-id</b>: {{ message.chat.id }}\n<b>Chat-username</b>: {{ message.chat.username }}"
+    }
+}
+
+
+<% CASE ['/sup', '🖥 Чат поддержки'] %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "sendMessage": {
+        "text":"🖥 Чат поддержки",
+        "parse_mode": "HTML",
+        "reply_markup" : {
+            "inline_keyboard": [
+                [
+					{
+                        "text": "Тех-Поддержка",
+                        "web_app": {
+                            "url": "https://t.me/supservru/1"
+                        }
+                    }
+					
+                ]
+            ]
+        }
+    }
+}
+
+<% CASE ['/speedtest', '🖥 Проверка скорости'] %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "sendMessage": {
+        "text":"🖥 Скорость интернета",
+        "parse_mode": "HTML",
+        "reply_markup" : {
+            "inline_keyboard": [
+                [
+					{
+                        "text": "📶 Скорость интернета",
+                        "web_app": {
+                            "url": "https://speedtest.net/"
+                        }
+                    }
+					
+                ]
+            ]
+        }
+    }
+}
+
+<% CASE ['/help', '📡 Помощь'] %>
+
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "sendMessage": {
+        "text":"📡 Выберите пункт который вас интересует!",
+        "parse_mode": "HTML",
+        "reply_markup": {
+            "keyboard": [
+                [
+                     {"text": "🖥 Чат поддержки"},
+                    {"text": "🖥 Инструкция Xray-Core/VLESS"}
+                ],
+				[
+                      {"text": "🖥 Инструкция SS"},
+                    {"text": "🔗 💻 Windows/MacOS"}
+                ],
+                [
+                    {"text": "🌍 Главное Меню"}
+                ]
+            ],
+            "one_time_keyboard": false,
+            "resize_keyboard": true
+        }
+    }
+}
+
+
+<% CASE ['/xray', '🖥 Инструкция Xray-Core/VLESS'] %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "sendPhoto": {
+        "photo": "https://play-lh.googleusercontent.com/EU8VQ3e2Ylty9w1_TQWh74X0jh37kBNNLKsFDH6DWc9_W7hjGR-tA1DP51-E6lc1hA=w240-h480-rw",
+        "protect_content": "true",
+        "parse_mode":"HTML",
+        "caption": "Инструкция для Android:\n\n1️⃣ Нажми на ключ доступа (☝️ начинается с vless://)\n2️⃣ Установи приложение <a href=\"https://play.google.com/store/apps/details?id=com.v2ray.ang\">🌐V2rayNG Andriod</a>,<a href=\"https://apps.apple.com/us/app/v2rayng/id1661166628\">🌐 V2rayNG IOS</a>,\n3️⃣ Запусти программу Outline и вставь ключ\n4️⃣ Нажми <b>'Подключится'</b> и наслаждайся высокой скоростью и стабильностью ",
+        "reply_markup" : {
+            "keyboard": [
+                 [
+                     {"text": "🖥 Чат поддержки"}
+                ],
+				[
+                      {"text": "🖥 Инструкция SS"},
+                    {"text": "🔗 💻 Windows/MacOS"}
+                ],
+                [
+                    {"text": "🌍 Главное Меню"}
+                ]
+            ]
+        }
+    }
+}
+
+<% CASE ['/ss', '🖥 Инструкция SS'] %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "sendPhoto": {
+        "photo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTrWE_1T5S0CxnVsQe9oUcuYgG7BOYV7n5ZdQ&usqp=CAU",
+        "protect_content": "true",
+        "parse_mode":"HTML",
+        "caption": "1️⃣  Скачайте и установите приложение Outline к себе на устройство. Скачать для <a href=\"https://apps.apple.com/us/app/outline-app/id1356177741\">iPhone</a>, <a href=\"https://play.google.com/store/apps/details?id=org.outline.android.client\">Android</a>, <a href=\"https://apps.apple.com/us/app/wireguard/id1451685025\">Mac</a>.\n\n2️⃣ В разделе \"Ключи\" нажмите \"Новый ключ\" и выберите нужный вам.\n\n3️⃣  После оплаты скачайте файл настроек для приложения OutLine. Находясь в меню \"Ключи\" выберите нужный ключ, кликнув по нему. Далее скачайте файл ключа и добавьте его в приложение OutLine.",
+        "reply_markup" : {
+            "keyboard": [
+                 [
+                     {"text": "🖥 Чат поддержки"},
+                    {"text": "🖥 Инструкция Xray-Core/VLESS"}
+                ],
+				[
+                    {"text": "🔗 💻 Windows/MacOS"}
+                ],
+                [
+                    {"text": "🌍 Главное Меню"}
+                ]
+            ]
+        }
+    }
+}
+
+
+<% CASE ['/pc', '🔗 💻 Windows/MacOS'] %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "sendPhoto": {
+        "photo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTrWE_1T5S0CxnVsQe9oUcuYgG7BOYV7n5ZdQ&usqp=CAU",
+        "protect_content": "true",
+        "parse_mode":"HTML",
+        "caption": "1️⃣  Скачайте и установите приложение Outline к себе на устройство. Скачать для <a href=\"https://itunes.apple.com/app/outline-app/id1356178125\">🌐для Mac OS</a>, <a href=\"https://itunes.apple.com/app/outline-app/id1356178125\">🌐для Windows</a>\n\n2️⃣ В разделе \"Ключи\" нажмите \"Новый ключ\" и выберите нужный вам.\n\n3️⃣  После оплаты скачайте файл настроек для приложения OutLine. Находясь в меню \"Ключи\" выберите нужный ключ, кликнув по нему. Далее скачайте файл ключа и добавьте его в приложение OutLine.",
+        "reply_markup" : {
+            "keyboard": [
+                 [
+                     {"text": "🖥 Чат поддержки"},
+                    {"text": "🖥 Инструкция Xray-Core/VLESS"}
+                ],
+				[
+                      {"text": "🖥 Инструкция SS"}
+                ],
+                [
+                    {"text": "🌍 Главное Меню"}
+                ]
+            ]
+        }
+    }
+}
+
+
+<% CASE ['/test', '🚀 Тестировать Услуги'] %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "sendMessage": {
+        "text": "☷ Чтобы подключиться:\n\n1.Выбери нужный тариф\n2.И получи ключ с простой инструкций для своего устройства 😉\n\n👍Пользователи говорят, что готовы платить за эту скорость🏎️ и удобство даже больше.\n▶️Жми на нужный тариф👇",
+        "reply_markup" : {
+            "inline_keyboard": [
+                {{ FOR item IN ref( service.api_price_list( 'category', 'vpn-mz-test-%' ) ) }}
+                [
+                    {
+                        "text": "{{ item.name }} - {{ item.cost * (1 - 0.01 * user.discount) }} руб/мес.",
+                        "callback_data": "/serviceorder {{ item.service_id }}"
+                    }
+                ],
+                {{ END }}
+				[
+                    {
+                        "text": "🚀 Ваш список TEST ключей",
+                        "callback_data": "/buytest"
+                    }
+                ],
+                [
+                    {
+                        "text": "⇦ Назад",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+
+<% CASE ['/buytest', '🚀 Список TEST ключей'] %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "sendMessage": {
+        "text": "🚀 <b>{{ user.full_name }}!</b> Ваши активные тестовые <b>🔑 Ключи!</b>",
+        "reply_markup" : {
+            "inline_keyboard": [
+                {{ FOR item IN ref( user.services.list_for_api( 'category', 'vpn-mz-test-%' ) ) }}
+                {{ SWITCH item.status }}
+                  {{ CASE 'ACTIVE' }}
+                  {{ icon = '✅' }}
+                  {{ status = 'Работает' }}
+                  {{ CASE 'BLOCK' }}
+                  {{ icon = '❌' }}
+                  {{ status = 'Заблокирована' }}
+                  {{ CASE 'NOT PAID' }}
+                  {{ icon = '💰' }}
+                  {{ status = 'Ожидает оплаты' }}
+                  {{ CASE }}
+                  {{ icon = '⏳' }}
+                  {{ status = 'Обработка' }}
+                {{ END }}
+                [
+                    {
+                        "text": "{{ item.name }} - {{ icon }} {{ status }} {{ end_date }}",
+                        "callback_data": "/service {{ item.user_service_id }}"
+                    }
+                ],
+                {{ END }}
+                [
+                    {
+                        "text": "✚ Купить новый ключ",
+                        "callback_data": "/test"
+                    }
+                ],
+                [
+                    {
+                        "text": "⇦ Назад",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+
+<% CASE ['/referrals', '🤝 Реферальная система'] %>
+{
+    "sendMessage": {
+        "text": "🤝 Партнёрская программа\n\nПриводи друзей и зарабатывай {{ config.billing.partner.income_percent }}% с их пополнений\n\n⬇️️ Твоя реферальная ссылка:\n└ https://t.me/servruvpn_bot?start={{ user.id }}\n\n🏅 Статистика:\n├ Приведено друзей: {{ user.referrals_count }}\n└ Доступно к выводу: {{ user.get_bonus }} ₽",
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "Назад...",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+<% CASE ['/about', '🚀 О Сервисе'] %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+     "sendPhoto": {
+        "photo": "https://sun9-67.userapi.com/impg/_Dda2_prlnWOWx8AOThq7SpcUa-CZo35ICgLdQ/adNqp7zUhis.jpg?size=628x1280&quality=95&sign=b1fb8d6e0d0bd04d9225b35adabf7611&type=album",
+        "protect_content": "true",
+        "parse_mode":"HTML",
+        "caption": "🌐 Весь трафик идёт через сервера в современном Датацентре. Не собирается, не хранится и защищён сквозным шифрованием - спокойно вводи логины/пароли и отправляй личные файлы, они в безопасности\n\n ✈️ Скорость передачи сервера 10 Gb/сек, остальные ограничения наложены тарифом провайдера. В прикреплённых фото результат Speedtest-а: зелёный слайд - скорость скачивания, фиолетовый - загрузки\n\n✅️Проверить скорость интернета на своем устройстве ты сможешь после подключения VPN\n\n📍 Твой постоянный IP-адрес - даёт снижение риска блокировки аккаунтов из-за частой смены IP",
+        "reply_markup" : {
+            "inline_keyboard": [
+                [
+                   
+                ]
+            ]
+        }
+    }
+},
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "sendMessage": {
+        "text": "✅Для подключения достаточно нажать одноименную кнопку.\n\nУ тебя будет 2 дня бесплатного пользования, чтобы оценить его преимущества перед обычными VPN из AppStore или Google Play\n\nЕсли знаешь VPN лучше, сообщи в чат поддержки: <a href=\"https://t.me/supservru/7\">SupServRU VPN</a>"
+    }
+},
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "sendMessage": {
+        "text": "Почему VPN платный? \n\n\nНе смотря на то, что я трачу всё своё личное время🕗 на улучшение сервера, мне необходимо:\n\n✅Оплачивать современный сервер в датацентре с большой пропускной способностью 10Gb/s📶\n✅И быть на связи со своими клиентами 24/7"
     }
 }
 <% END %>
