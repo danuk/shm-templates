@@ -51,7 +51,10 @@
                 [
                     {"text": "🤝 Реферальная система"},
                     {"text": "📡 Помощь"}
-                ]
+                ],
+				 [
+				{"text": "🖥 Проверка скорости"}
+				]
             ],
             "one_time_keyboard": false,
             "resize_keyboard": true
@@ -60,7 +63,7 @@
 },
 {
     "sendMessage": {
-        "text": "👋🏽 <b>Добро пожаловать!</b> <b><u>{{ user.full_name }}</u></b> .\n           🌐             <b>Service RU VPN</b>           🌐          \n\n 🔥 <b><u>У нас самые низкие цены на рынке!</u></b>  🔥\n   *** <u> <i>Мы используем ShadowSocks  и XRAY-Core 'VLESS TCP' ПРОТОКОЛЫ</i> </u> ***\n\n 🤝 Партнёрская программа\n Приводи друзей и зарабатывай <b>{{ config.billing.partner.income_percent }}%</b>\n\n\n <b>Действует тестовая услуга 10/дней</b> 🤝\n\n\nVPN в частном облаке, чтобы у тебя была возможность свободно путешествовать и получать доступ к своим соц. сетям и банкам из любой страны, а также избавить тебя от:\n\n😥 зависающих видео в запрещённой сети\n😥 пропущенных новых сообщений\n😡 бесконечного просмотра рекламы\n😱 риска блокировки из-за частой смены IP-адреса\n🤬 утекающего заряда батареи на пробных VPN\n\n\n🔌<b>Подключишься -></b> и сразу оценишь преимущества НАШЕГО VPN! на своем устройстве",
+        "text": "👋🏽 <b>Добро пожаловать!</b> <b><u>{{ user.full_name }}</u></b> .\n           🌐             <b>Service RU VPN</b>           🌐          \n\n 🔥 <b><u>ВСТРЕЧАЙТЕ VPN НОВОГО ПОКОЛЕНИЯ! БЕЗОПАСНАЯ ТЕХНОЛОГИЯ ШИФРОВАНИЯ ТРАФИКА СДЕЛАЕТ ВАС НАСТОЯЩИМ ПРИВИДЕНИЕМ 👻</u></b>  🔥\n\n   *** <u> <i>Мы используем ShadowSocks  и XRAY-Core 'VLESS TCP' ПРОТОКОЛЫ</i> </u> ***\n\n 🤝 Партнёрская программа\n Приводи друзей и зарабатывай <b>{{ config.billing.partner.income_percent }}%</b>\n\n\n <b>Действует тестовая услуга 10/дней</b> 🤝\n\n\nVPN в частном облаке, чтобы у тебя была возможность свободно путешествовать и получать доступ к своим соц. сетям и банкам из любой страны, а также избавить тебя от:\n\n😥 зависающих видео в запрещённой сети\n😥 пропущенных новых сообщений\n😡 бесконечного просмотра рекламы\n😱 риска блокировки из-за частой смены IP-адреса\n🤬 утекающего заряда батареи на пробных VPN\n\n\n🔌<b>Подключишься -></b> и сразу оценишь преимущества НАШЕГО VPN! на своем устройстве",
         "reply_markup": {
         
         }
@@ -79,7 +82,13 @@
 					{
                         "text": "✚ Пополнить баланс",
                         "web_app": {
-                            "url": "https://yoomoney.ru/quickpay/shop-widget?writer=seller&targets=%D0%9E%D0%BF%D0%BB%D0%B0%D1%82%D0%B0%20%D0%BF%D0%BE%20%D0%B4%D0%BE%D0%B3%D0%BE%D0%B2%D0%BE%D1%80%D1%83%20{{ user.id }}&targets-hint=&default-sum={{ user.pays.forecast.total }}&label={{ user.id }}&button-text=12&payment-type-choice=on&hint=&successURL=&quickpay=shop&account={{ config.pay_systems.yoomoney.account }}"
+                            "url": "https://yoomoney.ru/quickpay/shop-widget?writer=seller&targets=%D0%9E%D0%BF%D0%BB%D0%B0%D1%82%D0%B0%20%D0%BF%D0%BE%20%D0%B4%D0%BE%D0%B3%D0%BE%D0%B2%D0%BE%D1%80%D1%83%20{{ user.id }}&targets-hint=&default-sum={{ user.pays.forecast.total }}&label={{ user.id }}&button-text=12&payment-type-choice=on&hint=&successURL=&quickpay=shop&account={{ config.pay_systems.yoomoney.account }}&message_id={{ message.message_id + 1 }}"
+                        }
+                    },
+					{
+                        "text": "✚ Пополнить CryptoCloud",
+                        "web_app": {
+                            "url": "{{ config.api.url }}/shm/pay_systems/cryptocloud.cgi?user_id={{ user.id }}&action=create&amount={{ user.pays.forecast.total }}&message_id={{ message.message_id + 1 }}"
                         }
                     }
 					
@@ -156,7 +165,7 @@
     "sendMessage": {
         {{ SWITCH us.status }}
           {{ CASE 'ACTIVE' }}
-          {{ icon = '✅' }}
+          {{ icon = '✅ ' }}
           {{ status = 'Работает' }}
           {{ CASE 'BLOCK' }}
           {{ icon = '❌' }}
@@ -169,7 +178,7 @@
           {{ status = 'Обработка' }}
             {{ end_date = 'до'  _ item.withdraw.end_date }}
         {{ END }}
-        "text": "<b>Услуга</b>: {{ us.name }}{{ IF us.expire }}\n\n<b>Оплачена до</b>: {{ us.expire }}{{ END }}\n\n<b>Статус</b>: {{ icon}} {{ status }}",
+        "text": "<b>Услуга</b>: <i>{{ us.name }}{{ IF us.expire }}</i>\n\n<b>Оплачена до</b>: {{ us.expire }}{{ END }}\n\n<b>Статус</b>: {{ icon}}  <b>{{ status }}</b>",
         "reply_markup" : {
             "inline_keyboard": [
                 {{ IF us.status == 'ACTIVE' }}
@@ -251,7 +260,7 @@
                 {{ FOR item IN ref(service.api_price_list) }}
                 [
                     {
-                        "text": "{{ item.name }} - {{ item.cost }} руб/мес.",
+                        "text": "{{ item.name }} - {{ item.cost * (1 - 0.01 * user.discount) }} руб/мес.",
                         "callback_data": "/serviceorder {{ item.service_id }}"
                     }
                 ],
@@ -426,8 +435,10 @@
             "inline_keyboard": [
                 [
 					{
-                        "text": "🖥 Чат поддержки",
-                            "url": "https://t.me/supservru/7"
+                        "text": "Тех-Поддержка",
+                        "web_app": {
+                            "url": "https://t.me/supservru/1"
+                        }
                     }
 					
                 ]
@@ -436,12 +447,35 @@
     }
 }
 
-<% CASE ['/help', '/menu', '📡 Помощь'] %>
-{{ IF cmd == '/menu' OR cmd == '🌍 Главное Меню' }}
+<% CASE ['/speedtest', '🖥 Проверка скорости'] %>
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
-{{ END }}
+{
+    "sendMessage": {
+        "text":"🖥 Скорость интернета",
+        "parse_mode": "HTML",
+        "reply_markup" : {
+            "inline_keyboard": [
+                [
+					{
+                        "text": "📶 Скорость интернета",
+                        "web_app": {
+                            "url": "https://speedtest.net/"
+                        }
+                    }
+					
+                ]
+            ]
+        }
+    }
+}
+
+<% CASE ['/help', '📡 Помощь'] %>
+
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
 {
     "sendMessage": {
         "text":"📡 Выберите пункт который вас интересует!",
@@ -562,7 +596,7 @@
                 {{ FOR item IN ref( service.api_price_list( 'category', 'vpn-mz-test-%' ) ) }}
                 [
                     {
-                        "text": "{{ item.name }} - {{ item.cost }} руб/мес.",
+                        "text": "{{ item.name }} - {{ item.cost * (1 - 0.01 * user.discount) }} руб/мес.",
                         "callback_data": "/serviceorder {{ item.service_id }}"
                     }
                 ],
