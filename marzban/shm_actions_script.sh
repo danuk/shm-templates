@@ -98,7 +98,7 @@ case $EVENT in
             "vless": {"flow": ""},
             "trojan": {},
             "shadowsocks": {
-              "method": "chacha20-poly1305"
+              "method": "chacha20-ietf-poly1305"
             }
           },
           "data_limit": 0,
