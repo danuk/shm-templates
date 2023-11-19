@@ -1,4 +1,7 @@
 #!/usr/bin/env bash
+
+# Origin file: https://github.com/Gozargah/Marzban-scripts/raw/master/marzban.sh
+
 set -e
 
 INSTALL_DIR="/opt"
