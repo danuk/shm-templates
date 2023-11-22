@@ -95,7 +95,7 @@ case $EVENT in
           "username": "us_{{ us.id }}",
           "proxies": {
             "vmess": {},
-            "vless": {"flow": ""},
+            "vless": {"flow": "xtls-rprx-vision"},
             "trojan": {},
             "shadowsocks": {
               "method": "chacha20-ietf-poly1305"
