@@ -8,7 +8,7 @@
                 [
                     {
                         "text": "Продолжить...",
-                        "callback_data": "/register {{ args.1 }}"
+                        "callback_data": "/register {{ args.0 }}"
                     }
                 ]
             ]
@@ -39,7 +39,7 @@
         "reply_markup": {
             "keyboard": [
                 [
-                    {"text": "Меню"}
+                    {"text": "Лучшее Меню"}
                 ]
             ],
             "one_time_keyboard": false,
@@ -120,7 +120,7 @@
         "text": "🔑  Список VPN ключей",
         "reply_markup" : {
             "inline_keyboard": [
-                {{ FOR item IN ref( user.services.list_for_api( 'category', 'vpn-%' ) ) }}
+                {{ FOR item IN ref( user.services.list_for_api( 'category', '%' ) ) }}
                 {{ SWITCH item.status }}
                   {{ CASE 'ACTIVE' }}
                   {{ icon = '✅' }}
@@ -258,7 +258,7 @@
         "text": "☷ Выберите услугу для заказа",
         "reply_markup" : {
             "inline_keyboard": [
-                {{ FOR item IN ref(service.api_price_list) }}
+                {{ FOR item IN ref(service.api_price_list).nsort('service_id') }}
                 [
                     {
                         "text": "{{ item.name }} - {{ item.cost }} руб/мес.",
