@@ -1,28 +1,9 @@
 <% SWITCH cmd %>
 <% CASE 'USER_NOT_FOUND' %>
 {
-    "sendMessage": {
-        "text": "🔐 <b>Бот для регистрации VPN ключиков</b>",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "Продолжить...",
-                        "callback_data": "/register {{ args.0 }}"
-                    }
-                ]
-            ]
-        }
-    }
-}
-<% CASE '/register' %>
-{
-    "deleteMessage": { "message_id": {{ message.message_id }} }
-},
-{
     "shmRegister": {
         "partner_id": "{{ args.0 }}",
-        "callback_data": "/pricelist",
+        "callback_data": "/start",
         "error": "ОШИБКА: Логин {{ message.chat.username }} или chat_id {{ message.chat.id }} уже существует"
     }
 }
@@ -435,6 +416,12 @@
             "parse_mode": "HTML",
             "caption": "<b>VLESS TCP:</b>\n<code>{{ vless_tcp }}</code>"
         }
+    }
+}
+<% CASE %>
+{
+    "sendMessage": {
+        "text": "ОШИБКА! Бот не знает введенную вами команду. Если у Вас есть вопросы, пишите в чат поддержки"
     }
 }
 <% END %>
