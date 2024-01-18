@@ -436,15 +436,5 @@
             "caption": "<b>VLESS TCP:</b>\n<code>{{ vless_tcp }}</code>"
         }
     }
-},
-{{ vless_grpc = storage.read('name','vpn_mrzb_' _ args.0 ).links.grep('^vless:').last }}
-{
-    "printQrCode": {
-        "data": "{{ vless_grpc }}",
-        "parameters": {
-            "parse_mode": "HTML",
-            "caption": "<b>VLESS GRPC:</b>\n<code>{{ vless_grpc }}</code>"
-        }
-    }
 }
 <% END %>
