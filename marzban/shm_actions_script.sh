@@ -105,6 +105,7 @@ case $EVENT in
           "expire": null,
           "data_limit_reset_strategy": "no_reset",
           "status": "active",
+          "note": "SHM_info- {{ user.login }}, {{ user.full_name }}",
           "inbounds": {
             "vmess": [
               "VMess TCP",
