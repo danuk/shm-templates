@@ -105,7 +105,7 @@ case $EVENT in
           "expire": null,
           "data_limit_reset_strategy": "no_reset",
           "status": "active",
-          "note": "SHM_info- {{ user.login }}, {{ user.full_name }}",
+          "note": "SHM_info- {{ user.login }}, {{ user.full_name }}, https://t.me/{{ user.settings.telegram.login }}",
           "inbounds": {
             "vmess": [
               "VMess TCP",
