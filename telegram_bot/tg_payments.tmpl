@@ -157,7 +157,7 @@
 <section>
     <h4 style="text-align:left;">Выберите способ оплаты:</h4>
 
-{{ FOR item IN pay.paysystems }}
+{{ FOR item IN ref(pay.paysystems) }}
     <button id="main_btn" onclick="ShmPayApp.makePayment( '{{ item.shm_url }}' );">{{ item.name }}</button>
 {{ END }}
 </section>
