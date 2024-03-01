@@ -138,7 +138,7 @@ EOF
             exit 1
         fi
 
-        echo "Upload user config to SHM: vpn_mrzb_{{ us.id }}"
+        echo "Upload user config to SHM: $API_URL/shm/v1/storage/manage/vpn_mrzb_{{ us.id }}"
         curl -sk -XPUT \
             -H "session-id: $SESSION_ID" \
             -H "Content-Type: application/json" \
