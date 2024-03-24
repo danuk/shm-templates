@@ -34,17 +34,28 @@
             border: none;
         }
 
+        .button-container {
+            display: flex;
+        }
+
         button {
             display: block;
             width: 100%;
             font-size: 14px;
-            margin: 15px 0;
+            margin: 5px 0;
             padding: 12px 20px;
             border: none;
             border-radius: 4px;
             background-color: var(--tg-theme-button-color, #50a8eb);
             color: var(--tg-theme-button-text-color, #ffffff);
             cursor: pointer;
+        }
+
+        button.remove {
+            width: 40px;
+            padding: 10px;
+            margin-left: 10px;
+            background-color: red;
         }
 
         .main-container {
@@ -154,11 +165,16 @@
     />
 </section>
 
-<section>
+<section id="main_section">
     <h4 style="text-align:left;">Выберите способ оплаты:</h4>
 
 {{ FOR item IN ref(pay.paysystems) }}
-    <button id="main_btn" onclick="ShmPayApp.makePayment( '{{ item.shm_url }}' );">{{ item.name }}</button>
+    <div class="button-container" id='{{ item.shm_url }}'>
+        <button onclick="ShmPayApp.makePayment('{{ item.shm_url }}','{{ item.recurring }}');">{{ item.name }}</button>
+        {{ IF item.recurring }}
+        <button onclick="ShmPayApp.removePayment('{{ item.shm_url }}');" class="remove">Х</button>
+        {{ END }}
+    </div>
 {{ END }}
 </section>
 
@@ -185,15 +201,47 @@
             Telegram.WebApp.close();
         },
 
-        makePayment(shm_url) {
+        makePayment(shm_url, recurring) {
             var amount = document.getElementById('text_amount').value;
             if ( amount < 1 ) {
                 Telegram.WebApp.showAlert("Ошибка: Некоректная сумма к оплате");
                 return;
             };
 
-            Telegram.WebApp.openLink( shm_url + amount, { try_instant_view: false } );
-            Telegram.WebApp.close();
+            if ( recurring == '1' ) {
+                Telegram.WebApp.MainButton.showProgress();
+                document.getElementById('main_section').style.display = 'none';
+
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', shm_url + amount);
+                xhr.responseType = 'json';
+
+                xhr.onload = function() {
+                    Telegram.WebApp.MainButton.hideProgress();
+                    if (xhr.status === 200) {
+                        Telegram.WebApp.showAlert( "Платеж проведен успешно" );
+                    } else {
+                        var jsonResponse = xhr.response;
+                        Telegram.WebApp.showAlert( "Ошибка: " + ( jsonResponse.msg_ru || jsonResponse.msg ) );
+                    }
+                    Telegram.WebApp.close();
+                }
+                xhr.send();
+            } else {
+                Telegram.WebApp.openLink( shm_url + amount, { try_instant_view: false } );
+                Telegram.WebApp.close();
+            }
+        },
+        removePayment(shm_url) {
+            Telegram.WebApp.showConfirm('Отвязать сохраненный способ оплаты?', function(confirmed) {
+                if (!confirmed) return;
+
+                document.getElementById( shm_url ).style.display = 'none';
+                var xhr = new XMLHttpRequest();
+                xhr.open('DELETE', '/shm/v1/user/autopayment');
+                xhr.setRequestHeader('session-id', '{{ user.user.gen_session.id }}');
+                xhr.send();
+            });
         },
     }
 </script>
