@@ -175,7 +175,7 @@
     <div class="button-container" id='{{ item.shm_url }}'>
         <button onclick="ShmPayApp.makePayment('{{ item.shm_url }}','{{ item.recurring }}');">{{ item.name }}</button>
         {{ IF item.recurring }}
-        <button onclick="ShmPayApp.removePayment('{{ item.shm_url }}');" class="remove">Х</button>
+        <button onclick="ShmPayApp.removePayment('{{ item.shm_url }}','{{ user.gen_session.id }}');" class="remove">Х</button>
         {{ END }}
     </div>
 {{ END }}
@@ -235,14 +235,14 @@
                 Telegram.WebApp.close();
             }
         },
-        removePayment(shm_url) {
+        removePayment(shm_url, session_id) {
             Telegram.WebApp.showConfirm('Отвязать сохраненный способ оплаты?', function(confirmed) {
                 if (!confirmed) return;
 
                 document.getElementById( shm_url ).style.display = 'none';
                 var xhr = new XMLHttpRequest();
                 xhr.open('DELETE', '/shm/v1/user/autopayment');
-                xhr.setRequestHeader('session-id', '{{ user.user.gen_session.id }}');
+                xhr.setRequestHeader('session-id', '{{ session.id }}');
                 xhr.send();
             });
         },
