@@ -1,3 +1,6 @@
+{{ IF request.params.uid }}
+{{ user = user.switch( request.params.uid ) }}
+{{ END }}
 <!DOCTYPE html>
 <html lang="ru">
 <head>
