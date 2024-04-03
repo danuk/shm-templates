@@ -250,7 +250,7 @@
 </script>
 
 <script type="application/javascript">
-    document.getElementById('text_amount').value = "{{ ref(pay.paysystems).0.amount }}";
+    document.getElementById('text_amount').value = "{{ request.params.amount || ref(pay.paysystems).0.amount }}";
     ShmPayApp.init();
 </script>
 
