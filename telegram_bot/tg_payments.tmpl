@@ -242,7 +242,7 @@
                 document.getElementById( shm_url ).style.display = 'none';
                 var xhr = new XMLHttpRequest();
                 xhr.open('DELETE', '/shm/v1/user/autopayment');
-                xhr.setRequestHeader('session-id', '{{ session.id }}');
+                xhr.setRequestHeader('session-id', session_id );
                 xhr.send();
             });
         },
