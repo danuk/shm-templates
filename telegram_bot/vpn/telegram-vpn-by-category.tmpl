@@ -1,3 +1,7 @@
+{{
+  limit = 5
+  data = []
+}}
 <% SWITCH cmd %>
 
 <% CASE 'USER_NOT_FOUND' %>
@@ -40,24 +44,24 @@
         "photo": "https://appleinsider.ru/wp-content/uploads/2022/04/vpn_app_screenshot.jpg",
         "protect_content": true,
         "parse_mode": "HTML",
-        "caption": "🏽 <b>Добро пожаловать!</b> <b><u>{{ user.full_name }}</u></b>.\n\n🌐 <b>{{ config.company.name }}</b> 🌐\n\n🔥 <b><u>Самые низкие цены на рынке!</u></b> 🔥\n\n<i>Мы используем протоколы WireGuard и Proxy для стабильного и безопасного подключения.</i>\n\n🏅 <b>Скачать приложение:</b>\n├ <a href=\"{{ config.apk.android }}\">🌐 {{ config.company.name }} Android 🌐</a>\n└ <a href=\"{{ config.apk.ios }}\">🌐 {{ config.company.name }} iOS 🌐</a>\n\n🏅 <b>WireGuard:</b>\n├ <a href=\"{{ config.apk.wireguard_and }}\">🌐 WireGuard Android 🌐</a>\n└ <a href=\"{{ config.apk.wireguard_ios }}\">🌐 WireGuard iOS 🌐</a>\n\n🛡 <b>Быстрое и безопасное подключение</b>\n💼 <b>Стабильные соединения по всему миру</b>",
+        "caption": "👋 <b>Добро пожаловать, <u>{{ user.full_name }}</u>!</b>\n\n🌐 <b>{{ config.company.name }}</b> - <i>лучшие решения для безопасного подключения</i>\n\n💸 <b>Самые выгодные цены!</b>\n<i>Используем новейшие протоколы WireGuard и Proxy для стабильного, быстрого подключения.</i>\n\n📲 <b>Скачать приложение:</b>\n├ <a href=\"{{ config.apk.android }}\">Android 📲</a>\n└ <a href=\"{{ config.apk.ios }}\">iOS 📲</a>\n\n🛡️ <b>WireGuard Клиенты:</b>\n├ <a href=\"{{ config.apk.wireguard_and }}\">Android 🛡️</a>\n└ <a href=\"{{ config.apk.wireguard_ios }}\">iOS 🛡️</a>\n\n💼 <b>Надежность и защита по всему миру!</b>",
         "reply_markup": {
             "keyboard": [
                 [ { "text": "🌍 Главное Меню" } ],
-                [ { "text": "🖼️ Профиль" } ],
+                [ { "text": "👤 Профиль" } ],
                 [
                     { "text": "💰 Баланс" },
-                    { "text": "🚀 Список VPN ключей" }
+                    { "text": "🔑 Список VPN ключей" }
                 ],
-                [ { "text": "🚀 О Сервисе" } ],
+                [ { "text": "📄 О Сервисе" } ],
                 [
-                    { "text": "🤝 Реферальная система" },
-                    { "text": "📡 Помощь" }
+                    { "text": "👥 Реферальная система" },
+                    { "text": "❓ Помощь" }
                 ],
                 {{ IF message.chat.id == config.telegram_admin.id }}
                 [ { "text": "📡 Админка", "callback_data": "/qadminmenu" } ],
                 {{ END }}
-                [ { "text": "☢ Тестировать Услуги" } ]
+                [ { "text": "🧪 Тестировать Услуги" } ]
             ],
             "one_time_keyboard": false,
             "resize_keyboard": true
@@ -164,9 +168,6 @@
     }
 }
 
-
-
-
 <% CASE ['/pays', 'История пополнений'] %>
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
@@ -176,21 +177,21 @@
     "sendPhoto": {
         "photo": "https://appleinsider.ru/wp-content/uploads/2022/04/vpn_app_screenshot.jpg",
         "protect_content": "true",
-        "parse_mode":"HTML",
-        "caption": "💳 <b>История пополнений</b> 🧾\n\n📅 Ниже представлена информация о ваших последних пополнениях. Дата и сумма каждого платежа помогут вам отслеживать расходы и планировать бюджет. 💰\n\nДля дополнительной информации или возврата в меню воспользуйтесь кнопками ниже.\n\n🔽 <b>Последние пополнения</b>:",
+        "parse_mode": "HTML",
+        "caption": "💳 <b>История пополнений</b> 🧾\n\n📅 Здесь вы можете увидеть информацию о своих последних пополнениях. Дата и сумма каждого платежа помогают вам отслеживать расходы и планировать бюджет. 💰\n\n🔽 <b>Последние пополнения</b>:",
         "reply_markup": {
             "inline_keyboard": [
-			 {{ FOR item IN ref(user.pays.list_for_api('limit', 5)) }}
+                {{ FOR item IN ref(user.pays.list_for_api('limit', 5)) }}
                 [
                     {
-                        "text": "📅 Дата: {{ item.date }}, 💵 Сумма: {{ item.money }} руб.",
+                        "text": "📅 <b>Дата:</b> {{ item.date }} | 💵 <b>Сумма:</b> {{ item.money }} руб.",
                         "callback_data": "/menu"
                     }
                 ],
-				 {{ END }}
+                {{ END }}
                 [
                     {
-                        "text": "⇦ Назад",
+                        "text": "🔙 Назад",
                         "callback_data": "/payment"
                     }
                 ]
@@ -199,7 +200,8 @@
     }
 }
 
-<% CASE ['/list', '🚀 Список VPN ключей'] %>
+
+<% CASE ['/list', '🔑 Список VPN ключей'] %>
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
@@ -341,7 +343,7 @@
     }
 }
 
-<% CASE '/pricelist' %>
+<% CASE ['/pricelist', '🚀 Прайс лист'] %>
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
@@ -350,7 +352,7 @@
         "photo": "https://appleinsider.ru/wp-content/uploads/2022/04/vpn_app_screenshot.jpg",
         "protect_content": true,
         "parse_mode": "HTML",
-        "caption": "☷ <b>Как подключиться к VPN:</b>\n\n1. <b>Выберите тариф:</b> Найдите идеальный план для вас.\n2. <b>Оформите платеж:</b> Оплатите выбранный тариф.\n3. <b>Получите ключ:</b> Следуйте простой инструкции для активации на вашем устройстве. 😉\n\n👍 Пользователи говорят, что за такую скорость 🏎️ и удобство готовы платить даже больше!\n\n🔽 Выберите тариф и начните использовать VPN уже сегодня!",
+        "caption": "💡<b>Как подключиться к VPN:</b>\n1️⃣<b>Выберите тариф:</b> Найдите идеальный план для вас.\n2️⃣<b>Оформите платеж:</b> Оплатите выбранный тариф.\n3️⃣<b>Получите ключ:</b> Следуйте простой инструкции для активации на вашем устройстве. 🛠️\n🚀<b>Отзывы наших пользователей:</b>\n🏎️<i>Высокая скорость и надежность, даже за границей!</i>\n🔒<i>Абсолютная безопасность и простота в использовании.</i>\n🔽<b>Выберите тариф и начните пользоваться VPN прямо сейчас!</b>",
         "reply_markup": {
             "inline_keyboard": [
                 [
@@ -361,12 +363,18 @@
                 ],
                 [
                     {
-                        "text": "🔑 PROXY 🌟",
+                        "text": "🔐 PROXY 🌟",
                         "callback_data": "/buy_mz_key"
                     },
                     {
-                        "text": "🔑 WireGuard 🌟",
+                        "text": "🔒 WireGuard 🌟",
                         "callback_data": "/buy_wg_key"
+                    }
+                ],
+                [
+                    {
+                        "text": "📋 Список активных ключей",
+                        "callback_data": "/list"
                     }
                 ],
                 [
@@ -379,6 +387,7 @@
         }
     }
 }
+
 
 
 
@@ -606,7 +615,7 @@
 }
 
 
-<% CASE ['/test', '☢ Тестировать Услуги'] %>
+<% CASE ['/test', '🧪 Тестировать Услуги'] %>
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
@@ -701,7 +710,10 @@
         "caption": "🌐 **MZ (Beta) - Тестирование**\n\n🚀 **Что такое MZ?**\nMZ — это современное решение для анонимного серфинга, обеспечивающее высокую скорость и безопасность вашей интернет-активности.\n\n🔍 **Как пройти тестирование?**\n1. **Выберите тариф:** Ознакомьтесь с доступными тарифами ниже.\n2. **Активируйте тест:** Нажмите на нужный тариф, чтобы начать тестирование.\n\n💰 **Доступные тарифы:**",
         "reply_markup": {
             "inline_keyboard": [
-                {{ FOR item IN ref(service.api_price_list('category', 'vpn-lt-mz-beta')) }}
+                {{ 
+                    services = ref(service.api_price_list('category', 'vpn-lt-mz-beta'));
+                }}
+                {{ FOR item IN services }}
                 [
                     {
                         "text": "🌐 {{ item.name }} - {{ item.cost }} руб/мес.",
@@ -1045,7 +1057,7 @@
 
 
 
-<% CASE '🤝 Реферальная система' %>
+<% CASE '👥 Реферальная система' %>
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
@@ -1058,7 +1070,7 @@
                 [
                     {
                         "text": "🎟 Поделиться ссылкой",
-                        "switch_inline_query": "Присоединяйся к {{ config.company.name }} и получай бонусы!\n\n🛡 https://t.me/servruvpn_bot?start={{ toBase64Url(toQueryString( pid = user.id )) }}"
+                        "switch_inline_query": "Присоединяйся к {{ config.company.name }} и получай бонусы!\n\n🛡 https://t.me/mrzbill_bot?start={{ toBase64Url(toQueryString( pid = user.id )) }}"
                     }
                 ],
                 [
@@ -1072,7 +1084,7 @@
     }
 }
 
-<% CASE '🚀 О Сервисе' %>
+<% CASE '📄 О Сервисе' %>
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
@@ -1099,8 +1111,8 @@
     }
 }
 
-<% CASE ['/support', '📡 Помощь'] %>
-{{ IF cmd == '/help' OR cmd == '📡 Помощь' }}
+<% CASE ['/support', '❓ Помощь'] %>
+{{ IF cmd == '/help' OR cmd == '❓ Помощь' }}
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
@@ -1150,7 +1162,7 @@
                         "url": "https://t.me/supservru"
                     },
                     {
-                        "text": "🚀 Список VPN ключей",
+                        "text": "🔑 Список VPN ключей",
                         "callback_data": "/list"
                     }
                 ],
@@ -1192,7 +1204,7 @@
                         "url": "https://t.me/supservru"
                     },
                     {
-                        "text": "🚀 Список VPN ключей",
+                        "text": "🔑 Список VPN ключей",
                         "callback_data": "/list"
                     }
                 ],
@@ -1215,17 +1227,86 @@
     }
 }
 
-
-<% CASE ['/profile', '🖼️ Профиль'] %>
+<% CASE '/new_test' %>
+{{ us = user.services.list_for_api('usi', args.0) }}
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "sendMessage": {
+        {{ SWITCH us.status }}
+          {{ CASE 'ACTIVE' }}
+          {{ icon = '✅' }}
+          {{ status = 'Работает' }}
+          {{ CASE 'BLOCK' }}
+          {{ icon = '❌' }}
+          {{ status = 'Заблокирована' }}
+          {{ CASE 'NOT PAID' }}
+          {{ icon = '💰' }}
+          {{ status = 'Ожидает оплаты' }}
+          {{ CASE }}
+          {{ icon = '⏳' }}
+          {{ status = 'Обработка' }}
+        {{ END }}
+        "text": "<b>Тест ключ</b>: {{ us.name }}{{ IF us.expire }}\n\n<b>Оплачен до</b>: {{ us.expire }}{{ END }}\n\n<b>Статус</b>: {{ status }}",
+        "reply_markup": {
+            "inline_keyboard": keyboard({
+                "ACTIVE": [
+                    { "🗝 Скачать тест ключ": "/download_qr {{ args.0 }}" },
+                    { "👀 Показать тест QR код": "/show_qr {{ args.0 }}" }
+                ],
+                "NOT PAID,BLOCK": [
+                    { "💰 Оплатить тест": "/balance" }
+                ],
+                "default": [
+                    { "❌ Удалить тест ключ": "/delete {{ args.0 }}" }
+                ],
+                "back": [
+                    { "⇦ Назад к тесту": "/new_test_list" }
+                ]
+            })
+        }
+    }
+}
+
+<% CASE '/new_test_list' %>
+{{ us_list = user.services.list_for_api('category', 'vpn-test') }}
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "sendMessage": {
+        "photo": "https://appleinsider.ru/wp-content/uploads/2022/04/vpn_app_screenshot.jpg",
+        "caption": "🚀 <b>{{ user.full_name }}!</b> Вот список ваших тестовых VPN ключей:",
+        "parse_mode": "HTML",
+        "reply_markup": {
+            "inline_keyboard": keyboard({
+                "services": [
+                    {{ FOR us IN us_list }}
+                    { "{{ us.name }} - {{ us.status }}": "/new_test {{ us.user_service_id }}" }
+                    {{ END }}
+                ],
+                "new_key": [
+                    { "✚ Купить новый тест ключ": "/pricelist" }
+                ],
+                "back": [
+                    { "⇦ Назад в меню": "/menu" }
+                ]
+            })
+        }
+    }
+}
+
+
+<% CASE ['/profile', '👤 Профиль'] %>
+{
+  "deleteMessage": { "message_id": {{ message.message_id }} }
 },
 {{ userlogs = user.services.list_for_api('usi', {}) }}
 {{ last_payment = user.payments.last() }}
 {{ forecast = user.pays.forecast }}
-
 {{ user_services = ref(user.services.list_for_api('category', '%')) }}
-
+{{ current_service = user.services.current() }}
 {{ USE date }}
 
 {
@@ -1238,6 +1319,7 @@
       "inline_keyboard": [
         [
           { "text": "🎟️ Промокод", "callback_data": "/promocode" },
+          { "text": "🚀 Список ваших услуг", "callback_data": "/tariff_list" },
           { "text": "🔑 Сменить пароль", "callback_data": "/resetpassword" }
         ],
         [
@@ -1250,9 +1332,8 @@
 
 <% CASE ['/resetpassword'] %>
 {
-    "deleteMessage": { "message_id": {{ message.message_id }} }
+  "deleteMessage": { "message_id": {{ message.message_id }} }
 },
-{{ userlogs = user.services.list_for_api('usi', {}) }}
 {
   "sendMessage": {
     "chat_id": {{ message.chat.id }},
@@ -1268,41 +1349,83 @@
   }
 }
 
-<% CASE '/tariffchoice' %>
+<% CASE ['/change_tariff'] %>
 {
-    "deleteMessage": { "message_id": {{ message.message_id }} }
+  "deleteMessage": { "message_id": {{ message.message_id }} }
 },
-{{ args_split = args.0.split('_') }}
-{{ user_id = args_split.0 }}
-{{ next_service_id = args_split.1 }}
-{{ current_service = us.id(user_id) }}
-{{ change = current_service.set('next', next_service_id) }}
+{
+  arr = ref(user.services.list_for_api('limit', 0, 'filter', {}))
+  
+
+  {{ IF item }}
+    {{ user = user.switch(item.user_id) }}
+    {{ us.id(item.user_service_id).set('next', item.service_id) }}
+
+
+    "sendMessage": {
+      "chat_id": {{ message.chat.id }},
+      "parse_mode": "HTML",
+      "text": "🔑 <b>Ваш новый тариф успешно изменён!</b>\n\n<b>Выбранный тариф:</b> <code>{{ item.service_id }}</code>\n<b>Используйте его для получения услуг.</b>\n",
+      "reply_markup": {
+        "inline_keyboard": [
+          [
+            { "text": "🏠 Назад в меню", "callback_data": "/menu" }
+          ]
+        ]
+      }
+    }
+  {{ ELSE }}
+    "sendMessage": {
+      "chat_id": {{ message.chat.id }},
+      "parse_mode": "HTML",
+      "text": "❌ <b>Ошибка:</b> Тариф не найден.",
+      "reply_markup": {
+        "inline_keyboard": [
+          [
+            { "text": "🏠 Назад в меню", "callback_data": "/menu" }
+          ]
+        ]
+      }
+    }
+  {{ END }}
+}
+
+
+
+<% CASE '/tariff_list' %>
+{{
+  offset = args.0 || 0
+  items = ref( user.services.list_for_api('limit',limit, 'offset',offset) )
+}}
+{{ FOR item IN items }}
+{{ data.push(
+    [{
+      "text" = 'Услуга: ' _ item.name _ ' ID: ' _  item.user_service_id
+      "callback_data" = '/service ' _ item.user_service_id
+    }]
+  )
+}}
+{{ END }}
+
+{{ data.push(
+    [{
+      "text" = 'Еще...'
+      "callback_data" = '/list ' _ (limit + offset)
+    }]
+  ) IF items.size == limit
+}}
 
 {
   "sendMessage": {
-    "message_id": {{ message.message_id }},
-    "parse_mode": "HTML",
-    "text": "Смена тарифа будет выполнена при следующем продлении.\n\n<b>Текущий тариф:</b> {{ current_service.name }}\n<b>Действует до:</b> {{ date.format(current_service.expire, '%H:%M %d.%m.%Y') }} (МСК)\n\n<b>Выберите тариф на следующий период:</b>",
-    "reply_markup": {
-      "inline_keyboard": [
-        {{ FOR service_option IN ref(service.api_price_list).nsort('cost') }}
-        [
-          {
-            "text": "{{ service_option.name }} - {{ service_option.cost }} руб/мес",
-            "callback_data": "/userchoicetariff {{ user_id }} {{ service_option.service_id }}"
-          }
-        ],
-        {{ END }}
-        [
-          {
-            "text": "🏠 Профиль",
-            "callback_data": "/profile"
-          }
-        ]
-      ]
+    "text": "Список услуг",
+    "reply_markup" : {
+      "inline_keyboard": {{ toJson( data ) }}
     }
   }
 }
+
+
+
 
 <% CASE ['/adminmenu', '/qadminmenu'] %>
 {{ IF message.chat.id == config.telegram_admin.id }}
@@ -2571,8 +2694,7 @@
 
 
 <% CASE %>
-
-{{ IF message.reply_to_message.chat.id == config.telegram_admin.id }}
+{{ IF message.reply_to_message and message.reply_to_message.chat.id == config.telegram_admin.id }}
 {{ text = message.reply_to_message.caption || message.reply_to_message.text }}
 {{ chatid = text.split('#').1 }}
 
@@ -2599,24 +2721,24 @@
     }
     {{ ELSIF message.text }}
     {
-    "sendPhoto": {
-        "protect_content": true,
-        "parse_mode": "HTML",
-        "chat_id": "{{ chatid }}",
-        "photo": "https://img.freepik.com/premium-vector/attention-danger-sign-caution-alert-icon-logo-attention-vector-alert-exclamation_41737-1005.jpg?w=320",
-        "caption": "<b>{{ message.text }}!</b>\n\nС уважением, Администрация",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "🏠 Личный кабинет",
-                        "callback_data": "/start"
-                    }
+        "sendPhoto": {
+            "protect_content": true,
+            "parse_mode": "HTML",
+            "chat_id": "{{ chatid }}",
+            "photo": "https://img.freepik.com/premium-vector/attention-danger-sign-caution-alert-icon-logo-attention-vector-alert-exclamation_41737-1005.jpg?w=320",
+            "caption": "<b>{{ message.text }}</b>\n\nС уважением, Администрация",
+            "reply_markup": {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "🏠 Личный кабинет",
+                            "callback_data": "/start"
+                        }
+                    ]
                 ]
-            ]
+            }
         }
     }
-}
     {{ ELSIF message.document }}
     {
         "sendDocument": {
