@@ -279,7 +279,7 @@
             "inline_keyboard": [
                 {{ IF us.status == 'ACTIVE' }}
                 {{ subscription_url = storage.read('name', 'vpn_mrzb_' _ args.0).subscription_url }}
-                {{ IF us.category.grep('^(vpn-lt-mz|vpn-sw-mz)').first }}
+                {{ IF us.category.grep('^(vpn-lt-mz|vpn-sw-mz|%)').first }}
                 {{ IF subscription_url.grep('^https:').first }}
                 [
                     {
@@ -484,10 +484,6 @@
         }
     }
 }
-
-
-
-
 
 <% CASE '/vless_key' %>
 {{ vless_tcp = storage.read('name', 'vpn_mrzb_' _ args.0).links.grep('^vless:').first }}
@@ -711,16 +707,15 @@
         "caption": "🌐 **MZ (Beta) - Тестирование**\n\n🚀 **Что такое MZ?**\nMZ — это современное решение для анонимного серфинга, обеспечивающее высокую скорость и безопасность вашей интернет-активности.\n\n🔍 **Как пройти тестирование?**\n1. **Выберите тариф:** Ознакомьтесь с доступными тарифами ниже.\n2. **Активируйте тест:** Нажмите на нужный тариф, чтобы начать тестирование.\n\n💰 **Доступные тарифы:**",
         "reply_markup": {
             "inline_keyboard": [
-                {{ 
-                    services = ref(service.api_price_list('category', 'vpn-lt-mz-beta'));
-                }}
-                {{ FOR item IN services }}
-                [
-                    {
-                        "text": "🌐 {{ item.name }} - {{ item.cost }} руб/мес.",
-                        "callback_data": "/serviceorder {{ item.service_id }} 1"
-                    }
-                ],
+                {{ FOR item IN ref(service.api_price_list).nsort('service_id') }}
+                    {{ IF item.category == 'vpn-sw-mz-beta' or item.category == 'vpn-lt-mz-beta' }}
+                    [
+                        {
+                            "text": "🌐 {{ item.name }} - {{ item.cost }} руб/мес.",
+                            "callback_data": "/serviceorder {{ item.service_id }} 1"
+                        }
+                    ],
+                    {{ END }}
                 {{ END }}
                 [
                     {
@@ -738,7 +733,6 @@
         }
     }
 }
-
 
 
 <% CASE ['/beta_test', '🚀 Список активных тестовых услуг'] %>
@@ -1370,38 +1364,33 @@
 
 
 
-<% CASE ['/adminmenu', '/qadminmenu'] %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{ IF cmd == '/qadminmenu' }}
+<% CASE ['/adminmenu', '📡 Админка'] %>
 {
+    {{ IF message.chat.id == config.telegram_admin.id }}
     "sendMessage": {
-{{ END }}
-{{ IF cmd == '/adminmenu' }}
-{
-    "sendMessage": {
-        "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
-{{ END }}
-        "text": "Админка",
-        "reply_markup" : {
+        "parse_mode": "HTML",
+        "text": "📡 Админка",
+        "reply_markup": {
             "inline_keyboard": [
                 [
                     {
                         "text": "Пользователи",
                         "callback_data": "/admusers"
                     }
-                ], [
+                ],
+                [
                     {
                         "text": "Акции",
                         "callback_data": "/admakcii"
                     }
-                ],[
+                ],
+                [
                     {
                         "text": "Доход",
                         "callback_data": "/payitogo"
                     }
-                ] ,        
-                 [
+                ],
+                [
                     {
                         "text": "🏠 Домой",
                         "callback_data": "/menu"
@@ -1410,8 +1399,8 @@
             ]
         }
     }
+    {{ END }}
 }
-{{ END }}
 <% CASE ['/admusers', '/qadmusers'] %>
 {{ IF message.chat.id == config.telegram_admin.id }}
 {{
