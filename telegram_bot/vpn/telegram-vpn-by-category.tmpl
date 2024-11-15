@@ -109,14 +109,16 @@
 
 <% CASE ['/promocode', '💼 Промокоды'] %>
 {
-    "deleteMessage": { "message_id": {{ message.message_id }} }
+    "deleteMessage": { 
+        "message_id": "{{ message.message_id }}" 
+    },
 },
 {
     "sendPhoto": {
         "photo": "https://sun9-73.userapi.com/impg/e8pkzF2oh-Ac40ZO_dpgJLHT__K9BlIX3I5aaA/O0QGe8WxUg0.jpg?size=1024x1024&quality=95&sign=7bda3be0397d08e13d7edb0db5e1f8a5&type=album",
         "protect_content": true,
         "parse_mode": "HTML",
-        "caption": "💼 <b>Используйте промокод:</b>\n\nВведите ваш промокод и получите бонусы. Для этого используйте кнопку ниже.",
+        "caption": "💼 <b>Активируйте ваш бонус с промокодом:</b>\n\nВведите промокод ниже и получите эксклюзивные бонусы на ваш аккаунт. Легко и быстро! 🚀\n\n<b>Примечание:</b> Промокод активен на все наши услуги.",
         "reply_markup": {
             "inline_keyboard": [
                 [
@@ -129,13 +131,13 @@
                 ],
                 [
                     {
-                        "text": "☰ История промокодов",
+                        "text": "📝 История промокодов",
                         "callback_data": "/promo_history"
                     }
                 ],
                 [
                     {
-                        "text": "⇦ Назад",
+                        "text": "🔙 Назад в меню",
                         "callback_data": "/menu"
                     }
                 ]
@@ -143,6 +145,7 @@
         }
     }
 }
+
 
 
 
@@ -152,13 +155,21 @@
 },
 {
     "sendMessage": {
-        "text": "📜 <b>История промокодов:</b>\n\n{{ FOR code IN codes }}<li>{{ code }}</li>{{ END }}",
+        "text": "📜 <b>История ваших промокодов:</b>\n\n{{ IF codes.length > 0 }}\n\n{{ FOR code IN codes }}\n<b>✔️</b> <i>{{ code }}</i>\n{{ END }}\n\n{{ ELSE }}\n🔍 <i>У вас нет использованных промокодов.</i>\n{{ END }}\n\n<b>Посмотреть и активировать новые промокоды:</b>\nИспользуйте кнопку ниже для ввода нового промокода и получения бонусов! 🎉",
         "parse_mode": "HTML",
         "reply_markup": {
             "inline_keyboard": [
                 [
                     {
-                        "text": "⇦ Назад",
+                        "text": "🎫 Ввести новый промокод",
+                        "web_app": {
+                            "url": "{{ config.api.url }}/shm/v1/template/promo?format=html&session_id={{ user.gen_session.id }}"
+                        }
+                    }
+                ],
+                [
+                    {
+                        "text": "🔙 Назад в меню",
                         "callback_data": "/menu"
                     }
                 ]
@@ -166,38 +177,79 @@
         }
     }
 }
+
 
 <% CASE ['/pays', 'История пополнений'] %>
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
-
 {
     "sendPhoto": {
         "photo": "https://sun9-73.userapi.com/impg/e8pkzF2oh-Ac40ZO_dpgJLHT__K9BlIX3I5aaA/O0QGe8WxUg0.jpg?size=1024x1024&quality=95&sign=7bda3be0397d08e13d7edb0db5e1f8a5&type=album",
-        "protect_content": "true",
+        "protect_content": true,
         "parse_mode": "HTML",
-        "caption": "💳 <b>История пополнений</b> 🧾\n\n📅 Здесь вы можете увидеть информацию о своих последних пополнениях. Дата и сумма каждого платежа помогают вам отслеживать расходы и планировать бюджет. 💰\n\n🔽 <b>Последние пополнения</b>:",
+        "caption": "💳 <b>История пополнений</b> 🧾\n\n📅 <i>Здесь вы можете отслеживать последнее пополнение.</i>\n\n🔽 <b>Последнее пополнение:</b>\n\n{{ FOR item IN ref(user.pays.list_for_api('limit', 1)) }}\n📅 <b>Дата:</b> {{ item.date }} | 💵 <b>Сумма:</b> {{ item.money }} руб.\n{{ END }}\n\n<b>Используйте кнопки для дополнительных действий:</b>",
         "reply_markup": {
             "inline_keyboard": [
-                {{ FOR item IN ref(user.pays.list_for_api('limit', 5)) }}
                 [
                     {
-                        "text": "📅 <b>Дата:</b> {{ item.date }} | 💵 <b>Сумма:</b> {{ item.money }} руб.",
-                        "callback_data": "/menu"
+                        "text": "🔄 Обновить историю",
+                        "callback_data": "/pays"
                     }
                 ],
-                {{ END }}
                 [
                     {
-                        "text": "🔙 Назад",
-                        "callback_data": "/payment"
+                        "text": "📊 Подробная статистика",
+                        "callback_data": "/payment_stats"
+                    }
+                ],
+                [
+                    {
+                        "text": "🔙 Назад в меню",
+                        "callback_data": "/menu"
                     }
                 ]
             ]
         }
     }
 }
+
+<% CASE '/payment_stats' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "sendPhoto": {
+        "photo": "https://sun9-73.userapi.com/impg/e8pkzF2oh-Ac40ZO_dpgJLHT__K9BlIX3I5aaA/O0QGe8WxUg0.jpg?size=1024x1024&quality=95&sign=7bda3be0397d08e13d7edb0db5e1f8a5&type=album",
+        "protect_content": true,
+        "parse_mode": "HTML",
+        "caption": "📅 <b>Последние пополнения:</b>\n\n{{ FOR item IN ref(user.pays.list_for_api('limit', 5)) }}\n📅 <b>Дата:</b> {{ item.date }} | 💵 <b>Сумма:</b> {{ item.money }} руб.\n{{ END }}\n\n🔽 <b>Дополнительные действия:</b>",
+        "reply_markup": {
+            "inline_keyboard": [
+			
+                [
+                    {
+                        "text": "🔄 Обновить статистику",
+                        "callback_data": "/payment_stats"
+                    }
+                ],
+                [
+                    {
+                        "text": "💳 История пополнений",
+                        "callback_data": "/pays"
+                    }
+                ],
+                [
+                    {
+                        "text": "🔙 Назад в меню",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+
 
 
 <% CASE ['/list', '🔑 Список VPN ключей'] %>
