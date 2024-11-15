@@ -109,9 +109,7 @@
 
 <% CASE ['/promocode', '💼 Промокоды'] %>
 {
-    "deleteMessage": { 
-        "message_id": "{{ message.message_id }}" 
-    },
+    "deleteMessage": { "message_id": {{ message.message_id }} }
 },
 {
     "sendPhoto": {
