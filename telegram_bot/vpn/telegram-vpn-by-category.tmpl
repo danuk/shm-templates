@@ -268,7 +268,7 @@
                         "callback_data": "/pricelist"
                     }
                 ],
-                 {{ SET categories = ['vpn-lt-mz', 'vpn-sw-mz', 'vpn-lt-wireguard'] }}
+                 {{ SET categories = ['vpn-lt-mz', 'vpn-sw-mz', 'vpn-lt-wireguard', 'vpn-spain-mz'] }}
                 {{ FOR category IN categories }}
                     {{ FOR item IN ref(user.services.list_for_api('category', category)) }}
                 {{ SWITCH item.status }}
@@ -332,7 +332,7 @@
             "inline_keyboard": [
                 {{ IF us.status == 'ACTIVE' }}
                 {{ subscription_url = storage.read('name', 'vpn_mrzb_' _ args.0).subscription_url }}
-                {{ IF us.category.grep('^(vpn-lt-mz|vpn-sw-mz|%)').first }}
+                {{ IF us.category.grep('^(vpn-lt-mz|vpn-sw-mz|vpn-spain-mz)').first }}
                 {{ IF subscription_url.grep('^https:').first }}
                 [
                     {
@@ -466,7 +466,7 @@
             "inline_keyboard": [
 				
                 {{ FOR item IN ref(service.api_price_list).nsort('service_id') }}
-                    {{ IF item.category == 'vpn-sw-mz' or item.category == 'vpn-lt-mz' }}
+					{{ IF item.category == 'vpn-sw-mz' or item.category == 'vpn-lt-mz' or item.category == 'vpn-spain-mz' }}
                     [
                         {
                             "text": "{{ item.name }} - {{ item.cost }} руб/мес. 🌟",
@@ -759,9 +759,7 @@
     }
 }
 
-
-
-<% CASE ['/test_mz', '🌐 VPN TEST'] %>
+<% CASE ['/test_mz', '🌐 MZ Test'] %>
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
@@ -770,11 +768,11 @@
         "photo": "https://sun9-73.userapi.com/impg/e8pkzF2oh-Ac40ZO_dpgJLHT__K9BlIX3I5aaA/O0QGe8WxUg0.jpg?size=1024x1024&quality=95&sign=7bda3be0397d08e13d7edb0db5e1f8a5&type=album",
         "protect_content": true,
         "parse_mode": "HTML",
-        "caption": "🌐 **VPN (Beta) - Тестирование**\n\n🚀 **Что такое VPN?**\VPN — это современное решение для анонимного серфинга, обеспечивающее высокую скорость и безопасность вашей интернет-активности.\n\n🔍 **Как пройти тестирование?**\n1. **Выберите тариф:** Ознакомьтесь с доступными тарифами ниже.\n2. **Активируйте тест:** Нажмите на нужный тариф, чтобы начать тестирование.\n\n💰 **Доступные тарифы:**",
+        "caption": "🌐 **MZ (Beta) - Тестирование**\n\n🚀 **Что такое MZ?**\nMZ — это современное решение для анонимного серфинга, обеспечивающее высокую скорость и безопасность вашей интернет-активности.\n\n🔍 **Как пройти тестирование?**\n1. **Выберите тариф:** Ознакомьтесь с доступными тарифами ниже.\n2. **Активируйте тест:** Нажмите на нужный тариф, чтобы начать тестирование.\n\n💰 **Доступные тарифы:**",
         "reply_markup": {
             "inline_keyboard": [
                 {{ FOR item IN ref(service.api_price_list).nsort('service_id') }}
-                    {{ IF item.category == 'vpn-sw-mz-beta' or item.category == 'vpn-lt-mz-beta' }}
+                    {{ IF item.category.grep('^(vpn-sw-mz-beta|vpn-lt-mz-beta|vpn-isp-mz-beta)').first }}
                     [
                         {
                             "text": "🌐 {{ item.name }} - {{ item.cost }} руб/мес.",
@@ -799,7 +797,6 @@
         }
     }
 }
-
 
 <% CASE ['/beta_test', '🚀 Список активных тестовых услуг'] %>
 {
