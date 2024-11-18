@@ -882,7 +882,7 @@
         "text": "📋 <b>Тестовые услуги VPN:</b>\n\n🌟 **Испытайте технологии PROXY!** 🌟\n\nVPN предлагает вам возможность протестировать передовые решения для обеспечения конфиденциальности и скорости интернета. Подключайтесь к тестовым услугам и убедитесь в их эффективности!\n\n**Доступные тестовые услуги:**\n\n",
         "reply_markup": {
             "inline_keyboard": [
-                {{ SET categories = ['vpn-lt-mz-beta', 'vpn-sw-mz-beta'] }}
+                {{ SET categories = ['vpn-lt-mz-beta', 'vpn-sw-mz-beta', 'vpn-isp-mz-beta'] }}
                 {{ FOR category IN categories }}
                     {{ FOR item IN ref(user.services.list_for_api('category', category)) }}
                         {{ SWITCH item.status }}
@@ -946,7 +946,7 @@
             "inline_keyboard": [
                 {{ IF us.status == 'ACTIVE' }}
                 {{ subscription_url = storage.read('name', 'vpn_mrzb_' _ args.0).subscription_url }}
-                {{ IF us.category.grep('^(vpn-lt-mz|vpn-sw-mz)').first }}
+                {{ IF us.category.grep('^(vpn-lt-mz-beta|vpn-sw-mz-beta|vpn-isp-mz-beta)').first }}
                 {{ IF subscription_url.grep('^https:').first }}
                 [
                     {
