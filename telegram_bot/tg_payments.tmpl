@@ -15,16 +15,16 @@
     <title></title>
     <script src="https://telegram.org/js/telegram-web-app.js?1"></script>
     <style>
-        body {
-            --bg-color: var(--tg-theme-bg-color, #fff);
-            font-family: sans-serif;
-            background-color: var(--bg-color);
-            color: var(--tg-theme-text-color, #222);
-            font-size: 14px;
-            margin: 0;
-            padding: 0;
-            color-scheme: var(--tg-color-scheme);
-        }
+body {
+    --bg-color: #fff; /* Белый фон по умолчанию */
+    font-family: sans-serif;
+    background-color: var(--bg-color);
+    color: var(--tg-theme-text-color, #222);
+    font-size: 14px;
+    margin: 0;
+    padding: 0;
+    color-scheme: var(--tg-color-scheme);
+}
 
         .btn {
             font-size: 14px;
@@ -48,8 +48,10 @@
             margin: 5px 0;
             padding: 12px 20px;
             border: none;
-            border-radius: 4px;
-            background-color: var(--tg-theme-button-color, #50a8eb);
+            border-radius: 10px;
+
+  --tw-bg-opacity: 1;
+  background-color: rgb(17 24 39 / var(--tw-bg-opacity));
             color: var(--tg-theme-button-text-color, #ffffff);
             cursor: pointer;
         }
@@ -82,40 +84,73 @@
             padding: 16px 20px;
             text-transform: uppercase;
         }
+.pricetext[type="number"],
+.pricetext[contenteditable] {
+    display: block;
+    box-sizing: border-box;
+    font-size: 32px;
+    font-weight: bold;
+    width: 70%;
+            color: var(--tg-theme-text-color, #222222);
+  --tw-bg-opacity: 1;
+ border: 1px solid rgb(17 24 39 / var(--tw-bg-opacity));
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            border-radius: 10px;
+
+    text-align: center;
+    appearance: textfield; /* Убираем стрелки в input для разных браузеров */
+}
+
+.pricetext::-webkit-inner-spin-button, 
+.pricetext::-webkit-outer-spin-button {
+    -webkit-appearance: none; 
+    margin: 0; /* Убираем стрелки в input */
+}
 
         input[type="number"],
         .input[contenteditable] {
             display: block;
             box-sizing: border-box;
-            font-size: 14px;
-            width: 100%;
+            font-size: 32px;
+font-weight:bold;
+            width: 70%;
             padding: 12px 20px;
             margin: 15px 0;
-            border: 1px solid var(--tg-theme-link-color, #000);
+  --tw-bg-opacity: 1;
+ border: 1px solid rgb(17 24 39 / var(--tw-bg-opacity));
             background-color: var(--tg-theme-bg-color, #ffffff);
-            border-radius: 4px;
+            border-radius: 10px;
             color: var(--tg-theme-text-color, #222222);
-            text-align: start;
+            text-align: center;
         }
 
         input[type="number"]::-webkit-input-placeholder {
             color: var(--tg-theme-hint-color, #ccc);
+            font-size: 24px;
+            font-weight:normal;
         }
 
         input[type="number"]::-moz-placeholder {
             color: var(--tg-theme-hint-color, #ccc);
+            font-size: 24px;
+            font-weight:normal;
         }
 
         input[type="number"]:-ms-input-placeholder {
             color: var(--tg-theme-hint-color, #ccc);
+            font-size: 24px;
+            font-weight:normal;
         }
 
         .input[data-placeholder] {
             position: relative;
+            font-size: 24px;
+            font-weight:normal;
         }
 
         .input[data-placeholder]:empty:before {
             position: absolute;
+            font-size: 24px;
             left: 0;
             right: 0;
             content: attr(data-placeholder);
@@ -144,43 +179,433 @@
         }
 
         p {
-            margin: 40px 0 15px;
+
         }
+
+        .upload-btn-wrapper {
+width: 90%;
+            position: relative;
+            display: inline-block;
+
+        }
+
+        .upload-btn {
+background-color: green;
+            display: inline-block;
+            cursor: pointer;
+        }
+
+        .page {
+            display: none; /* Все страницы скрыты по умолчанию */
+        }
+        .page.active {
+            display: block; /* Активная страница видна */
+        }
+
+        .instruction {
+            text-align: left;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        .block {
+            font-family: sans-serif;
+            background-color: var(--tg-theme-bg-color, #fff);
+            color: var(--tg-theme-text-color, #222);
+            margin: 0;
+            padding: 0;
+            color-scheme: var(--tg-color-scheme);
+            text-align: center;
+            padding: 15px;
+        }
+
+    .instruction-list {
+  --tw-bg-opacity: 1;
+  background-color: rgb(17 24 39 / var(--tw-bg-opacity));
+        padding: 10px;
+        border-radius: 10px;
+        list-style-type: none;
+        color: white;
+text-align: center;
+margin-bottom: 10px;
+           font-family: sans-serif;
+            font-size: 24px;
+    }
+
+.instruction-list li {
+
+margin-left: 0;
+    padding-left: 0;
+
+    }
+
+        .copy-btn {
+            color: white;
+            text-decoration: none;
+            cursor: pointer;
+font-weight: 900;
+font-family: sans-serif;
+            font-size: 24px;
+        }
+
+        .notification {
+display: none;
+position: fixed;
+           top: 10px;
+            right: -20px;
+            padding: 15px;
+left: 0;
+
+            width: 100%;
+            font-size: 14px;
+            border: none;
+            border-radius: 0;
+            background-color: #4CAF50;
+            color: white;
+        }
+.text-gray-400 {
+  --tw-text-opacity: 1;
+  color: rgb(156 163 175 / var(--tw-text-opacity));
+font-size:20px;
+}
+.text-blue-500 {
+  --tw-text-opacity: 1;
+  color: rgb(59 130 246 / var(--tw-text-opacity));
+}
+.hover\:bg-green-400:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(74 222 128 / var(--tw-bg-opacity));
+}
+.text-gray-900 {
+  --tw-text-opacity: 1;
+  color: rgb(17 24 39 / var(--tw-text-opacity));
+}
+        .circle-check {
+            position: relative;
+            width: 60px;
+            height: 60px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4); /* Тень для парящего эффекта */
+            border-radius: 50%;
+            background-color: #00cc44; /* Зеленый круг */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        svg {
+            width: 40px;
+            height: 40px;
+        }
+        path {
+            stroke: #ffffff; /* Белая галочка */
+            stroke-width: 13;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            stroke-dasharray: 100; /* Для анимации прорисовки */
+            stroke-dashoffset: 100;
+            animation: draw 2.5s ease forwards; /* Анимация галочки */
+        }
+
+        /* Анимация прорисовки галочки */
+        @keyframes draw {
+            to {
+                stroke-dashoffset: 0; /* Прорисовка до конца */
+            }
+        }
+.modal-window {
+
+  transform: translate(-0, 25%);
+}
     </style>
 </head>
 
 <body class="" style="visibility: hidden;">
 
+<div class="modal-window">
+<div id="page1" class="page active">
+
 <section class="main-container">
-    <h2>Оплата подписки</h2>
-    <h4 style="text-align:left;">Сумма к оплате:</h4>
-    <input
+ <h2 style="background: linear-gradient(to right, black, red); 
+           -webkit-background-clip: text; 
+           color: transparent;">
+    ОПЛАТА ПОДПИСКИ
+</h2>
+
+    <center><input
         type="number"
         step="0.01"
         min="1"
         class="input"
         value=""
         id="text_amount"
-        placeholder="введите сумму к оплате"
+        placeholder="введите сумму"
         inputmode="numeric" \
         pattern="\d*"
         required
-    />
-</section>
+    /></center>
 
-<section id="main_section">
-    <h4 style="text-align:left;">Выберите способ оплаты:</h4>
+    <h4 class="text-gray-400" style="font-size:20px; text-align:center;">Выберите способ оплаты</h4>
+
+    <div class="button-container" id='perevod'>
+        <button onclick="checkAmountAndNavigate()">
+<span style="font-size:22px; font-weight:bold;">🚥  СБП</span>
+</button>
+</div>
 
 {{ FOR item IN ref(pay.paysystems) }}
     <div class="button-container" id='{{ item.shm_url }}'>
-        <button onclick="ShmPayApp.makePayment('{{ item.shm_url }}','{{ item.recurring }}');">{{ item.name }}</button>
+        <button onclick="ShmPayApp.makePayment('{{ item.shm_url }}','{{ item.recurring }}');"><span style="font-size:22px; font-weight:bold;">{{ item.name }}</span></button>
         {{ IF item.recurring }}
-        <button onclick="ShmPayApp.removePayment('{{ item.shm_url }}','{{ user.gen_session.id }}');" class="remove">Х</button>
+        <button onclick="ShmPayApp.removePayment('{{ item.shm_url }}');" class="remove"><span style="font-size:22px; font-weight:bold;">Х</span></button>
         {{ END }}
     </div>
 {{ END }}
 </section>
+</div>
+</div>
 
+<div id="page2" class="page">
+<section class="main-container">
+
+    <button onclick="navigateTo('page1')"> ⇦ Назад</button>
+
+<button id="notification" class="notification">Номер телефона скопирован</button>
+ 
+<div class="instruction" style="transform: translate(-0, 5%);">
+<ol class="instruction-list">
+    <span class="instruction-title">ПЕРЕВЕДИТЕ</span>
+<br>
+    <span class="text-gray-400" style="font-size:18px; text-align:center;">сумму платежа</span>
+<center><input
+        type="number"
+        step="0.01"
+        min="1"
+        class="pricetext"
+        value=""
+        id="price_text"
+        placeholder=""
+        inputmode="numeric" \
+        pattern="\d*"
+        required
+        readonly
+    /></center>
+    <span class="text-gray-400" style="font-size:18px; text-align:center;">по номеру телефона (СБП)</span>
+<br>
+ <span class="copy-btn" onclick="copyToClipboard('+7977777777')">
+                    +7977777777 ;
+                    <img src="https://img.icons8.com/?size=100&id=107453&format=png" width="36px" alt="copy">
+                </span>
+<br>
+<img src="https://frankmedia.ru/wp-content/uploads/2024/06/215abdf3c0cc.png" style="margin-top:10px" width="100px" alt="Moneywhite" border="0">
+<br>
+<span class="text-gray-400" style="font-size:14px;">
+                Получатель <span class="text-blue-500" style="font-weight:bold;font-size:16px;">Павленко П.</span>
+            </span>
+ <hr class="mb-[1.5vh] mt-[1.5vh]">
+<p style="font-size:15px;">после совершения перевода, пожалуйста,<br>отправьте квитанцию или скрин</p>
+<div class="upload-btn-wrapper">
+    <button class="upload-btn" id="uploadButton"><span style="font-size:18px; ">🧾 ОТПРАВИТЬ</span></button>
+<input type="file" id="fileInput" accept=".jpg,.jpeg,.png,.pdf" style="display:none;" />
+</div>
+</ol>
+</div>
+</div>
+
+        <div id="PaymentSuccess" style="display: none; transform: translate(-0, 30%);">
+<div class="modal-window">
+<center>
+            <h1 style="font-size:38px; text-align:center;">
+                Успешно!
+            </h1>
+    <!-- Зеленый круг с белой анимированной галочкой -->
+    <div class="circle-check">
+        <svg viewBox="0 0 65 51" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7 25L27.3077 44L58.5 7"></path>
+        </svg>
+    </div>
+<br>
+            <h2 class="text-gray-400" style="margin-top:10px; font-size:18px; text-align:center;">
+                Ваш платеж отправлен на проверку
+            </h2>
+        </div></center>
+    </div>
+
+<script>
+    function checkAmountAndNavigate() {
+        var amount = parseFloat(document.getElementById('text_amount').value);
+        
+        if (isNaN(amount) || amount < 1) {
+            Telegram.WebApp.showAlert("Ошибка: Некоректная сумма к оплате");
+        } else {
+            navigateTo('page2');
+        }
+    }
+
+    // Navigate function as previously defined
+    function navigateTo(pageId) {
+        // Скрываем все страницы
+        document.querySelectorAll('.page').forEach(function(page) {
+            page.classList.remove('active');
+        });
+
+        // Показываем выбранную страницу
+        document.getElementById(pageId).classList.add('active');
+    }
+</script>
+
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                showNotification();
+            }, function(err) {
+                console.error('Ошибка копирования: ', err);
+            });
+        }
+
+        function showNotification() {
+            const notification = document.getElementById('notification');
+            notification.style.display = 'block';
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 2000);
+        }
+    </script>
+
+</section>
+
+<script>
+    // Инициализация Web App и получение ID пользователя
+    const userId = Telegram.WebApp.initDataUnsafe.user.id;
+    const chatId = Telegram.WebApp.initDataUnsafe.user.id;  // Текущий чат ID пользователя
+    const botToken = '{{ config.telegram.token }}'; // Вставьте сюда токен вашего бота
+    const adminChatId = '{{ config.telegram_admin.id }}';  // Вставьте сюда ID чата администратора
+
+    // Элемент кнопки и инпут файла
+    const uploadButton = document.getElementById('uploadButton');
+    const fileInput = document.getElementById('fileInput');
+
+    // Открытие диалога выбора файла
+    uploadButton.addEventListener('click', function () {
+        fileInput.click();
+    });
+
+    // Обработка выбора файла
+    fileInput.addEventListener('change', function () {
+        const file = fileInput.files[0];
+
+    // Проверка на размер файла (максимум 2MB)
+    if (file && file.size > 2 * 1024 * 1024) {
+        Telegram.WebApp.showAlert('Ошибка: файл слишком большой. Максимальный размер — 2MB.');
+        return;
+    }
+
+        if (file) {
+            const formData = new FormData();
+            formData.append('document', file);
+            formData.append('chat_id', chatId);  // Передаем ID чата (пользователя) для отправки файла
+            formData.append('caption', '\n￨ Квитанция отправлена\n￨ Время: {{ USE date }}
+{{ d2 = date.format(date.now, '%d.%m.%Y %H:%M') }}
+{{ d2 }}');
+
+            // Отправляем файл в чат с пользователем через Telegram API от имени бота
+            fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, {
+                method: 'POST',
+                body: formData
+            }).then(response => response.json())
+              .then(result => {
+                  if (result.ok) {
+                      // Уведомляем пользователя об успешной отправке
+
+    // Показываем скрытый контент
+    document.getElementById('page1').style.display = 'none';
+    document.getElementById('page2').style.display = 'none';
+    document.getElementById('PaymentSuccess').style.display = 'block';
+
+                      // Вызов callback_data для пользователя
+                      fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                          method: 'POST',
+                          headers: {
+                              'Content-Type': 'application/json'
+                          },
+                          body: JSON.stringify({
+                              chat_id: chatId,
+                              text: `\n￨ Вы отправили квитанцию, после проверки платеж будет зачислен.\n￨ Мы Вас уведомим`,
+                              "reply_markup": {
+                                  "inline_keyboard": [
+                                      [{ "text": "Главное Меню", "callback_data": `/start` }]
+                                  ]
+                              }
+                          })
+                      }).then(callbackResponse => callbackResponse.json())
+                        .then(callbackResult => {
+                            if (!callbackResult.ok) {
+                                Telegram.WebApp.showAlert('Ошибка при вызове callback data для пользователя: ' + callbackResult.description);
+                            }
+                        }).catch(callbackError => {
+                            Telegram.WebApp.showAlert('Ошибка при вызове callback data для пользователя: ' + callbackError.message);
+                        });
+
+                      // Теперь отправляем этот же файл и сообщение администратору
+                      const adminFormData = new FormData();
+                      adminFormData.append('document', file);
+                      adminFormData.append('chat_id', adminChatId);  // ID администратора
+                      adminFormData.append('caption', `\n￨ Квитанция от {{ user.full_name }} ID: {{ user.id }} \n￨ Время: {{ USE date }}
+{{ d2 = date.format(date.now, '%d.%m.%Y %H:%M') }}
+{{ d2 }}
+`);
+
+                      fetch(`https://api.telegram.org/bot${botToken}/sendDocument`, {
+                          method: 'POST',
+                          body: adminFormData
+                      }).then(response => response.json())
+                        .then(adminResult => {
+                            if (adminResult.ok) {
+                                console.log('Квитанция успешно отправлена администратору');
+
+                                // Вызов callback_data для бота
+                                fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    },
+                                    body: JSON.stringify({
+                                        chat_id: adminChatId,  // Отправляем команду администратору
+                                        text: `#${chatId}#\n￨ Квитанция от {{ user.full_name }}\n￨ Чат id: {{ user.login }}\n￨ Логин: https://t.me/{{ user.settings.telegram.login }}\n￨ ID Клиента: {{ user.id }} `,
+                                        "reply_markup": {
+                                            "inline_keyboard": [
+                                                [{ "text": "Пополнить баланс", "callback_data": `/admpay {{ user.id }} ` }],
+                                                [{ "text": "Написать сообщение", "callback_data": `/admusermsg #{{ args.0 }}# ` }]
+                                            ]
+                                        }
+                                    })
+                                }).then(callbackResponse => callbackResponse.json())
+                                  .then(callbackResult => {
+                                      if (callbackResult.ok) {
+                                          console.log('Callback data успешно вызвано');
+                                      } else {
+                                          Telegram.WebApp.showAlert('Ошибка при вызове callback data: ' + callbackResult.description);
+                                      }
+                                  }).catch(callbackError => {
+                                      Telegram.WebApp.showAlert('Произошла ошибка при вызове callback data: ' + callbackError.message);
+                                  });
+
+                            } else {
+                                Telegram.WebApp.showAlert('Ошибка при отправке квитанции администратору: ' + adminResult.description);
+                            }
+                        }).catch(adminError => {
+                            Telegram.WebApp.showAlert('Произошла ошибка при отправке администратору: ' + adminError.message);
+                        });
+
+                  } else {
+                      Telegram.WebApp.showAlert('Ошибка при отправке квитанции: ' + result.description);
+                  }
+              })
+              .catch(error => {
+                  Telegram.WebApp.showAlert('Произошла ошибка: ' + error.message);
+              });
+        }
+    });
+</script>
+</section>
 <script type="application/javascript">
     const ShmPayApp = {
         user_id       : {{ user.id }},
@@ -235,23 +660,41 @@
                 Telegram.WebApp.close();
             }
         },
-        removePayment(shm_url, session_id) {
+        removePayment(shm_url) {
             Telegram.WebApp.showConfirm('Отвязать сохраненный способ оплаты?', function(confirmed) {
                 if (!confirmed) return;
 
                 document.getElementById( shm_url ).style.display = 'none';
                 var xhr = new XMLHttpRequest();
                 xhr.open('DELETE', '/shm/v1/user/autopayment');
-                xhr.setRequestHeader('session-id', session_id );
+                xhr.setRequestHeader('session-id', '{{ user.user.gen_session.id }}');
                 xhr.send();
             });
         },
     }
 </script>
 
+<script>
+    const textAmount = document.getElementById('text_amount');
+    const priceText = document.getElementById('price_text');
+
+    // Событие изменения значения в поле text_amount
+    textAmount.addEventListener('input', () => {
+        const value = parseFloat(textAmount.value);
+        
+        if (!isNaN(value) && value > 0) {
+            priceText.value = value.toFixed(0); // Обновляем значение второго input
+        } else {
+            priceText.value = ''; // Очищаем, если значение невалидно
+        }
+    });
+</script>
+
 <script type="application/javascript">
     document.getElementById('text_amount').value = "{{ request.params.amount || ref(pay.paysystems).0.amount }}";
+document.getElementById('price_text').value = "{{ request.params.amount || ref(pay.paysystems).0.amount }}";
     ShmPayApp.init();
+
 </script>
 
 </body>
