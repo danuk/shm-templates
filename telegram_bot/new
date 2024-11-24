@@ -7,7 +7,7 @@
         "error": "ОШИБКА: Логин {{ message.chat.username }} или chat_id {{ message.chat.id }} уже существует"
     }
 }
-<% CASE ['/start', '/menu', '🌍 Главное Меню'] %>
+<% CASE ['/start', '/menu', '🌍 Главное Меню', '🔄 Обновить'] %>
 {{ IF cmd != '/start' }}
 {
     "deleteMessage": {
@@ -24,11 +24,11 @@
             "inline_keyboard": [
                 [
                     {
-                        "text": "💰 Баланс: {{ user.balance }}$",
+                        "text": "💵 Баланс: {{ user.balance }}$",
                         "callback_data": "/balance"
                     },
                     {
-                        "text": "💲 Пополнить баланс",
+                        "text": "➕ Пополнить баланс",
                         "web_app": {
                             "url": "{{ config.api.url }}/shm/v1/template/tg_payments?format=html&session_id={{ user.gen_session.id }}"
                         }
@@ -40,7 +40,7 @@
                         "callback_data": "/list"
                     },
                     {
-                        "text": "✚ Купить новый ключ",
+                        "text": "🛒 Купить ключ",
                         "callback_data": "/pricelist"
                     }
                 ],
@@ -52,32 +52,58 @@
                 ],
                 [
                     {
-                        "text": "🗓 Помощь",
+                        "text": "📖 Помощь",
                         "callback_data": "/help"
                     },
                     {
-                        "text": "🧪 Тест 5 дней",
+                        "text": "🎁 Тест 5 дней",
                         "callback_data": "/test"
                     }
                 ],
                 {{ IF message.chat.id == config.telegram_admin.id }}
                 [
                     {
-                        "text": "📡 Админка",
+                        "text": "🔧 Админка",
                         "callback_data": "/adminmenu"
                     }
                 ],
                 {{ END }}
                 [
                     {
+                        "text": "🔄 Клавиатура",
+                        "callback_data": "/keyboard"
+                    },
+					{
                         "text": "🔄 Обновить",
                         "callback_data": "/menu"
-                    }
+                    },
                 ]
             ]
         }
     }
 }
+
+<% CASE ['/keyboard', '🌍 Меню'] %>
+{
+    "sendPhoto": {
+        "photo": "{{ config.logo.url }}", 
+        "caption": "🙌 <b>Добро пожаловать, <u>{{ user.full_name }}</u>!</b>\n\n🔒 <b>{{ config.company.name }}</b> — ваш надёжный спутник для безопасного интернета. Мы предлагаем:\n\n💎 <b>Выгодные тарифы:</b>\n✔️ Высокая скорость.\n✔️ Надёжная защита данных.\n✔️ Покрытие по всему миру.\n\n📱 <b>Начните прямо сейчас!</b>\nСкачайте наши приложения:\n- <a href=\"{{ config.apk.android }}\">📱 <b>Android</b></a>\n- <a href=\"{{ config.apk.ios }}\">📱 <b>iOS</b></a>\n\n🛡️ <b>WireGuard поддержка</b>\nПолучите клиент для вашего устройства:\n- <a href=\"{{ config.apk.wireguard_and }}\">🛡️ <b>WireGuard Android</b></a>\n- <a href=\"{{ config.apk.wireguard_ios }}\">🛡️ <b>WireGuard iOS</b></a>\n\n🌟 <b>Почему выбирают нас?</b>\nМы предлагаем стабильность, качество и непревзойдённую защиту.",
+        "parse_mode": "HTML",
+        "reply_markup": {
+    "keyboard": [
+        [
+            {
+                "text": "🔄 Обновить"
+            }
+        ]
+    ],
+    "resize_keyboard": true,
+    "one_time_keyboard": false
+}
+
+    }
+}
+
 
 
 <% CASE '/balance' %>
@@ -347,6 +373,10 @@
     }
 }
 
+
+
+
+
 <% CASE ['/pricelist', '🚀 Прайс лист'] %>
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
@@ -402,7 +432,6 @@
         "text": "🌐 <b>Как подключиться к VPN:</b>\n\n1️⃣ <b>Выберите тариф:</b> Подберите идеальный план, который соответствует вашим нуждам.\n\n2️⃣ <b>Оплатите:</b> Произведите безопасный платёж удобным способом.\n\n3️⃣ <b>Активируйте:</b> Получите ключ и следуйте инструкции для подключения. 🛠️\n\n🚀 <b>Почему выбирают нас:</b>\n🔒 <i>Высокая защита ваших данных</i>\n🏎️ <i>Быстрая скорость соединения</i>\n📶 <i>Стабильная работа по всему миру</i>\n\n✨ <b>Выберите свой тариф и начните пользоваться VPN прямо сейчас!</b>",
         "reply_markup": {
             "inline_keyboard": [
-				
                 {{ FOR item IN ref(service.api_price_list).nsort('service_id') }}
 					{{ IF item.category == 'vpn-sw-mz' or item.category == 'vpn-lt-mz' or item.category == 'vpn-spain-mz' }}
                     [
@@ -454,6 +483,7 @@
         }
     }
 }
+
 
 <% CASE '/serviceorder' %>
 {
@@ -530,7 +560,9 @@
 }
 <% CASE '/delete_confirmed' %>
 {
-    "deleteMessage": { "message_id": {{ message.message_id }} }
+    "deleteMessage": { 
+        "message_id": "{{ message.message_id }}" 
+    }
 },
 {
     "shmServiceDelete": {
@@ -538,7 +570,16 @@
         "callback_data": "/list",
         "error": "ОШИБКА"
     }
+},
+{
+    "answerCallbackQuery": {
+        "callback_query_id": "{{ callback_query.id }}",
+        "parse_mode": "HTML",
+        "text": "Ваш ключ удаляется...",
+        "show_alert": true
+    }
 }
+
 
 <% CASE '/referrals' %>
 {
@@ -1010,8 +1051,6 @@
     }
 }
 
-
-
 <% CASE ['/adminmenu', '📡 Админка'] %>
 {
     {{ IF message.chat.id == config.telegram_admin.id }}
@@ -1113,7 +1152,7 @@
 {{ END }}
 {{ IF cmd == '/admusers' }}
 {
-    "editMessageText": {
+    "sendMessage": {
         "message_id": {{ message.message_id }},
         "parse_mode":"HTML",
 {{ END }}
@@ -1127,7 +1166,7 @@
 <% CASE '/admusersall' %>
 {{ IF message.chat.id == config.telegram_admin.id }}
 {
-    "editMessageText": {
+    "sendMessage": {
         "message_id": {{ message.message_id }},
         "parse_mode":"HTML",
         "text": "Полный список пользователей",
@@ -1172,7 +1211,7 @@
 {{ END }}
 {{ IF cmd == '/admuser' }}
 {
-    "editMessageText": {
+    "sendMessage": {
         "message_id": {{ message.message_id }},
         "parse_mode":"HTML",
 {{ END }}
@@ -1264,7 +1303,7 @@
 {{ usis = user.services.list_for_api( 'usi', args.1 ) }}
 {{ USE date }}
 {
-    "editMessageText": {
+    "sendMessage": {
         "message_id": {{ message.message_id }},
         "parse_mode":"HTML",
         "text": "Услуги пользователя:\n{{ itemlks.full_name }}\n{{ itemlks.login }}\nУслуга: {{ usis.name }}\nСтатус: {{ usis.status }}\nСоздан: {{ usis.created }}\nОпдачен до: {{ usis.expire }}{{ IF usis.next }} {{ FOR itemis IN ref(service.api_price_list)}}{{ IF itemis.service_id == usis.next }}\n\n<b>Смена тарифа:</b>{{ itemis.name }} \nПроизойдёт: {{ date.format(usis.expire, '%H:%M %d.%m.%Y') }}  (МСК) {{ END }} {{ END }}{{ ELSE }}  {{ END }}",
@@ -1335,7 +1374,7 @@
 {{ IF message.chat.id == config.telegram_admin.id }}
 {{ user = user.switch(args.0) }}
 {
-    "editMessageText": {
+    "sendMessage": {
         "message_id": {{ message.message_id }},
         "parse_mode":"HTML",
         "text": "☷ Выберите услугу для\nПользователя: {{ user.full_name }}",
@@ -1377,7 +1416,7 @@
 {{ IF message.chat.id == config.telegram_admin.id }}
 {{ user = user.switch(args.0) }}
 {
-    "editMessageText": {
+    "sendMessage": {
         "message_id": {{ message.message_id }} }
 },
 {
@@ -1395,7 +1434,7 @@
 {{ usblall =  us.id(usisbl.user_service_id(usisbl.user_service_id)).block }}
 {{ userblocks = user.set('block',1) }}
 {
-    "editMessageText": {
+    "sendMessage": {
         "message_id": {{ message.message_id }},
         "parse_mode":"HTML",
         "text": "Пользователь: {{ user.full_name }}\nЗаблокирован🔴\nУслуга: {{ usisbl.name }}\nЗаблокирована🔴",
@@ -1433,7 +1472,7 @@
 {{ activ =  us.id(usisact.user_service_id(usisact.user_service_id)).activate }}
 {{ useractivs = user.set('block',0) }}
 {
-    "editMessageText": {
+    "sendMessage": {
         "message_id": {{ message.message_id }},
         "parse_mode":"HTML",
         "text": "Пользователь: {{ user.full_name }}\nРазблокирован🟢\nУслуга: {{ usisact.name }}\nРазблокирована🟢",
@@ -1470,7 +1509,7 @@
 {{ usisb = user.services.list_for_api('usi', {}) }}
 {{ blocks =  us.id(usisb.user_service_id(usisb.user_service_id)).block }}
 {
-    "editMessageText": {
+    "sendMessage": {
         "message_id": {{ message.message_id }},
         "parse_mode":"HTML",
         "text": "Пользователь: {{ user.full_name }}\nУслуга: {{ usisb.name }}\nЗаблокировано",
@@ -1507,7 +1546,7 @@
 {{ usisa = user.services.list_for_api('usi', {}) }}
 {{ activ =  us.id(usisa.user_service_id(usisa.user_service_id)).activate }}
 {
-    "editMessageText": {
+    "sendMessage": {
         "message_id": {{ message.message_id }},
         "parse_mode":"HTML",
         "text": "Пользователь: {{ user.full_name }}\nУслуга: {{ usisa.name }}\nАктивировано",
@@ -1544,7 +1583,7 @@
 {{ ussm = user.services.list_for_api('usi', {}) }}
 {{ USE date }}
 {
-    "editMessageText": {
+    "sendMessage": {
         "message_id": {{ message.message_id }},
         "parse_mode":"HTML",
         "text": "Смена тарифа происходит при следующем продлении\n\n<b>Текущий тариф пользователя: {{ user.full_name }}\n</b>{{ ussm.name }}\n<b>Действует до</b>: {{ date.format(us.expire, '%H:%M %d.%m.%Y') }}  (МСК)\n\n<b>Выберите тариф на следующий период</b>",
@@ -1589,7 +1628,7 @@
 {{ ntch = us.id(itemadmch.user_service_id).set('next', args.2) }}
 {{ USE date }}
 {
-    "editMessageText": {
+    "sendMessage": {
         "message_id": {{ message.message_id }},
         "parse_mode":"HTML",
         "text": "Тариф пользователя {{ user.full_name }} изменён. \n\nСмена тарифа произойдёт {{ date.format(us.expire, '%H:%M %d.%m.%Y') }}",
@@ -1625,7 +1664,7 @@
 {{ itemadmchn = user.services.list_for_api('usi', {}) }}
 {{ ntchn = us.id(itemadmchn.user_service_id).set('next') }}
 {
-    "editMessageText": {
+    "sendMessage": {
         "message_id": {{ message.message_id }},
         "parse_mode":"HTML",
         "text": "Смена тарифа: {{ itemadmchn.name }}\nПользователя: {{ user.full_name }}\nОтменена.",
@@ -1661,7 +1700,7 @@
 {{ user = user.switch(args.0) }}
 {{ usisdel = user.services.list_for_api( 'usi', {} ) }}
 {
-    "editMessageText": {
+    "sendMessage": {
         "message_id": {{ message.message_id }},
         "parse_mode":"HTML",
         "text": "Удаление услуги: {{ usisdel.name }}\nПользователя: {{ user.full_name }}\n\n🤔 <b>Подтвердите удаление. Ключ нельзя будет восстановить!</b>",
@@ -1702,7 +1741,7 @@
 {{ user = user.switch(args.0) }}
 {{ usisdels = user.services.list_for_api( 'usi', {} ) }}
 {
-    "editMessageText": {
+    "sendMessage": {
         "message_id": {{ message.message_id }} }
 },
 {
@@ -1718,7 +1757,7 @@
 {{ user = user.switch(args.0) }}
 {{ FOR itempl IN ref(user.id(args.0)) }}
 {
-    "editMessageText": {
+    "sendMessage": {
         "message_id": {{ message.message_id }},
         "parse_mode":"HTML",
         "text": "{{ itempl.full_name }}\nБаланс: {{ itempl.balance }}₽\n\nЗачислить:",
@@ -1770,7 +1809,7 @@
 {{ user = user.switch(args.0) }}
 {{ FOR itemplb IN ref(user.id(args.0)) }}
 {
-    "editMessageText": {
+    "sendMessage": {
         "message_id": {{ message.message_id }},
         "parse_mode":"HTML",
         "text": "{{ itemplb.full_name }}\nБонусов: {{ itemplb.get_bonus }}\n\nЗачислить бонусов:",
@@ -1822,7 +1861,7 @@
 {{ user = user.switch(args.0) }}
 {{ pay = user.id(args.0).payment('money', args.1, 'pay_system_id', 'manual') }}
 {
-    "editMessageText": {
+    "sendMessage": {
         "message_id": {{ message.message_id }},
         "parse_mode":"HTML",
         "text": "Пользователю {{ user.full_name }} начислено {{ args.1 }}₽",
@@ -1857,7 +1896,7 @@
 {{ user = user.switch( args.0 ) }}
 {{ bon = user.add_bonus( args.1 ) }}
 {
-    "editMessageText": {
+    "sendMessage": {
         "message_id": {{ message.message_id }},
         "parse_mode":"HTML",
         "text": "Пользователю {{ userb.full_name }} начислено {{ args.1 }}  - {{ args.0 }}бонусов",
@@ -1895,7 +1934,7 @@
 {{ sum = sum + item.money }}
 {{ END }}
 {
-    "editMessageText": {
+    "sendMessage": {
         "message_id": {{ message.message_id }},
         "parse_mode":"HTML",
         "text": "Доход:\nИтого за 2024 год: {{ sum }} руб.",
@@ -1921,7 +1960,7 @@
 {{ IF message.chat.id == config.telegram_admin.id }}
 {{ user = user.switch(args.0) }}
 {
-    "editMessageText": {
+    "sendMessage": {
         "message_id": {{ message.message_id }},
         "parse_mode":"HTML",
         "text": "Платежи",
