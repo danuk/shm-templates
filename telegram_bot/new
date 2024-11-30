@@ -30,7 +30,7 @@
                     {
                         "text": "➕ Пополнить баланс",
                         "web_app": {
-                            "url": "{{ config.api.url }}/shm/v1/template/tg_payments?format=html&session_id={{ user.gen_session.id }}"
+                            "url": "{{ config.api.url }}/shm/v1/public/tg_payment_webapp?format=html&user_id={{ user.id }}"
                         }
                     }
                 ],
@@ -59,24 +59,24 @@
                         "text": "🎁 Тест 5 дней",
                         "callback_data": "/test"
                     }
-                ],
-                {{ IF message.chat.id == config.telegram_admin.id }}
+                ]
+                {{ IF message.chat.id == config.telegram_admin.id }},
                 [
                     {
                         "text": "🔧 Админка",
                         "callback_data": "/adminmenu"
                     }
-                ],
-                {{ END }}
+                ]
+                {{ END }},
                 [
                     {
                         "text": "🔄 Клавиатура",
                         "callback_data": "/keyboard"
                     },
-					{
+                    {
                         "text": "🔄 Обновить",
                         "callback_data": "/menu"
-                    },
+                    }
                 ]
             ]
         }
@@ -237,7 +237,7 @@
                         {{ IF hasnotpaidus > 0 || hasblocked > 0 }}
                         "callback_data": "/hint"
                         {{ ELSE }}
-                        "callback_data": "/pricelist"
+                        "callback_data": "/buy_mz_key"
                         {{ END }}
                     }
                 ],
@@ -266,7 +266,6 @@
         "show_alert": true
     }
 }
-
 <% CASE '/service' %>
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
@@ -414,8 +413,6 @@
         }
     }
 }
-
-
 <% CASE '/buy_mz_key' %>
 {{ hasnotpaidus = ref(user.services.list_for_api('category', 'vpn-%', 'filter',{ 'status' => 'NOT PAID' } )).size }}
 {{ hasblocked = ref(user.services.list_for_api('category', 'vpn-%', 'filter',{ 'status' => 'BLOCK' } )).size }}
@@ -451,8 +448,6 @@
         }
     }
 }
-
-
 <% CASE '/buy_wg_key' %>
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
