@@ -107,8 +107,6 @@ case $EVENT in
         {
           "username": "us_{{ us.id }}",
           "proxies": {
-            # Раскомментируйте строку ниже, если настроите vless подключение
-            #"vless": {"flow": "xtls-rprx-vision"},
             "shadowsocks": {
               "method": "chacha20-ietf-poly1305"
             }
@@ -119,10 +117,6 @@ case $EVENT in
           "status": "active",
           "note": "SHM_info- {{ user.login }}, {{ user.full_name }}, https://t.me/{{ user.settings.telegram.login }}",
           "inbounds": {
-            # Раскомментируйте три строки ниже, если настроите vless подключение
-            #"vless": [
-            #  "VLESS TCP REALITY"
-            #],
             "shadowsocks": [
               "Shadowsocks TCP"
             ]
