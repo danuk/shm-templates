@@ -4,6 +4,33 @@ set -e
 [ -z "$SERVER_HOST" ] && echo "Error: SERVER_HOST not defined" && exit 1
 [ -z "$TOKEN" ] && echo "Error: TOKEN not defined" && exit 1
 
+echo "Configure Marzban server host..."
+PAYLOAD="$(cat <<-EOF
+{
+  "Shadowsocks TCP": [
+    {
+      "remark": "🚀 Marz ({USERNAME}) [{PROTOCOL} - {TRANSPORT}]",
+      "address": "$SERVER_HOST",
+      "port": null,
+      "sni": null,
+      "host": null,
+      "security": "inbound_default",
+      "alpn": "",
+      "fingerprint": ""
+    }
+  ]
+}
+EOF
+)"
+
+curl -sk -XPUT \
+  "$MARZBAN_HOST/api/hosts" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d "$PAYLOAD"
+
+echo "done\n"
+
 echo "Configure certificates..."
 echo "SUBSCRIPTION_DOMAIN=$SUBSCRIPTION_DOMAIN"
 echo "EMAIL_FOR_CERTIFICATE_ISSUE=$EMAIL_FOR_CERTIFICATE_ISSUE"
