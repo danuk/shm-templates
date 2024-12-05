@@ -65,7 +65,20 @@ case $EVENT in
         export SUDO_PASSWORD=$(pwgen -n 16 -1)
         bash -c "$(curl -sL https://github.com/danuk/shm-templates/raw/main/marzban/marzban.sh)" @ install
         echo "done"
-        echo
+
+        # Создаем админа с помощью marzban cli
+        echo "Create Marzban admin..."
+        sleep 3
+        if [[ $(grep '^SUDO_PASSWORD' /opt/marzban/.env) && $(grep '^SUDO_USERNAME' /opt/marzban/.env) ]]; then
+            echo "Get Marzban admin password & username from .env"
+            echo "Creating..."
+            marzban cli admin import-from-env --yes
+            sleep 5
+            echo "Done"
+        else
+            echo "Error: Can't get Marzban admin password & username from .env"
+        exit 1
+        fi
 
         echo "Setup Marzban..."
         sleep 5
@@ -94,9 +107,6 @@ case $EVENT in
         {
           "username": "us_{{ us.id }}",
           "proxies": {
-            "vmess": {},
-            "vless": {"flow": "xtls-rprx-vision"},
-            "trojan": {},
             "shadowsocks": {
               "method": "chacha20-ietf-poly1305"
             }
@@ -107,17 +117,6 @@ case $EVENT in
           "status": "active",
           "note": "SHM_info- {{ user.login }}, {{ user.full_name }}, https://t.me/{{ user.settings.telegram.login }}",
           "inbounds": {
-            "vmess": [
-              "VMess TCP",
-              "VMess Websocket"
-            ],
-            "vless": [
-              "VLESS TCP REALITY",
-              "VLESS GRPC REALITY"
-            ],
-            "trojan": [
-              "Trojan Websocket TLS"
-            ],
             "shadowsocks": [
               "Shadowsocks TCP"
             ]
