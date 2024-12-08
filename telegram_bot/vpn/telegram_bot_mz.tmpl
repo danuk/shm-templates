@@ -15,7 +15,7 @@
 {{ END }}
 {
     "sendMessage": {
-        "text": "👋 <b>Добро пожаловать, <u>{{ user.full_name }}</u>!</b>\n\n🌐 <b>{{ config.company.name }}</b>\n\n<b>Обязательно: подпишись на <a href=\"https://t.me/+6WNojwZUMo43OTdi\">КАНАЛ В ТЕЛЕГРАМ</a></b> (Новости, Полезные фичи, Информация о сбоях, розыгрыши и многое другое)\n\n🌐<b>Доступные локации:</b>\n- 🇦🇲Нидерланды (2 Сервера)\n- 🇷🇺Россия (1 Сервер)\n- 🇱🇻Латвия (1 Сервер)\n\n📲 <b>Простое подключение в пару шагов!</b>\nУстановите приложение:\n- <a href=\"{{ config.apk.android }}\">📲 <b>Для Android</b></a>\n- <a href=\"{{ config.apk.ios }}\">📲 <b>Для iPhone</b></a>\n- <a href=\"{{ config.apk.huawei }}\">📲 <b>Для Huawei</b></a>\n\n После установки нажмите кнопку 🗝 Мой VPN и следуйте инструкции",
+        "text": "👋 <b>Добро пожаловать, <u>{{ user.full_name }}</u>!</b>\n\n🌐 <b>{{ config.company.name }}</b> — ваш надёжный партнёр для безопасного и удобного подключения к интернету. Мы предлагаем:\n\n💸 <b>Лучшие тарифы:</b>\n✔️ Высокая скорость работы.\n✔️ Гарантированная безопасность ваших данных.\n✔️ Широкое глобальное покрытие.\n\n📲 <b>Простое подключение в пару шагов!</b>\nСкачайте наши приложения:\n- <a href=\"{{ config.apk.android }}\">📲 <b>Для Android</b></a>\n- <a href=\"{{ config.apk.ios }}\">📲 <b>Для iOS</b></a>\n\n🛡️ <b>Используете WireGuard?</b>\nСкачайте клиенты для вашего устройства:\n- <a href=\"{{ config.apk.wireguard_and }}\">🛡️ <b>WireGuard для Android</b></a>\n- <a href=\"{{ config.apk.wireguard_ios }}\">🛡️ <b>WireGuard для iOS</b></a>\n\n💼 <b>Почему выбирают нас?</b>\nМы предоставляем стабильность, качество и защиту, на которые можно положиться.\n\n",
         "reply_markup": {
             "inline_keyboard": [
                 [
@@ -122,7 +122,7 @@
 },
 {
     "sendPhoto": {
-        "photo": "https://sun9-22.userapi.com/impg/zpLAz_dIByjppQ39aySg00kYpfLoBsxcmic1fg/1t6pktww-ao.jpg?size=724x725&quality=95&sign=17516f24a820c22fe7a2e0178be44719&type=album",
+        "photo": "{{ config.logo.url }}",
         "protect_content": false,
         "parse_mode": "HTML",
         "caption": "💳 <b>История пополнений</b> 🧾\n\n📅 <i>Здесь вы можете отслеживать последнее пополнение.</i>\n\n🔽 <b>Последнее пополнение:</b>\n\n{{ FOR item IN ref(user.pays.list_for_api('limit', 1)) }}\n<u>📅 <b>Дата:</b> {{ item.date }} | 💵 <b>Сумма:</b> {{ item.money }} руб.</u>\n{{ END }}\n\n<b>Используйте кнопки для дополнительных действий:</b>",
@@ -157,7 +157,7 @@
 },
 {
     "sendPhoto": {
-        "photo": "https://sun9-22.userapi.com/impg/zpLAz_dIByjppQ39aySg00kYpfLoBsxcmic1fg/1t6pktww-ao.jpg?size=724x725&quality=95&sign=17516f24a820c22fe7a2e0178be44719&type=album",
+        "photo": "{{ config.logo.url }}",
         "protect_content": false,
         "parse_mode": "HTML",
         "caption": "💳 <b>История пополнений и выводов</b> 🧾\n\n📅 <i>Отслеживайте последние пополнения, выводы и начисленные бонусы для вашего удобства.</i>\n\n🔽 <b>Последнее пополнение:</b>\n\n{{ FOR item IN ref(user.pays.list_for_api('limit', 1)) }}\n<u>📅 <b>Дата:</b> {{ item.date }} | 💵 <b>Сумма:</b> {{ item.money }} руб.</u>\n{{ END }}\n\n🔽 <b>Последние выводы:</b>\n\n{{ FOR wd IN ref(wd.list_for_api('limit', 20)) }}\n<u>📅 <b>Дата:</b> {{ wd.withdraw_date }} | 💸 <b>Сумма:</b> {{ wd.cost }} ₽</u>\n{{ END }}\n\n🔽 <b>Начисленные бонусы:</b>\n\n{{ FOR bonus IN ref(bonus.list_for_api('limit', 20)) }}\n<u>📅 <b>Дата:</b> {{ bonus.date }} | 🎁 <b>Сумма:</b> {{ bonus.bonus }} ₽</u>\n{{ END }}\n\n<b>Используйте кнопки для дополнительных действий:</b>",
@@ -193,7 +193,7 @@
 },
 {
     "sendPhoto": {
-    "photo": "https://sun9-22.userapi.com/impg/zpLAz_dIByjppQ39aySg00kYpfLoBsxcmic1fg/1t6pktww-ao.jpg?size=724x725&quality=95&sign=17516f24a820c22fe7a2e0178be44719&type=album",
+    "photo": "{{ config.logo.url }}",
         "caption": "🚀 <b>Добро пожаловать, {{ user.full_name }}!</b>\n\n🔑 **Можно попрбовать Бесплатно или Купить сразу**\n\n Выберите соответсвующую кнопку ниже.\n\nАктивные подписки отмечены ✅",
         "parse_mode": "HTML",
 		"reply_markup" : {
@@ -265,7 +265,7 @@
               {{ icon = '⏳' }}
               {{ status = ' Обработка' }}
         {{ END }}
-        "photo": "https://sun9-22.userapi.com/impg/zpLAz_dIByjppQ39aySg00kYpfLoBsxcmic1fg/1t6pktww-ao.jpg?size=724x725&quality=95&sign=17516f24a820c22fe7a2e0178be44719&type=album",
+        "photo": "{{ config.logo.url }}",
         "caption": "<b>Услуга</b>: {{ us.name }}{{ IF us.expire }}\n<b>Статус</b>: {{ icon}} {{ status }}\n<b>Оплачена до</b>: {{ us.expire }}{{ END }}\n\nСкопируйте ссылку на подписку, нажать 🔗 Показать ссылку на подписку",
         "parse_mode": "HTML",
         "reply_markup": {
@@ -344,7 +344,7 @@
 },
 {
     "sendPhoto": {
-        "photo": "https://sun9-22.userapi.com/impg/zpLAz_dIByjppQ39aySg00kYpfLoBsxcmic1fg/1t6pktww-ao.jpg?size=724x725&quality=95&sign=17516f24a820c22fe7a2e0178be44719&type=album",
+        "photo": "{{ config.logo.url }}",
         "protect_content": true,
         "parse_mode": "HTML",
         "caption": "💡<b>Нажмите на кнопку 🔐 Выдать VPN:</b>\n",
@@ -390,7 +390,7 @@
         "reply_markup": {
             "inline_keyboard": [
                 {{ FOR item IN ref(service.api_price_list).nsort('service_id') }}
-                    {{ IF item.category == 'vpn-netherlands' or item.category == 'vpn-new-category' }}
+                    {{ IF item.category == 'vpn-lt-mz' or item.category == 'vpn-sw-mz' or item.category == 'vpn-spain-mz' }}
                     [
                         {
                             "text": "{{ item.name }} - {{ item.cost }} руб/мес.",
@@ -642,7 +642,7 @@
 },
 {
     "sendPhoto": {
-        "photo": "https://sun9-22.userapi.com/impg/zpLAz_dIByjppQ39aySg00kYpfLoBsxcmic1fg/1t6pktww-ao.jpg?size=724x725&quality=95&sign=17516f24a820c22fe7a2e0178be44719&type=album",
+        "photo": "{{ config.logo.url }}",
         "protect_content": false,
         "parse_mode": "HTML",
         "caption": "🛡️ <b>Инструкция по настройке VPN</b>\n\n📱\n1️⃣ Скопируйте <b>URL адрес подписки</b> (формат <i>https://</i>).\n2️⃣ Установите приложение \niPhone <a href=\"{{ config.apk.ios }}\">Streisand</a>\n Android<a href=\"{{ config.apk.android }}\">v2rayNG </a>\n Huawei <a href=\"{{ config.apk.huawei }}\">v2RayTun</a>\n3️⃣ Вставьте подписку в приложение(+ Добавить из буфера).\n4️⃣ Выбирайте Локацию и Нажмите <b>'Подключиться'</b> — готово!\n\n💡Если что-то непонятно — напишите в 🖥 Чат поддержки!",
@@ -684,7 +684,7 @@
 {{ subscription_url = storage.read('name', 'vpn_mrzb_' _ args.0 _ location).subscription_url }}
 {
     "sendPhoto": {
-        "photo": "https://sun9-22.userapi.com/impg/zpLAz_dIByjppQ39aySg00kYpfLoBsxcmic1fg/1t6pktww-ao.jpg?size=724x725&quality=95&sign=17516f24a820c22fe7a2e0178be44719&type=album",
+        "photo": "{{ config.logo.url }}",
         "protect_content": false,
         "parse_mode": "HTML",
         "caption": "🌐 <b>Ваши VPN ключи и подписка:</b>\n\n🔔 <b>Подписка:</b> <i>{{ item.name }} {{ item.user_service_id }}</i>\n📅 <b>Активирована:</b> {{ USE date }}{{ date.format(item.created, '%d.%m.%Yг. %H:%M') }}\n⏳ <b>Действует до:</b> {{ USE date }}{{ date.format(item.expire, '%d.%m.%Yг. %H:%M') }}\n\n🔗 <b>URL подписки:</b>\n<code>{{ subscription_url }}</code>\n\n💡 <i>Скопируйте этот URL, откройте приложение VPN на вашем устройстве, нажмите + и Добавить или Импорт из буфера.</i>\n\n",
