@@ -1,205 +1,183 @@
 <% SWITCH cmd %>
-<% CASE 'USER_NOT_FOUND' %>
-{
-    "sendMessage": {
-        "text": "🌐 <b>{{ config.company.name }}</b> предлагает:\n\n💸 <b>Лучшие тарифы:</b>\n✔️ Высокая скорость работы.\n✔️ Гарантированная безопасность ваших данных.\n✔️ Широкое глобальное покрытие.\n\n📲 <b>Простое подключение в пару шагов!</b>\nСкачайте наши приложения:\n- <a href=\"{{ config.apk.android }}\">📲 <b>Для Android</b></a>\n- <a href=\"{{ config.apk.ios }}\">📲 <b>Для iOS</b></a>\n\n💼 <b>Почему выбирают нас?</b>\nМы предоставляем стабильность, качество и защиту, на которые можно положиться.\n\n",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "Продолжить...",
-                        "callback_data": "/register {{ args.0 }}"
-                    }
-                ]
-            ]
-        }
-    }
-}
-
-<% CASE '/register' %>
-{
-    "deleteMessage": { "message_id": {{ message.message_id }} }
-},
-{
-    "shmRegister": {
-        "partner_id": "{{ args.0 }}",
-        "callback_data": "/select_service",
-        "error": "ОШИБКА: Логин {{ message.chat.username }} или chat_id {{ message.chat.id }} уже существует"
-    }
-}
-
-<% CASE ['/select_service', '🌐 Выбор тестовых услуг'] %>
-{
-    "deleteMessage": { "message_id": {{ message.message_id }} }
-},
-{
-    "sendPhoto": {
-        "photo": "https://sun9-11.userapi.com/impg/exVNggPpcr5tPCfzPEoHi_5beXy0CCbK1GStbw/cM306Mbb22s.jpg?size=1024x680&quality=95&sign=0a7243c58b7e3c1757d1bc00c997e4e1&type=album",
-        "protect_content": true,
-        "parse_mode": "HTML",
-        "caption": "🎉 Добро пожаловать в **{{ config.company.name }}™**! 🚀  \n\n✨ **Что такое {{ config.company.name }}*  \nЭто ваш надежный инструмент для безопасного и анонимного серфинга. Мы заботимся о вашей конфиденциальности и предлагаем высокую скорость подключения.  \n\n🎁 **Подарок для новых пользователей:**  \nВаш VPN уже готов к работе! **1 час бесплатного доступа** — оцените возможности нашего сервиса прямо сейчас.  \n\n📋 **Как начать?**  \n1. **Выберите тариф:** Ознакомьтесь с доступными тарифами ниже.  \n2. **Активируйте тест:** Просто нажмите на тариф, который вам подходит, и начните тестирование.  \n\n💡 **Почему выбрать нас?**  \n✔️ Быстрота и надежность.  \n✔️ Удобные приложения для всех платформ.  \n✔️ Полная анонимность и безопасность.  \n\n💰 **Доступные тарифы:**",
-        "reply_markup": {
-            "inline_keyboard": [
-                {{ FOR item IN ref(service.api_price_list).nsort('service_id') }}
-                    {{ IF item.category.grep('^(vpn-new-category)').first }}
+    <% CASE 'USER_NOT_FOUND' %>
+    {
+        "sendMessage": {
+            "text": "🌐 <b>{{ config.company.name }}</b> предлагает:\n\n💸 <b>Лучшие тарифы:</b>\n✔️ Высокая скорость работы.\n✔️ Гарантированная безопасность ваших данных.\n✔️ Широкое глобальное покрытие.\n\n📲 <b>Простое подключение в пару шагов!</b>\nСкачайте наши приложения:\n- <a href=\"{{ config.apk.android }}\">📲 <b>Для Android</b></a>\n- <a href=\"{{ config.apk.ios }}\">📲 <b>Для iOS</b></a>\n\n💼 <b>Почему выбирают нас?</b>\nМы предоставляем стабильность, качество и защиту, на которые можно положиться.\n\n",
+            "reply_markup": {
+                "inline_keyboard": [
                     [
                         {
-                            "text": "🌐 {{ item.name }} - {{ item.cost }} руб/1 час.",
-                            "callback_data": "/serviceorder {{ item.service_id }}"
+                            "text": "Продолжить...",
+                            "callback_data": "/register {{ args.0 }}"
+                        }
+                    ]
+                ]
+            }
+        }
+    }
+
+    <% CASE '/register' %>
+    {
+        "deleteMessage": { "message_id": {{ message.message_id }} }
+    },
+    {
+        "shmRegister": {
+            "partner_id": "{{ args.0 }}",
+            "callback_data": "/select_service",
+            "error": "ОШИБКА: Логин {{ message.chat.username }} или chat_id {{ message.chat.id }} уже существует"
+        }
+    }
+
+    <% CASE ['/select_service', '🌐 Выбор тестовых услуг'] %>
+    {
+        "deleteMessage": { "message_id": {{ message.message_id }} }
+    },
+    {
+        "sendPhoto": {
+            "photo": "https://sun9-73.userapi.com/impg/e8pkzF2oh-Ac40ZO_dpgJLHT__K9BlIX3I5aaA/O0QGe8WxUg0.jpg?size=1024x1024&quality=95&sign=7bda3be0397d08e13d7edb0db5e1f8a5&type=album",
+            "protect_content": true,
+            "parse_mode": "HTML",
+            "caption": "👋 <b>Добро пожаловать, <u>{{ user.full_name }}</u>!</b>\n\n🌐 <b>{{ config.company.name }}</b> – <i>передовые технологии для безопасного и анонимного подключения в интернете.</i>\n\n🔒 <b>Полная защита ваших данных</b> с использованием надежных алгоритмов шифрования.\n\n💸 <b>Доступные тарифы и выгодные условия</b> для пользователей по всему миру.\n\n🌍 <b>Подключение из любой точки планеты</b> с максимальной скоростью и стабильностью.\n\n💼 <b>Профессиональная поддержка 24/7</b> и высокая степень надежности.\n\n👉 <b>Выберите лучший план для себя</b> и пользуйтесь интернетом без ограничений!",
+            "reply_markup": {
+                "inline_keyboard": [
+                    {{ FOR item IN ref(service.api_price_list).nsort('service_id') }}
+                         {{ IF item.category.grep('^(vpn-new-category)') }}
+                        [
+                            {
+                                "text": "🌐 {{ item.name }} - {{ item.cost }} руб/1 час.",
+                                "callback_data": "/serviceorder {{ item.service_id }}"
+                            }
+                        ],
+                        {{ END }}
+                    {{ END }}
+                    [
+                        {
+                            "text": "⇦ Перейти в главное меню",
+                            "callback_data": "/menu"
+                        }
+                    ]
+                ]
+            }
+        }
+    }
+
+    <% CASE ['/start', '/menu'] %>
+    {{ IF cmd != '/start' }}
+    {
+        "deleteMessage": { 
+            "message_id": {{ message.message_id }} 
+        }
+    },
+    {{ END }}
+    {
+        "sendPhoto": {
+            "photo": "{{ config.logo.url }}",
+            "caption": "👋 <b>Добро пожаловать, <u>{{ user.full_name }}</u>!</b>\n🌐 <b>{{ config.company.name }}</b> — ваш надёжный партнёр для безопасного и удобного подключения к интернету.\n\nНажмите на кнопки ниже для продолжения.",
+            "parse_mode": "HTML"
+        }
+    },
+    {
+        "sendMessage": {
+            "text": "🌐 <b>{{ config.company.name }}</b> предлагает:\n\n💸 <b>Лучшие тарифы:</b>\n✔️ Высокая скорость работы.\n✔️ Гарантированная безопасность ваших данных.\n✔️ Широкое глобальное покрытие.\n\n📲 <b>Простое подключение в пару шагов!</b>\nСкачайте наши приложения:\n- <a href=\"{{ config.apk.android }}\">📲 <b>Для Android</b></a>\n- <a href=\"{{ config.apk.ios }}\">📲 <b>Для iOS</b></a>\n\n💼 <b>Почему выбирают нас?</b>\nМы предоставляем стабильность, качество и защиту, на которые можно положиться.\n\n",
+            "reply_markup": {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "💵 Баланс: {{ user.balance }} ₽",
+                            "callback_data": "/balance"
+                        },
+                        {
+                            "text": "➕ Пополнить баланс",
+                            "web_app": {
+                                "url": "{{ config.api.url }}/shm/v1/template/tg_payments?format=html&session_id={{ user.gen_session.id }}"
+                            }
                         }
                     ],
-                    {{ END }}
-                {{ END }}
-                [
-                    {
-                        "text": "⇦ Перейти в главное меню",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}
-<% CASE ['/start', '/menu', '🌍 Главное Меню', '🔄 Обновить'] %>
-{{ IF cmd != '/start' }}
-{
-    "deleteMessage": {
-        "message_id": {{ message.message_id }}
-    }
-},
-{{ END }}
-{
-    "sendPhoto": {
-        "photo": "https://sun9-11.userapi.com/impg/exVNggPpcr5tPCfzPEoHi_5beXy0CCbK1GStbw/cM306Mbb22s.jpg?size=1024x680&quality=95&sign=0a7243c58b7e3c1757d1bc00c997e4e1&type=album",
-        "parse_mode": "HTML",
-        "caption": "👋 <b>Добро пожаловать, <u>{{ user.full_name }}</u>!</b>\n\n🌐 <b>{{ config.company.name }}</b> – <i>передовые технологии для безопасного и анонимного подключения в интернете.</i>\n\n🔒 <b>Полная защита ваших данных</b> с использованием надежных алгоритмов шифрования.\n\n💸 <b>Доступные тарифы и выгодные условия</b> для пользователей по всему миру.\n\n🌍 <b>Подключение из любой точки планеты</b> с максимальной скоростью и стабильностью.\n\n💼 <b>Профессиональная поддержка 24/7</b> и высокая степень надежности.\n\n👉 <b>Выберите лучший план для себя</b> и пользуйтесь интернетом без ограничений!",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "💵 Баланс: {{ user.balance }} ₽",
-                        "callback_data": "/balance"
-                    },
-                    {
-                        "text": "➕ Пополнить баланс",
-                        "web_app": {
-                            "url": "{{ config.api.url }}/shm/v1/template/tg_payments?format=html&session_id={{ user.gen_session.id }}"
+                    [
+                        {
+                            "text": "🗝 Мой VPN",
+                            "callback_data": "/list"
+                        },
+                        {
+                            "text": "🛒 Купить ключ",
+                            "callback_data": "/pricelist"
                         }
-                    }
-                ],
-                [
-                    {
-                        "text": "🗝 Список VPN ключей",
-                        "callback_data": "/list"
-                    },
-                    {
-                        "text": "🛒 Купить ключ",
-                        "callback_data": "/pricelist"
-                    }
-                ],
-                [
-                    {
-                        "text": "🤝 Реферальная система",
-                        "callback_data": "/referrals"
-                    }
-                ],
-                [
-                    {
-                        "text": "📖 Помощь",
-                        "callback_data": "/help"
-                    }
-                ],
-                {{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id }}
-                [
-                    {
-                        "text": "🔧 Админка",
-                        "callback_data": "/adminmenu"
-                    }
-                ],
-                {{ END }}
-                [
-                    {
-                        "text": "🔄 Клавиатура",
-                        "callback_data": "/keyboard"
-                    },
-					{
-                        "text": "🔄 Обновить",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}
-
-
-<% CASE ['/keyboard', '🌍 Меню'] %>
-{
-    "sendPhoto": {
-        "photo": "https://sun9-11.userapi.com/impg/exVNggPpcr5tPCfzPEoHi_5beXy0CCbK1GStbw/cM306Mbb22s.jpg",
-        "caption": "👋 <b>Добро пожаловать, <u>{{ user.full_name }}</u>!</b>\n\n🌐 <b>{{ config.company.name }}</b> – <i>передовые технологии для безопасного и анонимного подключения в интернете.</i>\n\n🔒 <b>Полная защита ваших данных</b> с использованием надежных алгоритмов шифрования.\n\n💸 <b>Доступные тарифы и выгодные условия</b> для пользователей по всему миру.\n\n🌍 <b>Подключение из любой точки планеты</b> с максимальной скоростью и стабильностью.\n\n💼 <b>Профессиональная поддержка 24/7</b> и высокая степень надежности.\n\n👉 <b>Выберите лучший план для себя</b> и пользуйтесь интернетом без ограничений!",
-        "parse_mode": "HTML",
-        "reply_markup": {
-            "keyboard": [
-                [
-                    {
-                        "text": "🔄 Обновить"
-                    }
-                ],
-                [
-                    {
-                        "text": "📖 Помощь"
-                    }
-                ]
-            ],
-            "resize_keyboard": true,
-            "one_time_keyboard": false
-        }
-    }
-}
-
-
-
-<% CASE '/balance' %>
-{
-    "deleteMessage": { "message_id": {{ message.message_id }} }
-},
-{
-    "sendMessage": {
-        "text": "💰 <b>Баланс</b>: {{ user.balance }}\n\nНеобходимо оплатить: <b>{{ user.pays.forecast('blocked',1).total }}</b>",
-        "reply_markup" : {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "✚ Пополнить баланс",
-                        "web_app": {
-                            "url": "{{ config.api.url }}/shm/v1/template/tg_payments?format=html&session_id={{ user.gen_session.id }}"
+                    ],
+                    [
+                        {
+                            "text": "🤝 Реферальная система",
+                            "callback_data": "/referrals"
                         }
-                    }
-                ],
-                [
-                    {
-                        "text": "☰ История платежей",
-                        "callback_data": "/pays"
-                    }
-                ],
-[{
-                        "text": "🔄 Обновить",
-                        "callback_data": "/balance",
-  "deleteMessage": { "message_id": {{ message.message_id }} }
-                    }
-],
-
-                [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/menu"
-                    }
+                    ],
+                    [
+                        {
+                            "text": "📖 Помощь",
+                            "callback_data": "/xray"
+                        }
+                    ],
+                    {{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
+                    [
+                        {
+                            "text": "🔧 Админка",
+                            "callback_data": "/adminmenu"
+                        }
+                    ]
+                    {{ END }},
+                    [
+                        {
+                            "text": "🔄 Клавиатура",
+                            "callback_data": "/keyboard"
+                        },
+                        {
+                            "text": "🔄 Обновить",
+                            "callback_data": "/menu"
+                        }
+                    ]
                 ]
-            ]
+            },
+            "parse_mode": "HTML"
         }
     }
-}
+
+    <% CASE '/balance' %>
+    {
+        "deleteMessage": { "message_id": {{ message.message_id }} }
+    },
+    {
+        "sendMessage": {
+            "text": "💰 <b>Баланс</b>: {{ user.balance }}\n\nНеобходимо оплатить: <b>{{ user.pays.forecast('blocked',1).total }}</b>",
+            "reply_markup" : {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "✚ Пополнить баланс",
+                            "web_app": {
+                                "url": "{{ config.api.url }}/shm/v1/template/tg_payments?format=html&session_id={{ user.gen_session.id }}"
+                            }
+                        }
+                    ],
+                    [
+                        {
+                            "text": "☰ История платежей",
+                            "callback_data": "/pays"
+                        }
+                    ],
+                    [
+                        {
+                            "text": "🔄 Обновить",
+                            "callback_data": "/balance"
+                        }
+                    ],
+                    [
+                        {
+                            "text": "⇦ Назад",
+                            "callback_data": "/menu"
+                        }
+                    ]
+                ]
+            }
+        }
+    }
 
 <% CASE ['/pays', 'История пополнений'] %>
 {
@@ -207,26 +185,34 @@
 },
 {
     "sendPhoto": {
-        "photo": "https://sun9-11.userapi.com/impg/exVNggPpcr5tPCfzPEoHi_5beXy0CCbK1GStbw/cM306Mbb22s.jpg?size=1024x680&quality=95&sign=0a7243c58b7e3c1757d1bc00c997e4e1&type=album",
+        "photo": "{{ config.logo.url }}",
         "protect_content": false,
         "parse_mode": "HTML",
-        "caption": "💳 <b>История пополнений</b> 🧾\n\n📅 <i>Отслеживайте последние пополнения и планируйте свои расходы!</i>\n\n🔽 <b>Последнее пополнение:</b>\n{{ FOR item IN ref(user.pays.list_for_api('limit', 1)) }}\n<u>📅 <b>Дата:</b> {{ item.date }} | 💵 <b>Сумма:</b> {{ item.money }} ₽\n | 📝 <b>Платежная система:</b> {{ pay.pay_system_id }}</u>\n{{ END }}\n\n💡 <i>Совет:</i> Используйте раздел <b>📊 Статистика</b>, чтобы увидеть все транзакции в деталях!",
+        "caption": "💳 <b>История пополнений</b> 🧾\n\n📅 <i>Здесь вы можете отслеживать последнее пополнение.</i>\n\n🔽 <b>Последнее пополнение:</b>\n\n{{ FOR item IN ref(user.pays.list_for_api('limit', 1)) }}\n<u>📅 <b>Дата:</b> {{ item.date }} | 💵 <b>Сумма:</b> {{ item.money }} руб.</u>\n{{ END }}\n\n<b>Используйте кнопки для дополнительных действий:</b>",
         "reply_markup": {
             "inline_keyboard": [
                 [
-                    { "text": "🔄 Обновить", "callback_data": "/pays" },
-                    { "text": "📊 Статистика", "callback_data": "/payment_stats" }
+                    {
+                        "text": "🔄 Обновить историю",
+                        "callback_data": "/pays"
+                    }
                 ],
                 [
-                    { "text": "🔙 Назад", "callback_data": "/menu" }
+                    {
+                        "text": "📊 Подробная статистика",
+                        "callback_data": "/payment_stats"
+                    }
+                ],
+                [
+                    {
+                        "text": "🔙 Назад в меню",
+                        "callback_data": "/menu"
+                    }
                 ]
             ]
         }
     }
 }
-
-
-
 
 <% CASE '/payment_stats' %>
 {
@@ -234,18 +220,29 @@
 },
 {
     "sendPhoto": {
-        "photo": "https://sun9-11.userapi.com/impg/exVNggPpcr5tPCfzPEoHi_5beXy0CCbK1GStbw/cM306Mbb22s.jpg?size=1024x680&quality=95&sign=0a7243c58b7e3c1757d1bc00c997e4e1&type=album",
+        "photo": "{{ config.logo.url }}",
         "protect_content": false,
         "parse_mode": "HTML",
-        "caption": "💳 <b>История пополнений и выводов</b> 🧾\n\n📅 <i>Отслеживайте последние пополнения, выводы и начисленные бонусы для вашего удобства.</i>\n\n🔽 <b>Последнее пополнение:</b>\n\n{{ FOR item IN ref(user.pays.list_for_api('limit', 1)) }}\n<u>📅 <b>Дата:</b> {{ item.date }} | 💵 <b>Сумма:</b> {{ item.money }} руб.</u>\n{{ END }}\n\n🔽 <b>Последние списание:</b>\n\n{{ FOR wd IN ref(wd.list_for_api('limit', 5)) }}\n<u>📅 <b>Дата:</b> {{ wd.withdraw_date }} | 💸 <b>Сумма:</b> {{ wd.cost }} ₽</u>\n{{ END }}\n\n🔽 <b>Начисленные бонусы:</b>\n\n{{ FOR bonus IN ref(bonus.list_for_api('limit', 5)) }}\n<u>📅 <b>Дата:</b> {{ bonus.date }} | 🎁 <b>Сумма:</b> {{ user.get_bonus }} ₽</u>\n{{ END }}\n\n<b>Используйте кнопки для дополнительных действий:</b>",
+        "caption": "💳 <b>История пополнений и выводов</b> 🧾\n\n📅 <i>Отслеживайте последние пополнения, выводы и начисленные бонусы для вашего удобства.</i>\n\n🔽 <b>Последнее пополнение:</b>\n\n{{ FOR item IN ref(user.pays.list_for_api('limit', 1)) }}\n<u>📅 <b>Дата:</b> {{ item.date }} | 💵 <b>Сумма:</b> {{ item.money }} руб.</u>\n{{ END }}\n\n🔽 <b>Последние выводы:</b>\n\n{{ FOR wd IN ref(wd.list_for_api('limit', 20)) }}\n<u>📅 <b>Дата:</b> {{ wd.withdraw_date }} | 💸 <b>Сумма:</b> {{ wd.cost }} ₽</u>\n{{ END }}\n\n🔽 <b>Начисленные бонусы:</b>\n\n{{ FOR bonus IN ref(bonus.list_for_api('limit', 20)) }}\n<u>📅 <b>Дата:</b> {{ bonus.date }} | 🎁 <b>Сумма:</b> {{ bonus.bonus }} ₽</u>\n{{ END }}\n\n<b>Используйте кнопки для дополнительных действий:</b>",
         "reply_markup": {
             "inline_keyboard": [
                 [
-                    { "text": "🔄 Обновить", "callback_data": "/payment_stats" },
-                    { "text": "💳 История", "callback_data": "/pays" }
+                    {
+                        "text": "🔄 Обновить статистику",
+                        "callback_data": "/payment_stats"
+                    }
                 ],
                 [
-                    { "text": "🔙 Назад", "callback_data": "/menu" }
+                    {
+                        "text": "💳 История пополнений",
+                        "callback_data": "/pays"
+                    }
+                ],
+                [
+                    {
+                        "text": "🔙 Назад в меню",
+                        "callback_data": "/menu"
+                    }
                 ]
             ]
         }
@@ -254,32 +251,32 @@
 
 
 <% CASE '/list' %>
-{{ hasnotpaidus = ref(user.services.list_for_api('category', 'vpn-%', 'filter',{ 'status' => 'NOT PAID' } )).size }}
-{{ hasblocked = ref(user.services.list_for_api('category', 'vpn-%', 'filter',{ 'status' => 'BLOCK' } )).size }}
+{{ hasnotpaidus = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'NOT PAID' } )).size }}
+{{ hasblocked = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'BLOCK' } )).size }}
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
 {
     "sendPhoto": {
-    "photo": "https://sun9-11.userapi.com/impg/exVNggPpcr5tPCfzPEoHi_5beXy0CCbK1GStbw/cM306Mbb22s.jpg?size=1024x680&quality=95&sign=0a7243c58b7e3c1757d1bc00c997e4e1&type=album",
-        "caption": "🚀 <b>Добро пожаловать в MrzbCLI VPN, {{ user.full_name }}!</b>\n\n🌟 Мы — выбор тысяч пользователей благодаря:\n\n✅ <b>Высокому качеству подключения</b>\n🔒 <b>Максимальной безопасности</b>\n🌐 <b>Глобальному покрытию</b>\n⚡ <b>Высокой скорости и стабильности</b>\n\n💡 <b>У нас есть всё для безопасного подключения:</b>\n\n📲 <a href=\"{{ config.apk.android }}\">🌐 **MrzbCLI VPN для Android** 🌐</a>\n📲 <a href=\"{{ config.apk.ios }}\">🌐 **MrzbCLI VPN для iOS** 🌐</a>\n\n🔹 <a href=\"{{ config.apk.wireguard_and }}\">🌐 **WireGuard для Android** 🌐</a>\n🔹 <a href=\"{{ config.apk.wireguard_ios }}\">🌐 **WireGuard для iOS** 🌐</a>\n\n🔑 **Просто выберите ключ или создайте новый для мгновенного подключения!**",
-        "parse_mode": "HTML",
-		"reply_markup" : {
+        "photo": "{{ config.logo.url }}",
+		"parse_mode": "HTML",
+        "caption": "⭐️ <b>Мой ID:</b> {{ user.id }} ⭐️\n\n💡 Для получения подробной информации о вашем ключе, нажмите на его название.\n\n❇️ Для <b>разблокировки или продления</b> срока действия ключа достаточно пополнить баланс.\n\n🔑 <b>Ваши купленные ключи:</b>",
+        "reply_markup": {
             "inline_keyboard": [
                 {{ FOR item IN ref( user.services.list_for_api( 'category', '%' ) ) }}
                 {{ SWITCH item.status }}
                   {{ CASE 'ACTIVE' }}
                   {{ icon = '✅' }}
-                  {{ status = 'Работает' }}
+                  {{ status = ' Работает' }}
                   {{ CASE 'BLOCK' }}
                   {{ icon = '❌' }}
-                  {{ status = 'Заблокирована' }}
+                  {{ status = ' Заблокирована' }}
                   {{ CASE 'NOT PAID' }}
                   {{ icon = '💰' }}
-                  {{ status = 'Ожидает оплаты' }}
+                  {{ status = ' Ожидает оплаты' }}
                   {{ CASE }}
                   {{ icon = '⏳' }}
-                  {{ status = 'Обработка' }}
+                  {{ status = ' Обработка' }}
                 {{ END }}
                 [
                     {
@@ -290,24 +287,29 @@
                 {{ END }}
                 [
                     {
-                        "text": "✚ Купить новый ключ",
-                       {{ IF hasnotpaidus > 0 || hasblocked > 0 }}
-                        "callback_data": "/hint"
+                        "text": "🛒 Купить новый ключ 🛒",
+                        {{ IF hasnotpaidus > 0 || hasblocked > 0 }}
+                            "callback_data": "/hint"
                         {{ ELSE }}
-                        "callback_data": "/buy_mz_key"
+                            "callback_data": "/pricelist"
                         {{ END }}
                     }
                 ],
-				[
-					{
-                        "text": "🔄 Обновить",
-                        "callback_data": "/list",
-						"deleteMessage": { "message_id": {{ message.message_id }} }
-                    }
-				],
                 [
                     {
-                        "text": "⇦ Назад",
+                        "text": "🔄 Обновить список 🔄",
+                        "callback_data": "/list"
+                    }
+                ],
+                [
+                    {
+                        "text": "🔌 Как подключить ключ? 🔌",
+                        "url": "https://telegra.ph/Instrukciya-dlya-iPhoneiPad-11-27"
+                    }
+                ],
+                [
+                    {
+                        "text": "⇦ Назад в меню ⇦",
                         "callback_data": "/menu"
                     }
                 ]
@@ -316,12 +318,13 @@
     }
 }
 
+
 <% CASE '/hint' %>
 {
    "answerCallbackQuery": {
         "callback_query_id": {{ callback_query.id }},
         "parse_mode":"HTML",
-        "text": "🧐 У вас есть неоплаченные ключи!\n Пожалуйста, оплатите заказанные ключи или удалите их, чтобы иметь возможность заказать новые.",
+        "text": "🧐 Пожалуйста, сначала оплатите 💳 или удалите 🗑️ все неоплаченные или заблокированные услуги..Это необходимо для обеспечения корректной работы вашей учетной записи",
         "show_alert": true
     }
 }
@@ -348,23 +351,15 @@
               {{ icon = '⏳' }}
               {{ status = ' Обработка' }}
         {{ END }}
-        "photo": "https://sun9-11.userapi.com/impg/exVNggPpcr5tPCfzPEoHi_5beXy0CCbK1GStbw/cM306Mbb22s.jpg?size=1024x680&quality=95&sign=0a7243c58b7e3c1757d1bc00c997e4e1&type=album",
+        "photo": "https://vpnbot.pro/images/DALL-E-2024-11-30-19-58.jpg",
         "caption": "🔔 <b>Подписка:</b> <i>{{ item.name }} {{ item.user_service_id }}</i>\n📅 <b>Активирована:</b> {{ USE date }}{{ date.format(item.created, '%d.%m.%Yг. %H:%M') }}\n⏳ <b>Действует до:</b> {{ USE date }}{{ date.format(item.expire, '%d.%m.%Yг. %H:%M') }}",
         "parse_mode": "HTML",
         "reply_markup": {
             "inline_keyboard": [
                 {{ IF us.status == 'ACTIVE' }}
                 {{ subscription_url = storage.read('name', 'vpn_mrzb_' _ args.0).subscription_url }}
-                {{ IF us.category.grep('^(vpn-ger|vpn-shved|vpn-new-category|vpn-nd)').first }}
-                {{ IF subscription_url.grep('^https:').first }}
-                [
-                    {
-                        "text": "🔑 Показать данные для подключения",
-                        "web_app": {
-                            "url": "{{ config.api.url }}/shm/v1/template/sub_page?format=html&session_id={{ user.gen_session.id }}&uid={{ user.id }}&us_id={{ args.0 }}"
-                        }
-                    }
-                ],
+                {{ IF us.category.grep('^(vpn-ger|vpn-shved|vpn-new-category|vpn-nd)') }}
+                {{ IF subscription_url.grep('^https:') }}
                 [
                     {
                         "text": "🔗 Показать ссылку на подписку",
@@ -396,7 +391,7 @@
                 [
                     {
                         "text": "💳 Оплатить сейчас",
-                        "callback_data": "/payment {{ user.pays.forecast('blocked', 1).total }}"
+                        "callback_data": "/balance {{ user.pays.forecast('blocked', 1).total }}"
                     }
                 ],
                 {{ END }}
@@ -427,23 +422,21 @@
 
 
 
-
-
 <% CASE ['/pricelist', '🚀 Прайс лист'] %>
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
 {
     "sendPhoto": {
-        "photo": "https://sun9-11.userapi.com/impg/exVNggPpcr5tPCfzPEoHi_5beXy0CCbK1GStbw/cM306Mbb22s.jpg?size=1024x680&quality=95&sign=0a7243c58b7e3c1757d1bc00c997e4e1&type=album",
+        "photo": "{{ config.logo.url }}",
         "protect_content": true,
         "parse_mode": "HTML",
-        "caption": "💡<b>Как подключиться к VPN за несколько простых шагов:</b>\n\n1️⃣ <b>Выберите идеальный тариф:</b> Подберите план, который идеально соответствует вашим потребностям.\n\n2️⃣ <b>Оформите оплату:</b> Удобно и безопасно оплатите выбранный тариф с помощью доступных методов.\n\n3️⃣ <b>Активируйте VPN:</b> Следуйте пошаговой инструкции для активации на вашем устройстве. 🛠️\n\n🚀<b>Отзывы наших пользователей:</b>\n🏎️ <i>Высокая скорость соединения и стабильная работа даже за границей!</i>\n🔒 <i>Абсолютная безопасность и простота в использовании – VPN, которому можно доверять.</i>\n\n🔽 <b>Не теряйте времени – выберите тариф и начните пользоваться VPN прямо сейчас!</b>",
+        "caption": "💡<b>Нажмите на кнопку 🔐 Выдать VPN:</b>\n",
         "reply_markup": {
             "inline_keyboard": [
                 [
                     {
-                        "text": "🔐 VPN Услуги 🌟",
+                        "text": "🔐 Выдать VPN",
                         "callback_data": "/buy_mz_key"
                     }
                 ],
@@ -456,7 +449,7 @@
                 [
                     {
                         "text": "💬 Помощь и поддержка",
-                        "url": "{{ config.tg_support.url }}"
+                        "callback_data": "/support"
                     }
                 ],
                 [
@@ -472,28 +465,45 @@
 
 
 <% CASE '/buy_mz_key' %>
-{{ hasnotpaidus = ref(user.services.list_for_api('category', 'vpn-%', 'filter',{ 'status' => 'NOT PAID' } )).size }}
-{{ hasblocked = ref(user.services.list_for_api('category', 'vpn-%', 'filter',{ 'status' => 'BLOCK' } )).size }}
+{{ hasnotpaidus = ref(user.services.list_for_api('category', '%', 'filter',{ 'status' => 'NOT PAID' } )).size }}
+{{ hasblocked = ref(user.services.list_for_api('category', '%', 'filter',{ 'status' => 'BLOCK' } )).size }}
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
 {
     "sendMessage": {
-        "text": "🌐 <b>Как подключиться к VPN:</b>\n\n1️⃣ <b>Выберите тариф:</b> Подберите идеальный план, который соответствует вашим нуждам.\n\n2️⃣ <b>Оплатите:</b> Произведите безопасный платёж удобным способом.\n\n3️⃣ <b>Активируйте:</b> Получите ключ и следуйте инструкции для подключения. 🛠️\n\n🚀 <b>Почему выбирают нас:</b>\n🔒 <i>Высокая защита ваших данных</i>\n🏎️ <i>Быстрая скорость соединения</i>\n📶 <i>Стабильная работа по всему миру</i>\n\n✨ <b>Выберите свой тариф и начните пользоваться VPN прямо сейчас!</b>",
+        "text": "Попробуйте бесплатно или оплатите подписку",
         "reply_markup": {
             "inline_keyboard": [
                 {{ FOR item IN ref(service.api_price_list).nsort('service_id') }}
-					{{ IF item.category == 'vpn-ger' or item.category == 'vpn-shved' or item.category == 'vpn-new-category' or item.category == 'vpn-nd' }}
-                    [
-                        {
-                            "text": "{{ item.name }} - {{ item.cost }} руб/мес. 🌟",
-							{{ IF hasnotpaidus > 0 || hasblocked > 0 }}
-                            "callback_data": "/hint"
+                    {{ IF item.category == 'vpn-ger' or item.category == 'vpn-shved' or item.category == 'vpn-new-category' or item.category == 'vpn-nd' }}
+                        {{ IF item.service_id }}
+                            [
+                                {
+                                    "text": "{{ item.name }} - {{ item.cost }} руб/мес.",
+                                    {{ IF hasnotpaidus > 0 || hasblocked > 0 }}
+                                    "callback_data": "/hint"
+                                    {{ ELSE }}
+                                    "callback_data": "/serviceorder {{ item.service_id }}"
+                                    {{ END }}
+                                },
+                                {
+                                    "text": "6/мес - {{ item.cost * 6 }} руб.",
+                                    {{ IF hasnotpaidus > 0 || hasblocked > 0 }}
+                                    "callback_data": "/hint"
+                                    {{ ELSE }}
+                                    "callback_data": "/serviceorder {{ item.service_id }} 6"
+                                    {{ END }}
+                                }
+                            ],
                         {{ ELSE }}
-                        "callback_data": "/serviceorder {{ item.service_id }}"
+                            [
+                                {
+                                    "text": "Ошибка: нет доступных услуг.",
+                                    "callback_data": "/pricelist"
+                                }
+                            ]
                         {{ END }}
-                        }
-                    ],
                     {{ END }}
                 {{ END }}
                 [
@@ -507,14 +517,15 @@
     }
 }
 
-
 <% CASE '/serviceorder' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
 {
     "shmServiceOrder": {
         "service_id": "{{ args.0 }}",
         "callback_data": "/list",
         "cb_not_enough_money": "/menu",
-		"check_exists_unpaid": 1,
         "error": "ОШИБКА"
     }
 },
@@ -611,7 +622,7 @@
 },
 {
     "sendMessage": {
-        "text": "🤝 <b>Присоединяйтесь к нашей реферальной программе и начинайте зарабатывать!</b>\n\n🎉 <b>Простой способ получить дополнительный доход!</b>\n\nПриглашайте друзей и получайте <b>{{ config.billing.partner.income_percent }}% от каждого их платежа</b>. Это отличная возможность для пассивного заработка.\n\n🔗 <b>Ваша реферальная ссылка:</b>\n<code>{{ config.tg_bot.url }}?start={{ user.id }}</code>\n\nПоделитесь ссылкой с друзьями, и начинайте зарабатывать прямо сейчас! Чем больше приглашённых, тем больше ваш доход!\n\n💡 <b>Преимущества участия:</b>\n1️⃣ Постоянный процент с платежей.\n2️⃣ Вы помогаете друзьям подключиться к лучшему сервису.\n3️⃣ Ваш доход увеличивается с каждым новым приглашённым!\n\n📲 <b>Не упустите шанс — начните зарабатывать уже сегодня!</b>",
+        "text": "🤝 <b>Добро пожаловать в нашу реферальную программу!</b>\n\nПриглашайте друзей и получайте <b>{{ config.billing.partner.income_percent }}% от каждого их платежа</b>.\n\n🔗 <b>Ваша реферальная ссылка:</b>\n<code>{{ config.tg_bot.url }}?start={{ user.id }}</code>\n\nПоделитесь ссылкой с друзьями!\n\n",
         "reply_markup": {
             "inline_keyboard": [
                 [
@@ -712,20 +723,20 @@
         "text": "📡 <b>Помощь и главное меню</b>\n\nВыберите интересующий вас пункт из списка ниже:",
         "parse_mode": "HTML",
         "reply_markup": {
-            "inline_keyboard": [
+            "keyboard": [
                 [
                     {
-                        "text": "🖥 Инструкция по VPN",
-                        "url": "https://telegra.ph/Instrukciya-dlya-iPhoneiPad-11-27"
+                        "text": "🖥 Инструкция по VPN"
                     }
                 ],
                 [
                     {
-                        "text": "🌍 Главное Меню",
-                        "callback_data": "/menu"
+                        "text": "🌍 Главное Меню"
                     }
                 ]
-            ]
+            ],
+            "one_time_keyboard": false,
+            "resize_keyboard": true
         }
     }
 }
@@ -737,10 +748,10 @@
 },
 {
     "sendPhoto": {
-        "photo": "https://sun9-11.userapi.com/impg/exVNggPpcr5tPCfzPEoHi_5beXy0CCbK1GStbw/cM306Mbb22s.jpg?size=1024x680&quality=95&sign=0a7243c58b7e3c1757d1bc00c997e4e1&type=album",
+        "photo": "{{ config.logo.url }}",
         "protect_content": false,
         "parse_mode": "HTML",
-        "caption": "🛡️ <b>Инструкция по настройке VPN</b>\n\n📱 <b>Для Android:</b>\n1️⃣ Скопируйте <b>ключ доступа</b> (формат <i>vless://</i>).\n2️⃣ Установите приложение <a href=\"{{ config.apk.android }}\">ServRU Android 🌐</a>.\n3️⃣ Вставьте ключ в приложение.\n4️⃣ Нажмите <b>'Подключиться'</b> — готово!\n\n📲 <b>Для iOS:</b>\n1️⃣ Установите приложение <a href=\"https://apps.apple.com/ru/app/streisand/id6450534064\">Streisand 🌐</a>.\n2️⃣ Запустите приложение и вставьте ключ доступа.\n3️⃣ Нажмите <b>'Подключиться'</b>.\n\n💡 <b>Ваши преимущества:</b>\n- Высокая скорость подключения.\n- Защита данных на уровне топ-протоколов.\n- Стабильное соединение по всему миру.\n\nЕсли что-то непонятно — мы рядом! 👇",
+        "caption": "🛡️ <b>Инструкция по настройке VPN</b>\n\n📱\n1️⃣ Скопируйте <b>URL адрес подписки</b> (формат <i>https://</i>).\n2️⃣ Установите приложение \niPhone <a href=\"{{ config.apk.ios }}\">Streisand</a>\n Android<a href=\"{{ config.apk.android }}\">v2rayNG </a>\n Huawei <a href=\"{{ config.apk.huawei }}\">v2RayTun</a>\n3️⃣ Вставьте подписку в приложение(+ Добавить из буфера).\n4️⃣ Выбирайте Локацию и Нажмите <b>'Подключиться'</b> — готово!\n\n💡Если что-то непонятно — напишите в 🖥 Чат поддержки!",
         "reply_markup": {
             "inline_keyboard": [
                 [
@@ -749,7 +760,7 @@
                         "url": "{{ config.tg_support.url }}"
                     },
                     {
-                        "text": "🔑 Список VPN ключей",
+                        "text": "🔑 Мой VPN",
                         "callback_data": "/list"
                     }
                 ],
@@ -757,7 +768,7 @@
                     {
                         "text": "📖 Подробнее об инструкции",
                         "web_app": {
-                            "url": "https://support.mrzbcli.ru/xray.html"
+                            "url": "https://telegra.ph/Instrukciya-dlya-iPhoneiPad-11-27"
                         }
                     }
                 ],
@@ -787,11 +798,11 @@
             "inline_keyboard": [
                 [
                     {
-                        "text": "🔑 Trojan TCP",
+                        "text": "🔑 Показать 'TCP' ",
                         "callback_data": "/trojan_key {{ args.0 }}"
                     },
                     {
-                        "text": "🔑 VLESS GRPC",
+                        "text": "🔑 Показать 'UDP' ",
                         "callback_data": "/vless_key {{ args.0 }}"
                     }
                 ],
