@@ -1,10 +1,62 @@
 <% SWITCH cmd %>
-<% CASE 'USER_NOT_FOUND' %>
+    <% CASE 'USER_NOT_FOUND' %>
+    {
+        "sendMessage": {
+            "text": "🌐 <b>{{ config.company.name }}</b> предлагает:\n\n💸 <b>Лучшие тарифы:</b>\n✔️ Высокая скорость работы.\n✔️ Гарантированная безопасность ваших данных.\n✔️ Широкое глобальное покрытие.\n\n📲 <b>Простое подключение в пару шагов!</b>\nСкачайте наши приложения:\n- <a href=\"{{ config.apk.android }}\">📲 <b>Для Android</b></a>\n- <a href=\"{{ config.apk.ios }}\">📲 <b>Для iOS</b></a>\n\n💼 <b>Почему выбирают нас?</b>\nМы предоставляем стабильность, качество и защиту, на которые можно положиться.\n\n",
+            "reply_markup": {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "Продолжить...",
+                            "callback_data": "/register {{ args.0 }}"
+                        }
+                    ]
+                ]
+            }
+        }
+    }
+<% CASE '/register' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
 {
     "shmRegister": {
         "partner_id": "{{ args.0 }}",
-        "callback_data": "/start",
+        "callback_data": "/select_service",
         "error": "ОШИБКА: Логин {{ message.chat.username }} или chat_id {{ message.chat.id }} уже существует"
+    }
+}
+
+<% CASE ['/select_service', '🌐 Выбор тестовых услуг'] %>
+{
+    "deleteMessage": { "message_id": "{{ message.message_id }}" }
+},
+{
+    "sendPhoto": {
+        "photo": "{{ config.logo.url }}",
+        "chat_id": "{{ message.chat.id }}",
+        "protect_content": true,
+        "caption": "👋 <b>Добро пожаловать, <u>{{ user.full_name }}</u>!</b>\n\n🌐 <b>{{ config.company.name }}</b> — <i>инновационные решения для вашего безопасного и анонимного онлайн-опыта.</i>\n\n💡 <i>Мы предлагаем современные технологии для защиты ваших данных, а также высокоскоростное подключение по всему миру.</i>\n\n⏳ <b>Мы уже приступили к созданию вашей услуги. Это займет всего несколько секунд!</b>\n\n🔒 <i>Вскоре вы сможете насладиться полной анонимностью и защищенностью в сети.</i>",
+        "parse_mode": "HTML"
+    }
+},
+{
+    "shmServiceOrder": {
+        "user_id": "{{ message.chat.id }}",
+        "service_id": "1",
+        "success": {
+            "sendMessage": {
+                "chat_id": "{{ message.chat.id }}",
+                "text": "✅ Услуга успешно создана! Перейдите в профиль для просмотра.",
+                "callback_data": "/menu"
+            }
+        },
+        "error": {
+            "sendMessage": {
+                "chat_id": "{{ message.chat.id }}",
+                "text": "❌ Не удалось создать услугу. Попробуйте позже."
+            }
+        }
     }
 }
 <% CASE ['/start', '/menu', '🌍 Главное Меню', '🔄 Обновить'] %>
@@ -30,7 +82,7 @@
                     {
                         "text": "➕ Пополнить баланс",
                         "web_app": {
-                            "url": "{{ config.api.url }}/shm/v1/public/tg_payment_webapp?format=html&user_id={{ user.id }}"
+                            "url": "{{ config.api.url }}/shm/v1/public/tg_payments_webapp?format=html&user_id={{ user.id }}"
                         }
                     }
                 ],
@@ -54,10 +106,6 @@
                     {
                         "text": "📖 Помощь",
                         "callback_data": "/help"
-                    },
-                    {
-                        "text": "🎁 Тест 5 дней",
-                        "callback_data": "/test"
                     }
                 ]
                 {{ IF message.chat.id == config.telegram_admin.id }},
@@ -114,33 +162,10 @@
         "text": "💰 <b>Баланс</b>: {{ user.balance }}\n\nНеобходимо оплатить: <b>{{ user.pays.forecast('blocked',1).total }}</b>",
         "reply_markup" : {
             "inline_keyboard": [
-                [
-                    {
-                        "text": "✚ Пополнить баланс",
-                        "web_app": {
-                            "url": "{{ config.api.url }}/shm/v1/template/tg_payments?format=html&session_id={{ user.gen_session.id }}"
-                        }
-                    }
-                ],
-                [
-                    {
-                        "text": "☰ История платежей",
-                        "callback_data": "/pays"
-                    }
-                ],
-[{
-                        "text": "🔄 Обновить",
-                        "callback_data": "/balance",
-  "deleteMessage": { "message_id": {{ message.message_id }} }
-                    }
-],
-
-                [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/menu"
-                    }
-                ]
+                [ { "text": "✚ Пополнить баланс", "web_app": { "url": "{{ config.api.url }}/shm/v1/public/tg_payments_webapp?format=html&user_id={{ user.id }}" } } ],
+                [ { "text": "☰ История платежей", "callback_data": "/pays" } ],
+                [ { "text": "🔄 Обновить", "callback_data": "/balance" } ],
+                [ { "text": "⇦ Назад", "callback_data": "/menu" } ]
             ]
         }
     }
@@ -152,26 +177,19 @@
 },
 {
     "sendPhoto": {
-        "photo": "https://sun9-73.userapi.com/impg/e8pkzF2oh-Ac40ZO_dpgJLHT__K9BlIX3I5aaA/O0QGe8WxUg0.jpg?size=1024x1024&quality=95&sign=7bda3be0397d08e13d7edb0db5e1f8a5&type=album",
+        "photo": "{{ config.logo.url }}",
         "protect_content": false,
         "parse_mode": "HTML",
-        "caption": "💳 <b>История пополнений</b> 🧾\n\n📅 <i>Отслеживайте последние пополнения и планируйте свои расходы!</i>\n\n🔽 <b>Последнее пополнение:</b>\n{{ FOR item IN ref(user.pays.list_for_api('limit', 1)) }}\n<u>📅 <b>Дата:</b> {{ item.date }} | 💵 <b>Сумма:</b> {{ item.money }} ₽\n | 📝 <b>Платежная система:</b> {{ pay.pay_system_id }}</u>\n{{ END }}\n\n💡 <i>Совет:</i> Используйте раздел <b>📊 Статистика</b>, чтобы увидеть все транзакции в деталях!",
+        "caption": "💳 <b>История пополнений</b> 🧾\n\n📅 <i>Здесь вы можете отслеживать последнее пополнение.</i>\n\n🔽 <b>Последнее пополнение:</b>\n\n{{ FOR item IN ref(user.pays.list_for_api('limit', 1)) }}\n<u>📅 <b>Дата:</b> {{ item.date }} | 💵 <b>Сумма:</b> {{ item.money }} руб.</u>\n{{ END }}\n\n<b>Используйте кнопки для дополнительных действий:</b>",
         "reply_markup": {
             "inline_keyboard": [
-                [
-                    { "text": "🔄 Обновить", "callback_data": "/pays" },
-                    { "text": "📊 Статистика", "callback_data": "/payment_stats" }
-                ],
-                [
-                    { "text": "🔙 Назад", "callback_data": "/menu" }
-                ]
+                [ { "text": "🔄 Обновить историю", "callback_data": "/pays" } ],
+                [ { "text": "📊 Подробная статистика", "callback_data": "/payment_stats" } ],
+                [ { "text": "🔙 Назад в меню", "callback_data": "/menu" } ]
             ]
         }
     }
 }
-
-
-
 
 <% CASE '/payment_stats' %>
 {
@@ -179,54 +197,50 @@
 },
 {
     "sendPhoto": {
-        "photo": "https://sun9-73.userapi.com/impg/e8pkzF2oh-Ac40ZO_dpgJLHT__K9BlIX3I5aaA/O0QGe8WxUg0.jpg?size=1024x1024&quality=95&sign=7bda3be0397d08e13d7edb0db5e1f8a5&type=album",
+        "photo": "{{ config.logo.url }}",
         "protect_content": false,
         "parse_mode": "HTML",
-        "caption": "💳 <b>История пополнений и выводов</b> 🧾\n\n📅 <i>Отслеживайте последние пополнения, выводы и начисленные бонусы для вашего удобства.</i>\n\n🔽 <b>Последнее пополнение:</b>\n\n{{ FOR item IN ref(user.pays.list_for_api('limit', 1)) }}\n<u>📅 <b>Дата:</b> {{ item.date }} | 💵 <b>Сумма:</b> {{ item.money }} руб.</u>\n{{ END }}\n\n🔽 <b>Последние списание:</b>\n\n{{ FOR wd IN ref(wd.list_for_api('limit', 5)) }}\n<u>📅 <b>Дата:</b> {{ wd.withdraw_date }} | 💸 <b>Сумма:</b> {{ wd.cost }} ₽</u>\n{{ END }}\n\n🔽 <b>Начисленные бонусы:</b>\n\n{{ FOR bonus IN ref(bonus.list_for_api('limit', 5)) }}\n<u>📅 <b>Дата:</b> {{ bonus.date }} | 🎁 <b>Сумма:</b> {{ user.get_bonus }} ₽</u>\n{{ END }}\n\n<b>Используйте кнопки для дополнительных действий:</b>",
+        "caption": "💳 <b>История пополнений и выводов</b> 🧾\n\n📅 <i>Отслеживайте последние пополнения, выводы и начисленные бонусы для вашего удобства.</i>\n\n🔽 <b>Последнее пополнение:</b>\n\n{{ FOR item IN ref(user.pays.list_for_api('limit', 1)) }}\n<u>📅 <b>Дата:</b> {{ item.date }} | 💵 <b>Сумма:</b> {{ item.money }} руб.</u>\n{{ END }}\n\n🔽 <b>Последние выводы:</b>\n\n{{ FOR wd IN ref(wd.list_for_api('limit', 20)) }}\n<u>📅 <b>Дата:</b> {{ wd.withdraw_date }} | 💸 <b>Сумма:</b> {{ wd.cost }} ₽</u>\n{{ END }}\n\n🔽 <b>Начисленные бонусы:</b>\n\n{{ FOR bonus IN ref(bonus.list_for_api('limit', 20)) }}\n<u>📅 <b>Дата:</b> {{ bonus.date }} | 🎁 <b>Сумма:</b> {{ bonus.bonus }} ₽</u>\n{{ END }}\n\n<b>Используйте кнопки для дополнительных действий:</b>",
         "reply_markup": {
             "inline_keyboard": [
-                [
-                    { "text": "🔄 Обновить", "callback_data": "/payment_stats" },
-                    { "text": "💳 История", "callback_data": "/pays" }
-                ],
-                [
-                    { "text": "🔙 Назад", "callback_data": "/menu" }
-                ]
+                [ { "text": "🔄 Обновить статистику", "callback_data": "/payment_stats" } ],
+                [ { "text": "💳 История пополнений", "callback_data": "/pays" } ],
+                [ { "text": "🔙 Назад в меню", "callback_data": "/menu" } ]
             ]
         }
     }
 }
-
-
 <% CASE '/list' %>
-{{ hasnotpaidus = ref(user.services.list_for_api('category', 'vpn-%', 'filter',{ 'status' => 'NOT PAID' } )).size }}
-{{ hasblocked = ref(user.services.list_for_api('category', 'vpn-%', 'filter',{ 'status' => 'BLOCK' } )).size }}
+{{ hasnotpaidus = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'NOT PAID' } )).size }}
+{{ hasblocked = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'BLOCK' } )).size }}
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
 {
-    "sendMessage": {
-        "text": "️🚀 <b>Добро пожаловать в MrzbCLI VPN, {{ user.full_name }}!</b>\n\n🌟 Мы — выбор тысяч пользователей благодаря:\n\n✅ <b>Высокому качеству подключения</b>\n🔒 <b>Максимальной безопасности</b>\n🌐 <b>Глобальному покрытию</b>\n⚡ <b>Высокой скорости и стабильности</b>\n\n💡 <b>У нас есть всё для безопасного подключения:</b>\n\n📲 <a href=\"{{ config.apk.android }}\">🌐 **MrzbCLI VPN для Android** 🌐</a>\n📲 <a href=\"{{ config.apk.ios }}\">🌐 **MrzbCLI VPN для iOS** 🌐</a>\n\n🔹 <a href=\"{{ config.apk.wireguard_and }}\">🌐 **WireGuard для Android** 🌐</a>\n🔹 <a href=\"{{ config.apk.wireguard_ios }}\">🌐 **WireGuard для iOS** 🌐</a>\n\n🔑 **Просто выберите ключ или создайте новый для мгновенного подключения!**",
-        "reply_markup" : {
+    "sendPhoto": {
+        "photo": "{{ config.logo.url }}",
+		"parse_mode": "HTML",
+        "caption": "⭐️ <b>Мой ID:</b> {{ user.id }} ⭐️\n\n💡 Для получения подробной информации о вашем ключе, нажмите на его название.\n\n❇️ Для <b>разблокировки или продления</b> срока действия ключа достаточно пополнить баланс.\n\n🔑 <b>Ваши купленные ключи:</b>",
+        "reply_markup": {
             "inline_keyboard": [
-                {{ FOR item IN ref( user.services.list_for_api( 'category', 'vpn-%' ) ) }}
+                {{ FOR item IN ref( user.services.list_for_api( 'category', '%' ) ) }}
                 {{ SWITCH item.status }}
                   {{ CASE 'ACTIVE' }}
                   {{ icon = '✅' }}
-                  {{ status = 'Работает' }}
+                  {{ status = ' Работает' }}
                   {{ CASE 'BLOCK' }}
                   {{ icon = '❌' }}
-                  {{ status = 'Заблокирован' }}
+                  {{ status = ' Заблокирована' }}
                   {{ CASE 'NOT PAID' }}
                   {{ icon = '💰' }}
-                  {{ status = 'Ожидает оплаты' }}
+                  {{ status = ' Ожидает оплаты' }}
                   {{ CASE }}
                   {{ icon = '⏳' }}
-                  {{ status = 'Обработка' }}
+                  {{ status = ' Обработка' }}
                 {{ END }}
                 [
                     {
-                        "text": " {{ item.name }} - {{ icon }}",
+                        "text": "{{ item.name }} - {{ icon }} {{ status }}",
                         "callback_data": "/service {{ item.user_service_id }}"
                     }
                 ],
@@ -235,21 +249,27 @@
                     {
                         "text": "🛒 Купить новый ключ 🛒",
                         {{ IF hasnotpaidus > 0 || hasblocked > 0 }}
-                        "callback_data": "/hint"
+                            "callback_data": "/hint"
                         {{ ELSE }}
-                        "callback_data": "/buy_mz_key"
+                            "callback_data": "/pricelist"
                         {{ END }}
                     }
                 ],
                 [
                     {
-                        "text": "♻️ Инструкция ♻️",
+                        "text": "🔄 Обновить список 🔄",
+                        "callback_data": "/list"
+                    }
+                ],
+                [
+                    {
+                        "text": "🔌 Как подключить ключ? 🔌",
                         "url": "https://telegra.ph/Instrukciya-dlya-iPhoneiPad-11-27"
                     }
                 ],
                 [
                     {
-                        "text": "⇦ Назад ⇦",
+                        "text": "⇦ Назад в меню ⇦",
                         "callback_data": "/menu"
                     }
                 ]
@@ -257,15 +277,18 @@
         }
     }
 }
+
+
 <% CASE '/hint' %>
 {
    "answerCallbackQuery": {
         "callback_query_id": {{ callback_query.id }},
         "parse_mode":"HTML",
-        "text": "🧐 У вас есть неоплаченные ключи!\n Пожалуйста, оплатите заказанные ключи или удалите их, чтобы иметь возможность заказать новые.",
+        "text": "🧐 Пожалуйста, сначала оплатите 💳 или удалите 🗑️ все неоплаченные или заблокированные услуги..Это необходимо для обеспечения корректной работы вашей учетной записи",
         "show_alert": true
     }
 }
+
 <% CASE '/service' %>
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
@@ -288,7 +311,7 @@
               {{ icon = '⏳' }}
               {{ status = ' Обработка' }}
         {{ END }}
-        "photo": "https://sun9-73.userapi.com/impg/e8pkzF2oh-Ac40ZO_dpgJLHT__K9BlIX3I5aaA/O0QGe8WxUg0.jpg?size=1024x1024&quality=95&sign=7bda3be0397d08e13d7edb0db5e1f8a5&type=album",
+        "photo": "https://vpnbot.pro/images/DALL-E-2024-11-30-19-58.jpg",
         "caption": "🔔 <b>Подписка:</b> <i>{{ item.name }} {{ item.user_service_id }}</i>\n📅 <b>Активирована:</b> {{ USE date }}{{ date.format(item.created, '%d.%m.%Yг. %H:%M') }}\n⏳ <b>Действует до:</b> {{ USE date }}{{ date.format(item.expire, '%d.%m.%Yг. %H:%M') }}",
         "parse_mode": "HTML",
         "reply_markup": {
@@ -297,14 +320,6 @@
                 {{ subscription_url = storage.read('name', 'vpn_mrzb_' _ args.0).subscription_url }}
                 {{ IF us.category.grep('^(vpn-lt-mz|vpn-sw-mz|vpn-spain-mz)').first }}
                 {{ IF subscription_url.grep('^https:').first }}
-                [
-                    {
-                        "text": "🔑 Показать данные для подключения",
-                        "web_app": {
-                            "url": "{{ config.api.url }}/shm/v1/template/sub_page?format=html&session_id={{ user.gen_session.id }}&uid={{ user.id }}&us_id={{ args.0 }}"
-                        }
-                    }
-                ],
                 [
                     {
                         "text": "🔗 Показать ссылку на подписку",
@@ -336,7 +351,7 @@
                 [
                     {
                         "text": "💳 Оплатить сейчас",
-                        "callback_data": "/payment {{ user.pays.forecast('blocked', 1).total }}"
+                        "callback_data": "/balance {{ user.pays.forecast('blocked', 1).total }}"
                     }
                 ],
                 {{ END }}
@@ -367,28 +382,22 @@
 
 
 
-
-
 <% CASE ['/pricelist', '🚀 Прайс лист'] %>
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
 {
     "sendPhoto": {
-        "photo": "https://sun9-73.userapi.com/impg/e8pkzF2oh-Ac40ZO_dpgJLHT__K9BlIX3I5aaA/O0QGe8WxUg0.jpg?size=1024x1024&quality=95&sign=7bda3be0397d08e13d7edb0db5e1f8a5&type=album",
+        "photo": "{{ config.logo.url }}",
         "protect_content": true,
         "parse_mode": "HTML",
-        "caption": "💡<b>Как подключиться к VPN за несколько простых шагов:</b>\n\n1️⃣ <b>Выберите идеальный тариф:</b> Подберите план, который идеально соответствует вашим потребностям.\n\n2️⃣ <b>Оформите оплату:</b> Удобно и безопасно оплатите выбранный тариф с помощью доступных методов.\n\n3️⃣ <b>Активируйте VPN:</b> Следуйте пошаговой инструкции для активации на вашем устройстве. 🛠️\n\n🚀<b>Отзывы наших пользователей:</b>\n🏎️ <i>Высокая скорость соединения и стабильная работа даже за границей!</i>\n🔒 <i>Абсолютная безопасность и простота в использовании – VPN, которому можно доверять.</i>\n\n🔽 <b>Не теряйте времени – выберите тариф и начните пользоваться VPN прямо сейчас!</b>",
+        "caption": "💡<b>Нажмите на кнопку 🔐 Выдать VPN:</b>\n",
         "reply_markup": {
             "inline_keyboard": [
                 [
                     {
-                        "text": "🔐 VPN Услуги 🌟",
+                        "text": "🔐 Выдать VPN",
                         "callback_data": "/buy_mz_key"
-                    },
-                    {
-                        "text": "🔒 WireGuard Услуги 🌟",
-                        "callback_data": "/buy_wg_key"
                     }
                 ],
                 [
@@ -413,58 +422,48 @@
         }
     }
 }
+
+
 <% CASE '/buy_mz_key' %>
-{{ hasnotpaidus = ref(user.services.list_for_api('category', 'vpn-%', 'filter',{ 'status' => 'NOT PAID' } )).size }}
-{{ hasblocked = ref(user.services.list_for_api('category', 'vpn-%', 'filter',{ 'status' => 'BLOCK' } )).size }}
+{{ hasnotpaidus = ref(user.services.list_for_api('category', '%', 'filter',{ 'status' => 'NOT PAID' } )).size }}
+{{ hasblocked = ref(user.services.list_for_api('category', '%', 'filter',{ 'status' => 'BLOCK' } )).size }}
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
 {
     "sendMessage": {
-        "text": "🌐 <b>Как подключиться к VPN:</b>\n\n1️⃣ <b>Выберите тариф:</b> Подберите идеальный план, который соответствует вашим нуждам.\n\n2️⃣ <b>Оплатите:</b> Произведите безопасный платёж удобным способом.\n\n3️⃣ <b>Активируйте:</b> Получите ключ и следуйте инструкции для подключения. 🛠️\n\n🚀 <b>Почему выбирают нас:</b>\n🔒 <i>Высокая защита ваших данных</i>\n🏎️ <i>Быстрая скорость соединения</i>\n📶 <i>Стабильная работа по всему миру</i>\n\n✨ <b>Выберите свой тариф и начните пользоваться VPN прямо сейчас!</b>",
+        "text": "Попробуйте бесплатно или оплатите подписку",
         "reply_markup": {
             "inline_keyboard": [
                 {{ FOR item IN ref(service.api_price_list).nsort('service_id') }}
-					{{ IF item.category == 'vpn-sw-mz' or item.category == 'vpn-lt-mz' or item.category == 'vpn-spain-mz' }}
-                    [
-                        {
-                            "text": "{{ item.name }} - {{ item.cost }} руб/мес. 🌟",
-							{{ IF hasnotpaidus > 0 || hasblocked > 0 }}
-                            "callback_data": "/hint"
+                    {{ IF item.category == 'vpn-lt-mz' or item.category == 'vpn-sw-mz' or item.category == 'vpn-spain-mz' }}
+                        {{ IF item.service_id }}
+                            [
+                                {
+                                    "text": "{{ item.name }} - {{ item.cost }} руб/мес.",
+                                    {{ IF hasnotpaidus > 0 || hasblocked > 0 }}
+                                    "callback_data": "/hint"
+                                    {{ ELSE }}
+                                    "callback_data": "/serviceorder {{ item.service_id }}"
+                                    {{ END }}
+                                },
+                                {
+                                    "text": "6/мес - {{ item.cost * 6 }} руб.",
+                                    {{ IF hasnotpaidus > 0 || hasblocked > 0 }}
+                                    "callback_data": "/hint"
+                                    {{ ELSE }}
+                                    "callback_data": "/serviceorder {{ item.service_id }} 6"
+                                    {{ END }}
+                                }
+                            ],
                         {{ ELSE }}
-                        "callback_data": "/serviceorder {{ item.service_id }}"
+                            [
+                                {
+                                    "text": "Ошибка: нет доступных услуг.",
+                                    "callback_data": "/pricelist"
+                                }
+                            ]
                         {{ END }}
-                        }
-                    ],
-                    {{ END }}
-                {{ END }}
-                [
-                    {
-                        "text": "↩️ Назад к тарифам",
-                        "callback_data": "/pricelist"
-                    }
-                ]
-            ]
-        }
-    }
-}
-<% CASE '/buy_wg_key' %>
-{
-    "deleteMessage": { "message_id": {{ message.message_id }} }
-},
-{
-    "sendMessage": {
-        "text": "🌐 <b>Как подключиться к WireGuard:</b>\n\n1️⃣ <b>Выберите тариф:</b> Найдите подходящий план, который соответствует вашим потребностям.\n\n2️⃣ <b>Оплатите:</b> Произведите платёж удобным способом.\n\n3️⃣ <b>Настройте устройство:</b> Получите ключ и следуйте инструкции для подключения. 🛠️\n\n🚀 <b>Преимущества WireGuard:</b>\n🔒 <i>Максимальная защита данных</i>\n⚡ <i>Высокая скорость работы</i>\n🌍 <i>Стабильность по всему миру</i>\n\n✨ <b>Выберите тариф и начните пользоваться WireGuard уже сегодня!</b>",
-        "reply_markup": {
-            "inline_keyboard": [
-                {{ FOR item IN ref(service.api_price_list).nsort('service_id') }}
-                    {{ IF item.category == 'vpn-sw-wireguard' or item.category == 'vpn-lt-wireguard' }}
-                    [
-                        {
-                            "text": "{{ item.name }} - {{ item.cost }} руб/мес. 🌟",
-                            "callback_data": "/serviceorder {{ item.service_id }}"
-                        }
-                    ],
                     {{ END }}
                 {{ END }}
                 [
@@ -480,23 +479,24 @@
 
 <% CASE '/serviceorder' %>
 {
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
     "shmServiceOrder": {
         "service_id": "{{ args.0 }}",
         "callback_data": "/list",
         "cb_not_enough_money": "/menu",
-        "check_exists_unpaid": 1,
         "error": "ОШИБКА"
     }
 },
 {
     "answerCallbackQuery": {
         "callback_query_id": {{ callback_query.id }},
-        "parse_mode": "HTML",
+        "parse_mode":"HTML",
         "text": "Ваш ключ создается...",
         "show_alert": true
     }
 }
-
 
 
 <% CASE '/notifications_active' %>
@@ -582,7 +582,7 @@
 },
 {
     "sendMessage": {
-        "text": "🤝 <b>Присоединяйтесь к нашей реферальной программе и начинайте зарабатывать!</b>\n\n🎉 <b>Простой способ получить дополнительный доход!</b>\n\nПриглашайте друзей и получайте <b>{{ config.billing.partner.income_percent }}% от каждого их платежа</b>. Это отличная возможность для пассивного заработка.\n\n🔗 <b>Ваша реферальная ссылка:</b>\n<code>{{ config.tg_bot.url }}?start={{ user.id }}</code>\n\nПоделитесь ссылкой с друзьями, и начинайте зарабатывать прямо сейчас! Чем больше приглашённых, тем больше ваш доход!\n\n💡 <b>Преимущества участия:</b>\n1️⃣ Постоянный процент с платежей.\n2️⃣ Вы помогаете друзьям подключиться к лучшему сервису.\n3️⃣ Ваш доход увеличивается с каждым новым приглашённым!\n\n📲 <b>Не упустите шанс — начните зарабатывать уже сегодня!</b>",
+        "text": "🤝 <b>Добро пожаловать в нашу реферальную программу!</b>\n\nПриглашайте друзей и получайте <b>{{ config.billing.partner.income_percent }}% от каждого их платежа</b>.\n\n🔗 <b>Ваша реферальная ссылка:</b>\n<code>{{ config.tg_bot.url }}?start={{ user.id }}</code>\n\nПоделитесь ссылкой с друзьями!\n\n",
         "reply_markup": {
             "inline_keyboard": [
                 [
@@ -687,9 +687,6 @@
                 [
                     {
                         "text": "🖥 Инструкция по VPN"
-                    },
-                    {
-                        "text": "🖥 Инструкция по WireGuard"
                     }
                 ],
                 [
@@ -711,19 +708,19 @@
 },
 {
     "sendPhoto": {
-        "photo": "https://sun9-73.userapi.com/impg/e8pkzF2oh-Ac40ZO_dpgJLHT__K9BlIX3I5aaA/O0QGe8WxUg0.jpg?size=1024x1024&quality=95&sign=7bda3be0397d08e13d7edb0db5e1f8a5&type=album",
+        "photo": "{{ config.logo.url }}",
         "protect_content": false,
         "parse_mode": "HTML",
-        "caption": "🛡️ <b>Инструкция по настройке VPN</b>\n\n📱 <b>Для Android:</b>\n1️⃣ Скопируйте <b>ключ доступа</b> (формат <i>vless://</i>).\n2️⃣ Установите приложение <a href=\"{{ config.apk.android }}\">ServRU Android 🌐</a>.\n3️⃣ Вставьте ключ в приложение.\n4️⃣ Нажмите <b>'Подключиться'</b> — готово!\n\n📲 <b>Для iOS:</b>\n1️⃣ Установите приложение <a href=\"https://apps.apple.com/ru/app/streisand/id6450534064\">Streisand 🌐</a>.\n2️⃣ Запустите приложение и вставьте ключ доступа.\n3️⃣ Нажмите <b>'Подключиться'</b>.\n\n💡 <b>Ваши преимущества:</b>\n- Высокая скорость подключения.\n- Защита данных на уровне топ-протоколов.\n- Стабильное соединение по всему миру.\n\nЕсли что-то непонятно — мы рядом! 👇",
+        "caption": "🛡️ <b>Инструкция по настройке VPN</b>\n\n📱\n1️⃣ Скопируйте <b>URL адрес подписки</b> (формат <i>https://</i>).\n2️⃣ Установите приложение \niPhone <a href=\"{{ config.apk.ios }}\">Streisand</a>\n Android<a href=\"{{ config.apk.android }}\">v2rayNG </a>\n Huawei <a href=\"{{ config.apk.huawei }}\">v2RayTun</a>\n3️⃣ Вставьте подписку в приложение(+ Добавить из буфера).\n4️⃣ Выбирайте Локацию и Нажмите <b>'Подключиться'</b> — готово!\n\n💡Если что-то непонятно — напишите в 🖥 Чат поддержки!",
         "reply_markup": {
             "inline_keyboard": [
                 [
                     {
                         "text": "🖥 Чат поддержки",
-                        "url": "https://t.me/supservru"
+                        "url": "https://t.me/idsmef"
                     },
                     {
-                        "text": "🔑 Список VPN ключей",
+                        "text": "🔑 Мой VPN",
                         "callback_data": "/list"
                     }
                 ],
@@ -736,48 +733,6 @@
                     }
                 ],
 				
-                [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}
-
-
-<% CASE ['/wg', '🖥 Инструкция по WireGuard'] %>
-{
-    "deleteMessage": { "message_id": {{ message.message_id }} }
-},
-{
-    "sendPhoto": {
-        "photo": "https://sun9-73.userapi.com/impg/e8pkzF2oh-Ac40ZO_dpgJLHT__K9BlIX3I5aaA/O0QGe8WxUg0.jpg?size=1024x1024&quality=95&sign=7bda3be0397d08e13d7edb0db5e1f8a5&type=album",
-        "protect_content": false,
-        "parse_mode": "HTML",
-        "caption": "🛡️ <b>Инструкция по настройке WireGuard</b>\n\n📱 <b>Для Android и iOS:</b>\n1️⃣ Скачайте приложение WireGuard:\n   • <a href=\"https://play.google.com/store/apps/details?id=com.wireguard.android\">Android</a>\n   • <a href=\"https://apps.apple.com/ru/app/wireguard/id1441195209\">iOS</a>\n\n2️⃣ Откройте приложение и нажмите <b>'Добавить туннель'</b>.\n3️⃣ Вставьте ключ WireGuard или импортируйте конфигурацию (файл .conf).\n4️⃣ Нажмите <b>'Подключиться'</b> — наслаждайтесь безопасным интернетом!\n\n💻 <b>Для Windows и macOS:</b>\n1️⃣ Скачайте WireGuard с официального сайта: <a href=\"https://www.wireguard.com/install/\">WireGuard</a>.\n2️⃣ Установите и откройте приложение.\n3️⃣ Импортируйте конфигурацию или добавьте ключ вручную.\n4️⃣ Нажмите <b>'Activate'</b>, чтобы подключиться.\n\n🔐 <b>Почему WireGuard?</b>\n- Высокая скорость.\n- Простой интерфейс.\n- Современные протоколы безопасности.\n\nЕсли возникли вопросы, обратитесь в нашу поддержку 👇",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "🖥 Чат поддержки",
-                        "url": "https://t.me/idsmef"
-                    },
-                    {
-                        "text": "🔑 Список VPN ключей",
-                        "callback_data": "/list"
-                    }
-                ],
-                [
-                    {
-                        "text": "📖 Полная инструкция",
-                        "web_app": {
-                            "url": "https://support.mrzbcli.ru/wg.html"
-                        }
-                    }
-                ],
                 [
                     {
                         "text": "⇦ Назад",
@@ -803,11 +758,11 @@
             "inline_keyboard": [
                 [
                     {
-                        "text": "🔑 Trojan TCP",
+                        "text": "🔑 Показать 'TCP' ",
                         "callback_data": "/trojan_key {{ args.0 }}"
                     },
                     {
-                        "text": "🔑 VLESS GRPC",
+                        "text": "🔑 Показать 'UDP' ",
                         "callback_data": "/vless_key {{ args.0 }}"
                     }
                 ],
@@ -879,230 +834,8 @@
     }
 }
 
-
-<% CASE '/crtlg' %>
-{{ item = us.id(args.0) }}
-{{ subscription_data = storage.read('name', 'vpn_mrzb_' _ args.0 _ location) }}
-{{ subscription_url = subscription_data ? subscription_data.subscription_url : null }}
-
-{{ IF NOT subscription_url }}
-{{ log.error('Subscription URL not found for user: ' _ args.0 _ ' and location: ' _ location) }}
-{
-    "sendMessage": {
-        "parse_mode": "HTML",
-        "text": "❌ Ошибка: Подписочный URL не найден для вашего региона ({{ location }}). Пожалуйста, свяжитесь с поддержкой.",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "📖 В меню",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}
-{{ ELSE }}
-{
-    "sendMessage": {
-        "parse_mode": "HTML",
-        "text": "🎉 Поздравляем, ваша подписка активирована! \n\nТеперь давайте настроим ваш VPN. \nНажмите кнопку \"👉 Настроить приложение 👈\" и следуйте инструкциям.",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "👉 Настроить приложение 👈",
-                        "web_app": {
-                            "url": "{{ subscription_url | escape }}"
-                        }
-                    }
-                ],
-                [
-                    {
-                        "text": "📖 В меню",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}
-{{ END }}
-
-
-
-
-
-
-<% CASE ['/test', '🧪 Тестировать Услуги'] %>
-{
-    "deleteMessage": { "message_id": {{ message.message_id }} }
-},
-{
-    "sendPhoto": {
-        "photo": "https://sun9-73.userapi.com/impg/e8pkzF2oh-Ac40ZO_dpgJLHT__K9BlIX3I5aaA/O0QGe8WxUg0.jpg?size=1024x1024&quality=95&sign=7bda3be0397d08e13d7edb0db5e1f8a5&type=album",
-        "protect_content": false,
-        "parse_mode": "HTML",
-        "caption": "📲 **Тестирование VPN услуг**\n\n<b>Инструкции:</b>\n1. Выберите тестовый сервис из списка ниже.\n2. Активируйте тест, нажав на нужный тариф.\n\n<b>Доступные услуги:</b>\n- 🔑 VPN: анонимный серфинг.\n- 🔑 WireGuard: высокая скорость и защита.\n\n<b>Убедитесь сами!</b>",
-        "reply_markup": {
-            "inline_keyboard": [
-                [{ "text": "🚀 Список активных тестовых услуг", "callback_data": "/beta_test" }],
-                [
-                    { "text": "🔑 Заказать VPN", "callback_data": "/test_mz" },
-                    { "text": "🔑 Заказать WireGuard", "callback_data": "/test_wireguard" }
-                ],
-                [{ "text": "🔙 Назад", "callback_data": "/menu" }]
-            ]
-        }
-    }
-}
-
-<% CASE ['/test_wireguard', '🌐 WireGuard Test'] %>
-{
-    "deleteMessage": { "message_id": {{ message.message_id }} }
-},
-{
-    "sendPhoto": {
-        "photo": "https://sun9-73.userapi.com/impg/e8pkzF2oh-Ac40ZO_dpgJLHT__K9BlIX3I5aaA/O0QGe8WxUg0.jpg?size=1024x1024&quality=95&sign=7bda3be0397d08e13d7edb0db5e1f8a5&type=album",
-        "protect_content": false,
-        "parse_mode": "HTML",
-        "caption": "🌐 **WireGuard - Тестирование**\n\n<b>Что это такое?</b>\nСовременный VPN-протокол для надежной защиты ваших данных.\n\n<b>Инструкции:</b>\n1. Выберите тариф.\n2. Активируйте тест.\n\n<b>Доступные тарифы:</b>",
-        "reply_markup": {
-            "inline_keyboard": [
-                {{ FOR item IN ref(service.api_price_list('category', 'vpn-lt-wg-beta')) }}
-                [
-                    { "text": "🌐 {{ item.name }} - {{ item.cost }} руб/мес.", "callback_data": "/serviceorder {{ item.service_id }} 1" }
-                ],
-                {{ END }}
-                [{ "text": "🔙 Назад", "callback_data": "/test" }]
-            ]
-        }
-    }
-}
-
-<% CASE ['/test_mz', '🌐 MZ Test'] %>
-{
-    "deleteMessage": { "message_id": {{ message.message_id }} }
-},
-{
-    "sendPhoto": {
-        "photo": "https://sun9-73.userapi.com/impg/e8pkzF2oh-Ac40ZO_dpgJLHT__K9BlIX3I5aaA/O0QGe8WxUg0.jpg?size=1024x1024&quality=95&sign=7bda3be0397d08e13d7edb0db5e1f8a5&type=album",
-        "protect_content": false,
-        "parse_mode": "HTML",
-        "caption": "🌐 **MZ - Тестирование**\n\n<b>Что это такое?</b>\nРешение для анонимного серфинга с высокой скоростью.\n\n<b>Инструкции:</b>\n1. Выберите тариф.\n2. Активируйте тест.\n\n<b>Доступные тарифы:</b>",
-        "reply_markup": {
-            "inline_keyboard": [
-				{{ FOR item IN ref(service.api_price_list).nsort('service_id') }}
-					{{ IF item.category == 'vpn-isp-mz-beta' or item.category == 'vpn-sw-mz-beta' or item.category == 'vpn-spain-mz-beta' or item.category == 'vpn-lt-mz-beta' }}
-                    [
-                        {
-                            "text": "🌐 {{ item.name }} - {{ item.cost }} руб/мес.",
-                            "callback_data": "/serviceorder {{ item.service_id }} 1"
-                        }
-                    ],
-                {{ END }}
-                {{ END }}
-                [
-                    {
-                        "text": "🔙 Назад",
-                        "callback_data": "/test"
-                    }
-                ]
-            ]
-        }
-    }
-}
-
-
-
-<% CASE ['/beta_test', '🚀 Список активных тестовых услуг'] %>
-{
-    "deleteMessage": { "message_id": {{ message.message_id }} }
-},
-{
-    "sendMessage": {
-        "text": "🚀 Привет, <b>{{ user.full_name }}</b>! 🎉\n\nВот список ваших активных тестовых услуг. Выберите нужную категорию, чтобы продолжить:",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    { "text": "📡 VPN - Тестирование", "callback_data": "/test_services_mz" },
-                    { "text": "🔐 WireGuard - Тестирование", "callback_data": "/test_services_wg" }
-                ],
-                [{ "text": "🔙 Назад в меню", "callback_data": "/test" }]
-            ]
-        }
-    }
-}
-
-
-<% CASE '/test_services_mz' %> 
-{
-    "deleteMessage": { "message_id": {{ message.message_id }} }
-},
-{
-    "sendMessage": {
-        "text": "📋 <b>Тестирование услуг VPN:</b>\n\n🌟 **Испытайте передовые технологии PROXY!** 🌟\n\nМы предлагаем вам уникальную возможность протестировать лучшие VPN-услуги, обеспечивающие максимальную конфиденциальность и высокую скорость интернета. Подключайтесь и убедитесь в их эффективности!\n\n<b>Доступные тестовые услуги:</b>\n\n",
-        "reply_markup": {
-            "inline_keyboard": [
-                {{ SET categories = ['vpn-lt-mz-beta', 'vpn-sw-mz-beta', 'vpn-isp-mz-beta'] }}
-                {{ FOR category IN categories }}
-                    {{ FOR item IN ref(user.services.list_for_api('category', category)) }}
-                        {{ SWITCH item.status }}
-                            {{ CASE 'ACTIVE' }}
-                                {{ icon = '✅' }}
-                                {{ status = 'Работает' }}
-                            {{ CASE 'BLOCK' }}
-                                {{ icon = '❌' }}
-                                {{ status = 'Заблокирована' }}
-                            {{ CASE 'NOT PAID' }}
-                                {{ icon = '💰' }}
-                                {{ status = 'Ожидает оплаты' }}
-                            {{ CASE }}
-                                {{ icon = '⏳' }}
-                                {{ status = 'Обработка' }}
-                        {{ END }}
-                        [
-                            {
-                                "text": "{{ item.name }} - {{ icon }} {{ status }}",
-                                "callback_data": "/service_beta {{ item.user_service_id }}"
-                            }
-                        ],
-                    {{ END }}
-                {{ END }}
-                [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/beta_test"
-                    }
-                ]
-            ]
-        }
-    }
-}
-
-<% CASE '/test_services_wg' %>
-{
-    "deleteMessage": { "message_id": {{ message.message_id }} }
-},
-{
-    "sendMessage": {
-        "text": "📋 **Тестирование услуг WireGuard**\n\nWireGuard — это мощное и простое в использовании средство для повышения безопасности и скорости вашего интернет-соединения. Тестируйте WireGuard и убедитесь в его эффективности на практике!",
-        "reply_markup": {
-            "inline_keyboard": [
-                {{ FOR item IN ref(user.services.list_for_api('category', 'vpn-lt-wg-beta')) }}
-                [
-                    { "text": "🌐 {{ item.name }}", "callback_data": "/service_beta {{ item.user_service_id }}" }
-                ],
-                {{ END }}
-                [{ "text": "🔙 Назад", "callback_data": "/beta_test" }]
-            ]
-        }
-    }
-}
-
 <% CASE ['/adminmenu', '📡 Админка'] %>
-{{ IF message.chat.id == config.telegram_admin.id }}
+{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
 {
     "sendMessage": {
         "message_id": {{ message.message_id }},
@@ -1117,7 +850,7 @@
                     },
                     {
                         "text": "💼 Услуги",
-                        "callback_data": "/admservices"
+                        "callback_data": "/admservices_active"
                     }
                 ],
                 [
@@ -1165,8 +898,394 @@
 {{ END }}
 
 
+<% CASE '/admservicestats' %>
+{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
+
+{{ active_services = ref(user.services.list_for_api('admin', 1, 'limit', 0, 'filter', { 'status' => 'ACTIVE' })) }}
+{{ blocked_services = ref(user.services.list_for_api('admin', 1, 'limit', 0, 'filter', { 'status' => 'BLOCK' })) }}
+{{ unpaid_services = ref(user.services.list_for_api('admin', 1, 'limit', 0, 'filter', { 'status' => 'NOT PAID' })) }}
+
+{
+    "sendMessage": {
+        "message_id": {{ message.message_id }},
+        "parse_mode": "HTML",
+        "text": "📊 <b>Статистика услуг</b>\n\n💼 <b>Активные услуги:</b> <b>{{ active_services.size }}</b>\n🚫 <b>Заблокированные услуги:</b> <b>{{ blocked_services.size }}</b>\n💳 <b>Неоплаченные услуги:</b> <b>{{ unpaid_services.size }}</b>\n\n📝 <b>Детали:</b>\nОбщее количество услуг: <b>{{ active_services.size + blocked_services.size + unpaid_services.size }}</b>\ncредняя цена услуги: <b>{{ (active_services.sum('withdraws.cost') / active_services.size) * 100 / 100 }}</b> руб.\nСредняя скидка: <b>{{ (active_services.sum('withdraws.discount') / active_services.size) * 100 / 100 }}%</b>\n\n🕑 <b>Последнее обновление:</b> {{ current_time }}",
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "🚀 Вернуться к услугам",
+                        "callback_data": "/admservices"
+                    }
+                ],
+                [
+                    {
+                        "text": "📋 Все услуги",
+                        "callback_data": "/admallservices"
+                    }
+                ],
+                [
+                    {
+                        "text": "🔙 Назад",
+                        "callback_data": "/adminmenu"
+                    },
+                    {
+                        "text": "🏠 Домой",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ END }}
+
+<% CASE '/admservices_active' %> 
+{{  
+  limit = 10; 
+  data = []; 
+}} 
+
+{{  
+  offset = (args.0 || 0); 
+  arr = ref(user.services.list_for_api('admin', 1, 'limit', limit, 'offset', offset, 'filter', { 'status' = 'ACTIVE' })) 
+}} 
+
+{{ FOR item IN arr }} 
+{{  
+  status = (item.status == "ACTIVE" ? "🟢" : "🔴") 
+}}
+{{  
+  # Проверяем, есть ли идентификатор у услуги
+  service_id = (item.id || item.user_service_id || "N/A")
+}} 
+{{  
+  # Add service details to the button text 
+  data.push( 
+    [{ 
+      "text" = status _ " Услуга: " _ item.name _  " ID: " _ service_id _ "", 
+      "callback_data" = "/admallservices " _ item.id 
+    }] 
+  ) 
+}} 
+{{ END }} 
+
+{{ IF arr.size == limit }}
+{{  
+  data.push( 
+    [{ 
+      "text" = "Далее ▶️", 
+      "callback_data" = "/admservices_active " _ (offset + limit) 
+    }] 
+  )
+}} 
+{{ END }}
+
+{{ IF offset > 0 }}
+{{  
+  data.push( 
+    [{ 
+      "text" = "◀️ Назад", 
+      "callback_data" = "/admservices_active " _ (offset - limit) 
+    }] 
+  ) 
+}}
+{{ END }}
+
+{{ data.push( 
+    [{ 
+      "text" = "Весь список", 
+      "callback_data" = "/admservices_active 0" 
+    }],
+    [{ 
+      "text" = "Заблокированные услуги 🔴", 
+      "callback_data" = "/admaddservice_block" 
+    }],
+    [{ 
+      "text" = "Услуги без оплаты 💳", 
+      "callback_data" = "/admaddservice_notpaid" 
+    }],
+    [{ 
+      "text" = "Админка", 
+      "callback_data" = "/adminmenu" 
+    }, { 
+      "text" = "🏠 Домой", 
+      "callback_data" = "/menu" 
+    }] 
+  ) 
+}} 
+
+{{ IF cmd == "/qadmservices" }} 
+{ 
+    "sendMessage": {  
+{{ ELSIF cmd == "/admservices_active" }} 
+{ 
+    "editMessageText": { 
+    {{ END }}
+        "message_id": {{ message.message_id }},
+        "parse_mode": "HTML", 
+        "text": "💼 <b>Услуги</b>\n\nОбщее количество услуг: <b>{{ arr.size }}</b>\n\n", 
+        "reply_markup": { 
+          "inline_keyboard": {{ toJson(data) }} 
+        } 
+    } 
+}
+
+
+<% CASE '/admaddservice_block' %> 
+{{  
+  limit = 10; 
+  data = []; 
+}} 
+
+{{  
+  offset = (args.0 || 0); 
+  arr = ref(user.services.list_for_api('admin', 1, 'limit', limit, 'offset', offset, 'filter', { 'status' = 'BLOCK' })) 
+}} 
+
+{{ FOR item IN arr }} 
+{{  
+  status = (item.status == "ACTIVE" ? "🟢" : "🔴") 
+}}
+{{  
+  # Проверяем, есть ли идентификатор у услуги
+  service_id = (item.id || item.user_service_id || "N/A")
+}} 
+{{  
+  # Add service details to the button text 
+  data.push( 
+    [{ 
+      "text" = status _ " Услуга: " _ item.name _  " ID: " _ service_id _ "", 
+      "callback_data" = "/admallservices " _ item.id 
+    }] 
+  ) 
+}} 
+{{ END }} 
+
+{{ IF arr.size == limit }}
+{{  
+  data.push( 
+    [{ 
+      "text" = "Далее ▶️", 
+      "callback_data" = "/admaddservice_block " _ (offset + limit) 
+    }] 
+  )
+}} 
+{{ END }}
+
+{{ IF offset > 0 }}
+{{  
+  data.push( 
+    [{ 
+      "text" = "◀️ Назад", 
+      "callback_data" = "/admaddservice_block " _ (offset - limit) 
+    }] 
+  ) 
+}}
+{{ END }}
+
+{{ data.push( 
+    [{ 
+      "text" = "Весь список", 
+      "callback_data" = "/admservicesall" 
+    }],
+    [{ 
+      "text" = "Услуги без оплаты 💳", 
+      "callback_data" = "/admaddservice_notpaid" 
+    }],
+    [{ 
+      "text" = "Активные услуги 🟢", 
+      "callback_data" = "/admaddservice_active" 
+    }],
+    [{ 
+      "text" = "Админка", 
+      "callback_data" = "/adminmenu" 
+    }, { 
+      "text" = "🏠 Домой", 
+      "callback_data" = "/menu" 
+    }] 
+  ) 
+}} 
+
+{{ IF cmd == "/qadmservices" }} 
+{ 
+    "sendMessage": {  
+{{ ELSIF cmd == "/admaddservice_block" }} 
+{ 
+    "editMessageText": { 
+    {{ END }}
+        "message_id": {{ message.message_id }},
+        "parse_mode": "HTML", 
+        "text": "💼 <b>Заблокированные услуги</b>\n\nОбщее количество заблокированных услуг: <b>{{ arr.size }}</b>\n\n", 
+        "reply_markup": { 
+          "inline_keyboard": {{ toJson(data) }} 
+        } 
+    } 
+}
+
+<% CASE '/admaddservice_notpaid' %> 
+{{  
+  limit = 10; 
+  data = []; 
+}} 
+
+{{  
+  offset = (args.0 || 0); 
+  arr = ref(user.services.list_for_api('admin', 1, 'limit', limit, 'offset', offset, 'filter', { 'status' = 'NOT_PAID' })) 
+}} 
+
+{{ FOR item IN arr }} 
+{{  
+  status = (item.status == "ACTIVE" ? "🟢" : "🔴") 
+}}
+{{  
+  # Проверяем, есть ли идентификатор у услуги
+  service_id = (item.id || item.user_service_id || "N/A")
+}} 
+{{  
+  # Add service details to the button text 
+  data.push( 
+    [{ 
+      "text" = status _ " Услуга: " _ item.name _  " ID: " _ service_id _ "", 
+      "callback_data" = "/admallservices " _ item.id 
+    }] 
+  ) 
+}} 
+{{ END }} 
+
+
+{{ IF arr.size == limit }}
+{{  
+  data.push( 
+    [{ 
+      "text" = "Далее ▶️", 
+      "callback_data" = "/admaddservice_notpaid " _ (offset + limit) 
+    }] 
+  )
+}} 
+{{ END }}
+
+{{ IF offset > 0 }}
+{{  
+  data.push( 
+    [{ 
+      "text" = "◀️ Назад", 
+      "callback_data" = "/admaddservice_notpaid " _ (offset - limit) 
+    }] 
+  ) 
+}}
+{{ END }}
+
+{{ data.push( 
+    [{ 
+      "text" = "Весь список", 
+      "callback_data" = "/admaddservice_notpaid " _ (offset - limit)
+    }],
+    [{ 
+      "text" = "Активные услуги 🟢", 
+      "callback_data" = "/admaddservice_active" 
+    }],
+	[{ 
+      "text" = "Заблокированные услуги 🔴", 
+      "callback_data" = "/admaddservice_block" 
+    }],
+    [{ 
+      "text" = "Админка", 
+      "callback_data" = "/adminmenu" 
+    }, { 
+      "text" = "🏠 Домой", 
+      "callback_data" = "/menu" 
+    }] 
+  ) 
+}} 
+
+{{ IF cmd == "/qadmservices" }} 
+{ 
+    "sendMessage": {  
+{{ ELSIF cmd == "/admaddservice_notpaid" }} 
+{ 
+    "editMessageText": { 
+    {{ END }}
+        "message_id": {{ message.message_id }},
+        "parse_mode": "HTML", 
+        "text": "💼 <b>Услуги без оплаты</b>\n\nОбщее количество неоплаченных услуг: <b>{{ arr.size }}</b>\n\n", 
+        "reply_markup": { 
+          "inline_keyboard": {{ toJson(data) }} 
+        } 
+    } 
+}
+
+<% CASE '/admallservices' %> 
+{{  
+  service_id = (args.0 || 0); 
+  service = ref(user.services.get_for_api(service_id, 'admin')); 
+  data = []; 
+}} 
+
+{{ IF service }}
+{{  
+  status_icon = (service.status == "ACTIVE" ? "🟢 Активна" : "🔴 Остановлена");
+  data.push(
+    [{ 
+      "text" = "⏹️ Остановить", 
+      "callback_data" = "/admallservices_stop " _ service_id 
+    }],
+    [{ 
+      "text" = "🗑️ Удалить", 
+      "callback_data" = "/admallservices_delete " _ service_id 
+    }],
+    [{ 
+      "text" = "▶️ Активировать", 
+      "callback_data" = "/admallservices_activate " _ service_id 
+    }],
+    [{ 
+      "text" = "💳 Сменить тариф", 
+      "callback_data" = "/admallservices_change_tariff " _ service_id 
+    }]
+  ); 
+  data.push(
+    [{ 
+      "text" = "◀️ Назад", 
+      "callback_data" = "/admservices_active" 
+    }],
+    [{ 
+      "text" = "🏠 Домой", 
+      "callback_data" = "/menu" 
+    }]
+  ); 
+}} 
+
+{ 
+  "editMessageText": { 
+    "message_id": {{ message.message_id }},
+    "parse_mode": "HTML", 
+    "text": "💼 <b>Управление услугой</b>\n\n _ "ID услуги: <b>" _ service.id _ "</b>\n _ "Название: <b>" _ service.name _ "</b>\n _ "Статус: <b>" _ status_icon _ "</b>\n\n_ "Выберите действие ниже.", 
+    "reply_markup": { 
+      "inline_keyboard": {{ toJson(data) }} 
+    } 
+  } 
+}
+{{ ELSE }}
+{ 
+  "editMessageText": { 
+    "message_id": {{ message.message_id }},
+    "parse_mode": "HTML", 
+    "text": "⚠️ Услуга не найдена или недоступна.\n\nПопробуйте снова.", 
+    "reply_markup": { 
+      "inline_keyboard": [ 
+        [{ 
+          "text": "◀️ Назад", 
+          "callback_data": "/admservices_active" 
+        }] 
+      ] 
+    } 
+  } 
+}
+{{ END }}
+
+
 <% CASE ['/admusers', '/qadmusers'] %>
-{{ IF message.chat.id == config.telegram_admin.id }}
+{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
 {{
   limit = 10
   data = []
@@ -1234,7 +1353,7 @@
 }
 {{ END }}
 <% CASE '/admusersall' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
+{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
 {
     "editMessageText": {
         "message_id": {{ message.message_id }},
@@ -1271,7 +1390,7 @@
 }
 {{ END }}
 <% CASE ['/admuser', '/qadmuser'] %>
-{{ IF message.chat.id == config.telegram_admin.id }}
+{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
 {{ user = user.switch(args.0) }}
 {{ user_services = ref(user.services.list_for_api('category','%')) }}
 {{ FOR itemlk IN ref(user.id(args.0)) }}
@@ -1295,7 +1414,8 @@
                         "text": "Услуги",
                         "callback_data": "/admservice {{ itemlk.id }}"
                     }
-                ],{{ ELSE }} 
+                ],
+				{{ ELSE }} 
                  [
                     {
                         "text": "Добавить услугу",
@@ -1330,7 +1450,8 @@
                         "text": "Заблокировать",
                         "callback_data": "/admuserblock {{ itemlk.id }}"
                     }
-                ], {{ ELSE }}[
+                ], 
+				{{ ELSE }}[
                     {
                         "text": "Разблокировать",
                         "callback_data": "/admuseractiv {{ itemlk.id }}"
@@ -1366,82 +1487,9 @@
         }
     }
 }
-<% CASE '/admservice' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{ FOR itemlks IN ref(user.id(args.0)) }}
-{{ user = user.switch(args.0) }}
-{{ usis = user.services.list_for_api( 'usi', args.1 ) }}
-{{ USE date }}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
-        "text": "Услуги пользователя:\n{{ itemlks.full_name }}\n{{ itemlks.login }}\nУслуга: {{ usis.name }}\nСтатус: {{ usis.status }}\nСоздан: {{ usis.created }}\nОпдачен до: {{ usis.expire }}{{ IF usis.next }} {{ FOR itemis IN ref(service.api_price_list)}}{{ IF itemis.service_id == usis.next }}\n\n<b>Смена тарифа:</b>{{ itemis.name }} \nПроизойдёт: {{ date.format(usis.expire, '%H:%M %d.%m.%Y') }}  (МСК) {{ END }} {{ END }}{{ ELSE }}  {{ END }}",
-        "reply_markup" : {
-            "inline_keyboard": [
-               {{ IF usis.status == 'ACTIVE' }}     
-                 [
-                    {
-                        "text": "Заблокировать услугу",
-                        "callback_data": "/admusiblock {{ user.id }}"
-                    }
-                ],  {{ ELSE }}         
-              [
-                    {
-                        "text": "Активировать услугу",
-                        "callback_data": "/admusiactive {{ user.id }}"
-                    }
-                ],    {{ END }}   
-{{ IF usis.next }}
-{{ FOR itemis IN ref(service.api_price_list)}}
-{{ IF itemis.service_id == usis.next }}
-                 [
-                    {
-                        "text": "Отменить смену тарифа",
-                        "callback_data": "/admchoisenull {{ user.id }}"
-                    }
-                ],
-{{ END }} {{ END }}
-{{ ELSE }} 
-                   [
-                    {
-                        "text": "Изменить тариф",
-                        "callback_data": "/admsmena {{ user.id }}"
-                    }
-                ],
-{{ END }}
-                [
-                    {
-                        "text": "❌ Удалить услугу",
-                        "callback_data": "/admdelete {{ user.id }}"
-                    }
-                ], [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/admuser {{ user.id }}"
-                    }
-                ], [
-                    {
-                        "text": "Пользователи",
-                        "callback_data": "/admusers"
-                    },{
-                        "text": "Админка",
-                        "callback_data": "/adminmenu"
-                    }
-                ],
-                 [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]{{ END }}    
-        }
-    }
-}
-{{ END }}
+
 <% CASE '/admpricelist' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
+{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
 {{ user = user.switch(args.0) }}
 {
     "editMessageText": {
@@ -1481,9 +1529,10 @@
             ]
         }
     }
-}{{ END }}
+}
+{{ END }}
 <% CASE '/admserviceorder' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
+{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
 {{ user = user.switch(args.0) }}
 {
     "editMessageText": {
@@ -1498,7 +1547,7 @@
     }
 }{{ END }}
 <% CASE '/admuserblock' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
+{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
 {{ user = user.switch(args.0) }}
 {{ usisbl = user.services.list_for_api('usi', {}) }}
 {{ usblall =  us.id(usisbl.user_service_id(usisbl.user_service_id)).block }}
@@ -1536,7 +1585,7 @@
 }
 {{ END }}
 <% CASE '/admuseractiv' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
+{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
 {{ user = user.switch(args.0) }}
 {{ usisact = user.services.list_for_api('usi', {}) }}
 {{ activ =  us.id(usisact.user_service_id(usisact.user_service_id)).activate }}
@@ -1574,7 +1623,7 @@
 }
 {{ END }}
 <% CASE '/admusiblock' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
+{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
 {{ user = user.switch(args.0) }}
 {{ usisb = user.services.list_for_api('usi', {}) }}
 {{ blocks =  us.id(usisb.user_service_id(usisb.user_service_id)).block }}
@@ -1611,7 +1660,7 @@
 }
 {{ END }}
 <% CASE '/admusiactive' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
+{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
 {{ user = user.switch(args.0) }}
 {{ usisa = user.services.list_for_api('usi', {}) }}
 {{ activ =  us.id(usisa.user_service_id(usisa.user_service_id)).activate }}
@@ -1647,126 +1696,9 @@
     }
 }
 {{ END }}
-<% CASE '/admsmena' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{ user = user.switch(args.0) }}
-{{ ussm = user.services.list_for_api('usi', {}) }}
-{{ USE date }}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
-        "text": "Смена тарифа происходит при следующем продлении\n\n<b>Текущий тариф пользователя: {{ user.full_name }}\n</b>{{ ussm.name }}\n<b>Действует до</b>: {{ date.format(us.expire, '%H:%M %d.%m.%Y') }}  (МСК)\n\n<b>Выберите тариф на следующий период</b>",
-        "reply_markup" : {
-            "inline_keyboard": [               
-                {{ FOR itemsm IN ref(service.api_price_list).nsort('cost') }}                 
-                [
-                    {
-                        "text": "{{ itemsm.name }}.",
-                        "callback_data": "/admchoise {{ ussm.user_id }} 0 {{ itemsm.service_id }}"
-                    }
-                ],
-                {{ END }} 
-                  [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/admuser {{ user.id }}"
-                    }
-                ], [
-                   {
-                        "text": "Пользователи",
-                        "callback_data": "/admusers"
-                    }, {
-                        "text": "Админка",
-                        "callback_data": "/adminmenu"
-                    }
-                ],
-                 [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}{{ END }} 
-<% CASE '/admchoise' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{ user = user.switch(args.0) }}
-{{ itemadmch = user.services.list_for_api('usi', {}) }}
-{{ ntch = us.id(itemadmch.user_service_id).set('next', args.2) }}
-{{ USE date }}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
-        "text": "Тариф пользователя {{ user.full_name }} изменён. \n\nСмена тарифа произойдёт {{ date.format(us.expire, '%H:%M %d.%m.%Y') }}",
-        "reply_markup" : {
-            "inline_keyboard": [ 
-                  [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/admuser {{ user.id }}"
-                    }
-                ],[
-                   {
-                        "text": "Пользователи",
-                        "callback_data": "/admusers"
-                    }, {
-                        "text": "Админка",
-                        "callback_data": "/adminmenu"
-                    }
-                ],
-                 [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}{{ END }}
-<% CASE '/admchoisenull' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{ user = user.switch(args.0) }}
-{{ itemadmchn = user.services.list_for_api('usi', {}) }}
-{{ ntchn = us.id(itemadmchn.user_service_id).set('next') }}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
-        "text": "Смена тарифа: {{ itemadmchn.name }}\nПользователя: {{ user.full_name }}\nОтменена.",
-        "reply_markup" : {
-            "inline_keyboard": [ 
-                  [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/admuser {{ user.id }}"
-                    }
-                ], [
-                   {
-                        "text": "Пользователи",
-                        "callback_data": "/admusers"
-                    }, {
-                        "text": "Админка",
-                        "callback_data": "/adminmenu"
-                    }
-                ],
-                 [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}
-{{ END }}
+
 <% CASE '/admdelete' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
+{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
 {{ user = user.switch(args.0) }}
 {{ usisdel = user.services.list_for_api( 'usi', {} ) }}
 {
@@ -1805,9 +1737,10 @@
             ]
         }
     }
-}{{ END }}
+}
+{{ END }}
 <% CASE '/admdelete_confirmed' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
+{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
 {{ user = user.switch(args.0) }}
 {{ usisdels = user.services.list_for_api( 'usi', {} ) }}
 {
@@ -1821,113 +1754,182 @@
         "error": "ОШИБКА"
     }
 }
- {{ END }}
+{{ END }}
 <% CASE '/admpay' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
+{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
 {{ user = user.switch(args.0) }}
 {{ FOR itempl IN ref(user.id(args.0)) }}
 {
     "editMessageText": {
         "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
+        "parse_mode": "HTML",
         "text": "{{ itempl.full_name }}\nБаланс: {{ itempl.balance }}₽\n\nЗачислить:",
-        "reply_markup" : {
+        "reply_markup": {
             "inline_keyboard": [
-                       [
+                [
                     {
                         "text": "10₽",
                         "callback_data": "/admpayment {{ itempl.user_id }} 10"
                     }
-                ], [
+                ],
+                [
                     {
                         "text": "50₽",
                         "callback_data": "/admpayment {{ itempl.user_id }} 50"
                     }
-                ], [
+                ],
+                [
                     {
                         "text": "100₽",
                         "callback_data": "/admpayment {{ itempl.user_id }} 100"
                     }
                 ],
-                           [
+                [
+                    {
+                        "text": "Ввести сумму",
+                        "callback_data": "/admpay_input {{ itempl.user_id }}"
+                    }
+                ],
+                [
                     {
                         "text": "⇦ Назад",
                         "callback_data": "/admuser {{ user.id }}"
                     }
-                ], [
-                   {
+                ],
+                [
+                    {
                         "text": "Пользователи",
                         "callback_data": "/admusers"
-                    }, {
+                    },
+                    {
                         "text": "Админка",
                         "callback_data": "/adminmenu"
                     }
                 ],
-                 [
+                [
                     {
                         "text": "🏠 Домой",
                         "callback_data": "/menu"
                     }
                 ]
-            ]{{ END }}    
+            ]
         }
     }
 }
-{{ END }}  
+{{ END }}
+{{ END }}
+
+<% CASE '/admpay_input' %>
+{
+    "sendMessage": {
+        "chat_id": {{ message.chat.id }},
+        "parse_mode": "HTML",
+        "text": "Введите сумму в рублях, которую вы хотите зачислить пользователю с ID <b>{{ args.0 }}</b>:",
+        "reply_markup": {
+            "force_reply": true
+        }
+    }
+}
+
+<% CASE '/admpay_process' %>
+{{ user_id = args.0 }}
+{{ amount = message.text }}
+{
+    "sendMessage": {
+        "chat_id": {{ message.chat.id }},
+        "parse_mode": "HTML",
+        "text": "Вы успешно зачислили <b>{{ amount }}₽</b> пользователю с ID <b>{{ user_id }}</b>."
+    }
+}
+
 <% CASE '/admpayb' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
+{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
 {{ user = user.switch(args.0) }}
 {{ FOR itemplb IN ref(user.id(args.0)) }}
 {
     "editMessageText": {
         "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
+        "parse_mode": "HTML",
         "text": "{{ itemplb.full_name }}\nБонусов: {{ itemplb.get_bonus }}\n\nЗачислить бонусов:",
-        "reply_markup" : {
+        "reply_markup": {
             "inline_keyboard": [
-                       [
+                [
                     {
                         "text": "10",
                         "callback_data": "/admpaymentb {{ itemplb.user_id }} 10"
                     }
-                ], [
+                ],
+                [
                     {
                         "text": "50",
                         "callback_data": "/admpaymentb {{ itemplb.user_id }} 50"
                     }
-                ], [
+                ],
+                [
                     {
                         "text": "100",
                         "callback_data": "/admpaymentb {{ itemplb.user_id }} 100"
                     }
                 ],
-                          [
+                [
+                    {
+                        "text": "Ввести сумму",
+                        "callback_data": "/admpaymentb_input {{ itemplb.user_id }}"
+                    }
+                ],
+                [
                     {
                         "text": "⇦ Назад",
                         "callback_data": "/admuser {{ user.id }}"
                     }
-                ],  [
+                ],
+                [
                     {
                         "text": "Пользователи",
                         "callback_data": "/admusers"
-                    },{
+                    },
+                    {
                         "text": "Админка",
                         "callback_data": "/adminmenu"
                     }
                 ],
-                 [
+                [
                     {
                         "text": "🏠 Домой",
                         "callback_data": "/menu"
                     }
                 ]
-            ]{{ END }}    
+            ]
         }
     }
 }
-{{ END }}  
+{{ END }}
+
+<% CASE '/admpaymentb_input' %>
+{
+    "sendMessage": {
+        "chat_id": {{ message.chat.id }},
+        "parse_mode": "HTML",
+        "text": "Введите сумму бонусов, которые вы хотите начислить пользователю:",
+        "reply_markup": {
+            "force_reply": true
+        }
+    }
+}
+
+<% CASE '/admpaymentb_process' %>
+{{ user_id = args.0 }}
+{{ amount = message.text }}
+{
+    "sendMessage": {
+        "chat_id": {{ message.chat.id }},
+        "parse_mode": "HTML",
+        "text": "Вы начислили <b>{{ amount }} ₽</b> бонусов пользователю с ID <b>{{ user_id }}</b>."
+    }
+}
+
 <% CASE '/admpayment' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
+{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
 {{ user = user.switch(args.0) }}
 {{ pay = user.id(args.0).payment('money', args.1, 'pay_system_id', 'manual') }}
 {
@@ -1960,422 +1962,37 @@
             ]
         }
     }
-}{{ END }} 
-<% CASE '/admpaymentb' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{ user = user.switch( args.0 ) }}
-{{ bon = user.add_bonus( args.1 ) }}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
-        "text": "Пользователю {{ userb.full_name }} начислено {{ args.1 }}  - {{ args.0 }}бонусов",
-        "reply_markup" : {
-            "inline_keyboard": [
-                       [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/admuser {{ user.id }}"
-                    }
-                ],  [
-                    {
-                        "text": "Пользователи",
-                        "callback_data": "/admusers"
-                    },{
-                        "text": "Админка",
-                        "callback_data": "/adminmenu"
-                    }
-                ],
-                 [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}{{ END }}
-<% CASE '/payitogo' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{ sum = 0 }}
-{{ arr = ref(user.pays.list_for_api( 'admin', 1, 'limit', 0,  'filter', { 'date' => '2024-%-%'} )) }}
-{{ FOR item IN arr }}
-{{ sum = sum + item.money }}
-{{ END }}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
-        "text": "Доход:\nИтого за 2024 год: {{ sum }} руб.",
-        "reply_markup" : {
-            "inline_keyboard": [
-                       [
-                    {
-                        "text": "Админка",
-                        "callback_data": "/adminmenu"
-                    }
-                ],
-                 [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}{{ END }}
-<% CASE '/admpayhistory' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{ user = user.switch(args.0) }}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
-        "text": "Платежи",
-        "reply_markup" : {
-            "inline_keyboard": [
-                {{ FOR itemhis IN ref(user.pays.list_for_api('limit', 10)) }}
-                [
-                    {
-                        "text": "Дата: {{ itemhis.date }}, Сумма: {{ itemhis.money }} руб.",
-                        "callback_data": "/admuser {{ user.id }}"
-                    }
-                ],
-                {{ END }}
-                 [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/admuser {{ user.id }}"
-                    }
-                ], [
-                    {
-                        "text": "Пользователи",
-                        "callback_data": "/admusers"
-                    },{
-                        "text": "Админка",
-                        "callback_data": "/adminmenu"
-                    }
-                ],
-                 [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
 }
-{{ END }}
-
-
+{{ END }} 
 
 <% CASE %>
-{{ IF message.reply_to_message.chat.id == config.telegram_admin.id }}
-{{ text = message.reply_to_message.caption || message.reply_to_message.text }}
-{{ chatid = text.split('#').1 }}
-{{ IF chatid }}
-{{ IF message.photo }}
-{
-    "sendPhoto": {
-        "protect_content": true,
-        "parse_mode": "HTML",
-        "chat_id": "{{ chatid }}",
-        "photo": "{{ message.photo.0.file_id }}",
-        "caption": "{{ message.text }}",
-        "reply_markup" : {
-            "inline_keyboard": [
-                 [
-                    {
-                        "text": "🏠 Личный кабинет",
-                        "callback_data": "/start"
-                    }
-                ]
-            ]
-        }
-    }
-}
-{{ ELSIF message.text }}
-{
-    "sendMessage": {
-        "protect_content": true,
-        "parse_mode": "HTML",
-        "chat_id": "{{ chatid }}",
-        "text": "{{ message.text }}",
-        "reply_markup" : {
-            "inline_keyboard": [
-                 [
-                    {
-                        "text": "🏠 Личный кабинет",
-                        "callback_data": "/start"
-                    }
-                ]
-            ]
-        }
-    }
-}
-{{ ELSIF message.document }}
-{
-    "sendDocument": {
-        "protect_content": true,
-        "parse_mode": "HTML",
-        "chat_id": "{{ chatid }}",
-        "document": "{{ message.document.file_id }}",
-        "caption": "{{ message.text }}",
-        "reply_markup" : {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "🏠 Личный кабинет",
-                        "callback_data": "/start"
-                    }
-                ]
-            ]
-        }
-    }
-}
-{{ ELSIF message.video }}
-{
-    "sendVideo": {
-        "protect_content": true,
-        "parse_mode": "HTML",
-        "chat_id": "{{ chatid }}",
-        "video": "{{ message.video.file_id }}",
-        "caption": "{{ message.caption }}",
-        "reply_markup" : {
-            "inline_keyboard": [
-                 [
-                    {
-                        "text": "🏠 Личный кабинет",
-                        "callback_data": "/start"
-                    }
-                ]
-            ]
-        }
-    }
-}
-{{ ELSIF message.text_with_links }}
-{
-    "sendMessage": {
-        "protect_content": true,
-        "parse_mode": "HTML",
-        "chat_id": "{{ chatid }}",
-        "text": "{{ message.text_with_links }}",
-        "reply_markup" : {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "🏠 Личный кабинет",
-                        "callback_data": "/start"
-                    }
-                ]
-            ]
-        }
-    }
-}
-{{ ELSE }}
-{
-    "sendMessage": {
-        "chat_id": "{{ chatid }}",
-        "text": "Доступны только текстовые сообщения, фото, файлы и видео"
-    }
-}
+{{ IF message.reply_to_message.chat.id == tpl.settings.admin.chat_id }}
+{{ SET sender_name = message.reply_to_message.forward_origin.sender_user_name }}
+{{ FOR user IN ref(user.list_for_api('admin', 1)) }}
+    {{ IF user.full_name == sender_name }}
+        {{ SET chatid = user.settings.telegram.chat_id }}
+        {{ break }}
+    {{ END }}
 {{ END }}
-{{ ELSE }}
 {
     "sendMessage": {
-        "chat_id": "{{ config.telegram_admin.id }}",
-        "text": "Не удалось найти пользователя или вы не ответили на сообщение"
-    }
-}
-{{ END }}
-{{ ELSE }}
-{{ IF message.photo }}
-{
-    "sendPhoto": {
-        "protect_content": true,
-        "parse_mode": "HTML",
-        "chat_id": "{{ config.telegram_admin.id }}",
-        "photo": "{{ message.photo.0.file_id }}",
-        "caption": "#{{ user.settings.telegram.chat_id }}# \nСообщение от {{ user.full_name }} - {{ user.id }}:\n<a href=\"https://t.me/{{ user.settings.telegram.login }}\">{{ user.settings.telegram.login }}</a>\n\n{{ message.caption }}",
-        "reply_markup" : {
-            "inline_keyboard": [
-                  [
-                    {
-                        "text": "Профиль пользователя",
-                        "callback_data": "/qadmuser {{ user.id }}"
-                    }
-                ],  [
-                    {
-                        "text": "Пользователи",
-                        "callback_data": "/qadmusers"
-                    },{
-                        "text": "Админка",
-                        "callback_data": "/qadminmenu"
-                    }
-                ],
-                 [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/start"
-                    }
-                ]
-            ]
-        }
-    }
-}
-{{ ELSIF message.text }}
-{
-    "sendMessage": {
-        "protect_content": true,
-        "parse_mode": "HTML",
-        "chat_id": "{{ config.telegram_admin.id }}",
-        "text": "#{{ user.settings.telegram.chat_id }}# \nСообщение от {{ user.full_name }} - {{ user.id }}:\n<a href=\"https://t.me/{{ user.settings.telegram.login }}\">{{ user.settings.telegram.login }}</a>\n\n{{ message.text }}",
-              "reply_markup" : {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "Профиль пользователя",
-                        "callback_data": "/qadmuser {{ user.id }}"
-                    }
-                ],  [
-                    {
-                        "text": "Пользователи",
-                        "callback_data": "/qadmusers"
-                    },{
-                        "text": "Админка",
-                        "callback_data": "/qadminmenu"
-                    }
-                ],
-                 [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/start"
-                    }
-                ]
-            ]
-        }
-    }
-}
-{{ ELSIF message.document }}
-{
-    "sendDocument": {
-        "protect_content": true,
-        "parse_mode": "HTML",
-        "chat_id": "{{ config.telegram_admin.id }}",
-        "document": "{{ message.document.file_id }}",
-        "caption": "#{{ user.settings.telegram.chat_id }}# \nСообщение от {{ user.full_name }} - {{ user.id }}:\n<a href=\"https://t.me/{{ user.settings.telegram.login }}\">{{ user.settings.telegram.login }}</a>\n\n{{ message.caption }}",
-            "reply_markup" : {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "Профиль пользователя",
-                        "callback_data": "/qadmuser {{ user.id }}"
-                    }
-                ],  [
-                    {
-                        "text": "Пользователи",
-                        "callback_data": "/qadmusers"
-                    },{
-                        "text": "Админка",
-                        "callback_data": "/qadminmenu"
-                    }
-                ],
-                 [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/start"
-                    }
-                ]
-            ]
-        }
-    }
-}
-{{ ELSIF message.video }}
-{
-    "sendVideo": {
-        "protect_content": true,
-        "parse_mode": "HTML",
-        "chat_id": "{{ config.telegram_admin.id }}",
-        "video": "{{ message.video.file_id }}",
-        "caption": ""#{{ user.settings.telegram.chat_id }}# \nСообщение от {{ user.full_name }} - {{ user.id }}:\n<a href=\"https://t.me/{{ user.settings.telegram.login }}\">{{ user.settings.telegram.login }}</a>\n\n{{ message.caption }}",
-         "reply_markup" : {
-            "inline_keyboard": [
-                 [
-                    {
-                        "text": "Профиль пользователя",
-                        "callback_data": "/qadmuser {{ user.id }}"
-                    }
-                ],  [
-                    {
-                        "text": "Пользователи",
-                        "callback_data": "/qadmusers"
-                    },{
-                        "text": "Админка",
-                        "callback_data": "/qadminmenu"
-                    }
-                ],
-                 [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/start"
-                    }
-                ]
-            ]
-        }
-    }
-}
-{{ ELSIF message.text_with_links }}
-{
-    "sendMessage": {
-        "protect_content": true,
-        "parse_mode": "HTML",
-        "chat_id": "{{ config.telegram_admin.id }}",
-        "text": ""#{{ user.settings.telegram.chat_id }}# \nСообщение от {{ user.full_name }} - {{ user.id }}:\n<a href=\"https://t.me/{{ user.settings.telegram.login }}\">{{ user.settings.telegram.login }}</a>\n\n{{ message.text_with_links }}",
-             "reply_markup" : {
-            "inline_keyboard": [
-                 [
-                    {
-                        "text": "Профиль пользователя",
-                        "callback_data": "/qadmuser {{ user.id }}"
-                    }
-                ],  [
-                    {
-                        "text": "Пользователи",
-                        "callback_data": "/qadmusers"
-                    },{
-                        "text": "Админка",
-                        "callback_data": "/qadminmenu"
-                    }
-                ],
-                 [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/start"
-                    }
-                ]
-            ]
-        }
+        "chat_id": "{{ chatid }}",
+        "text": "Сообщение от администрации:\n\n{{ message.text }}"
     }
 }
 {{ ELSE }}
 {
     "sendMessage": {
-        "text": "Доступны только текстовые сообщения, фото, файлы и видео"
+        "chat_id": "{{ tpl.settings.admin.chat_id }}",
+        "text": "Сообщение от пользователя {{ user.full_name }}:"
     }
-}
-{{ END }}
-{{ IF message.reply_to_message }}
+},
 {
     "forwardMessage": {
-        "chat_id": "{{ config.telegram_admin.id }}",
-        "from_chat_id": "{{ message.chat.id }}",
-        "message_id": "{{ message.reply_to_message.message_id }}"
+        "chat_id": "{{ tpl.settings.admin.chat_id }}",
+        "from_chat_id": {{ message.chat.id }},
+        "message_id": {{ message.message_id }}
     }
 }
 {{ END }}
-{{ END }}
-
 <% END %>
