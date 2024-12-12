@@ -1217,49 +1217,68 @@
 
 <% CASE '/admallservices' %> 
 {{  
-  service_id = (args.0 || 0); 
-  service = ref(user.services.get_for_api(service_id, 'admin')); 
+  service_id = (args.0 || 0)
+  service = ref(user.services.get_for_api(service_id, 'admin'))
   data = []; 
 }} 
 
 {{ IF service }}
 {{  
-  status_icon = (service.status == "ACTIVE" ? "🟢 Активна" : "🔴 Остановлена");
+  status_icon = (service.status == "ACTIVE" ? "🟢 Активна" : "🔴 Остановлена")
+  }}
+  {{
   data.push(
-    [{ 
-      "text" = "⏹️ Остановить", 
-      "callback_data" = "/admallservices_stop " _ service_id 
-    }],
-    [{ 
-      "text" = "🗑️ Удалить", 
-      "callback_data" = "/admallservices_delete " _ service_id 
-    }],
-    [{ 
-      "text" = "▶️ Активировать", 
-      "callback_data" = "/admallservices_activate " _ service_id 
-    }],
-    [{ 
-      "text" = "💳 Сменить тариф", 
-      "callback_data" = "/admallservices_change_tariff " _ service_id 
-    }]
-  ); 
-  data.push(
-    [{ 
-      "text" = "◀️ Назад", 
-      "callback_data" = "/admservices_active" 
-    }],
-    [{ 
-      "text" = "🏠 Домой", 
-      "callback_data" = "/menu" 
-    }]
-  ); 
+    [
+      { 
+        "text": "⏹️ Остановить", 
+        "callback_data": "/admallservices_stop " _ service_id 
+      }
+    ],
+    [
+      { 
+        "text": "🗑️ Удалить", 
+        "callback_data": "/admallservices_delete " _ service_id 
+      }
+    ],
+    [
+      { 
+        "text": "▶️ Активировать", 
+        "callback_data": "/admallservices_activate " _ service_id 
+      }
+    ],
+    [
+      { 
+        "text": "💳 Сменить тариф", 
+        "callback_data": "/admallservices_change_tariff " _ service_id 
+      }
+    ]
+  )
 }} 
+{{ END }}
+
+  {{ IF arr.size == limit }}
+  data.push(
+    [
+      { 
+        "text": "◀️ Назад", 
+        "callback_data": "/admservices_active " _ (offset + limit)  
+      }
+    ],
+    [
+      { 
+        "text": "🏠 Домой", 
+        "callback_data": "/menu" 
+      }
+    ]
+  )
+}} 
+{{ END }}
 
 { 
   "editMessageText": { 
     "message_id": {{ message.message_id }},
     "parse_mode": "HTML", 
-    "text": "💼 <b>Управление услугой</b>\n\n _ "ID услуги: <b>" _ service.id _ "</b>\n _ "Название: <b>" _ service.name _ "</b>\n _ "Статус: <b>" _ status_icon _ "</b>\n\n_ "Выберите действие ниже.", 
+    "text": "💼 <b>Управление услугой</b>\nID услуги: <b>{{ service.id }}</b>\nНазвание: <b>{{ service.name }}</b>\nСтатус: <b>{{ status_icon }}</b>\n\nВыберите действие ниже.", 
     "reply_markup": { 
       "inline_keyboard": {{ toJson(data) }} 
     } 
@@ -1273,16 +1292,17 @@
     "text": "⚠️ Услуга не найдена или недоступна.\n\nПопробуйте снова.", 
     "reply_markup": { 
       "inline_keyboard": [ 
-        [{ 
-          "text": "◀️ Назад", 
-          "callback_data": "/admservices_active" 
-        }] 
+        [
+          { 
+            "text": "◀️ Назад", 
+            "callback_data": "/admservices_active" 
+          } 
+        ] 
       ] 
     } 
   } 
 }
 {{ END }}
-
 
 <% CASE ['/admusers', '/qadmusers'] %>
 {{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
