@@ -115,7 +115,7 @@ case $EVENT in
           "expire": null,
           "data_limit_reset_strategy": "no_reset",
           "status": "active",
-          "note": "SHM_info- {{ user.login }}, {{ user.full_name }}, https://t.me/{{ user.settings.telegram.login }}",
+          "note": "SHM_info- {{ user.login }}, https://t.me/{{ user.settings.telegram.login }}",
           "inbounds": {
             "shadowsocks": [
               "Shadowsocks TCP"
