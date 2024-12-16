@@ -129,7 +129,7 @@ EOF
         USER_CFG=$(curl -sk -XPOST \
           "$MARZBAN_HOST/api/user" \
           -H "Authorization: Bearer $TOKEN" \
-          -H 'Content-Type: application/json' \
+          -H 'Content-Type: application/json; charset=utf-8' \
           -d "$PAYLOAD")
 
         if [ -z $(echo "$USER_CFG" | jq -r '.username | select( . != null )') ]; then
@@ -140,7 +140,7 @@ EOF
         echo "Upload user config to SHM: $API_URL/shm/v1/storage/manage/vpn_mrzb_{{ us.id }}"
         curl -sk -XPUT \
             -H "session-id: $SESSION_ID" \
-            -H "Content-Type: application/json" \
+            -H "Content-Type: application/json; charset=utf-8" \
             $API_URL/shm/v1/storage/manage/vpn_mrzb_{{ us.id }} \
             --data-binary "$USER_CFG"
         echo "done"
@@ -152,7 +152,7 @@ EOF
         curl -sk -XPUT \
           "$MARZBAN_HOST/api/user/us_{{ us.id }}" \
           -H "Authorization: Bearer $TOKEN" \
-          -H 'Content-Type: application/json' \
+          -H 'Content-Type: application/json; charset=utf-8' \
           -d '{"status":"active"}'
 
         echo "done"
@@ -164,7 +164,7 @@ EOF
         curl -sk -XPUT \
           "$MARZBAN_HOST/api/user/us_{{ us.id }}" \
           -H "Authorization: Bearer $TOKEN" \
-          -H 'Content-Type: application/json' \
+          -H 'Content-Type: application/json; charset=utf-8' \
           -d '{"status":"disabled"}'
 
         echo "done"
