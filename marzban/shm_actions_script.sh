@@ -103,27 +103,25 @@ case $EVENT in
     CREATE)
         echo "Create a new user"
 
-        PAYLOAD="$(cat <<-EOF
-        {
-          "username": "us_{{ us.id }}",
-          "proxies": {
-            "shadowsocks": {
-              "method": "chacha20-ietf-poly1305"
+        PAYLOAD="{{ toJson(
+            username = "us_" _ us.id
+            proxies = {
+              shadowsocks = {
+                method = "chacha20-ietf-poly1305"
+              }
             }
-          },
-          "data_limit": 0,
-          "expire": null,
-          "data_limit_reset_strategy": "no_reset",
-          "status": "active",
-          "note": "SHM_info- {{ user.login }}, https://t.me/{{ user.settings.telegram.login }}",
-          "inbounds": {
-            "shadowsocks": [
-              "Shadowsocks TCP"
-            ]
-          }
-        }
-EOF
-        )"
+            data_limit = 0
+            expire = ''
+            data_limit_reset_strategy = "no_reset"
+            status = "active"
+            note = "SHM: login=" _  user.login _ ", name=" _ user.full_name _ ", url=https://t.me/" _ user.settings.telegram.login
+            inbounds = {
+              shadowsocks = [
+                "Shadowsocks TCP"
+              ]
+            }
+        ).dquote
+        }}"
 
         get_marzban_token
         USER_CFG=$(curl -sk -XPOST \
