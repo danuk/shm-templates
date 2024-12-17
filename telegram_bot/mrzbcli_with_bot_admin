@@ -118,6 +118,12 @@
                             "web_app": {
                                 "url": "{{ config.api.url }}/shm/v1/template/tg_payments?format=html&session_id={{ user.gen_session.id }}"
                             }
+                        },
+						{
+                            "text": "🎟️ Промокоды",
+                            "web_app": {
+                                "url": "{{ config.api.url }}/shm/v1/template/promo_webapp?format=html&session_id={{ user.gen_session.id }}"
+                            }
                         }
                     ],
                 [
@@ -419,25 +425,44 @@
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
 {{ item = us.id(args.0) }}
-{{ us = user.services.list_for_api('usi', args.0) }}
+{{ us = user.services.list_for_api( 'usi', args.0 ) }}
+{{ sub_url = storage.read('name','vpn_mrzb_' _ args.0 ).subscription_url }}
+{{ bytes = http.get("$sub_url/info").used_traffic }}
+{{ gb = bytes / 1073741824 FILTER format("%.0f") }}
+{{ mb = (bytes % 1073741824) / 1048576 FILTER format("%.0f") }}
 {
     "sendPhoto": {
         {{ SWITCH us.status }}
-          {{ CASE 'ACTIVE' }}
-              {{ icon = '✅' }}
-              {{ status = ' Работает' }}
-          {{ CASE 'BLOCK' }}
-              {{ icon = '❌' }}
-              {{ status = ' Заблокирована' }}
-          {{ CASE 'NOT PAID' }}
-              {{ icon = '💰' }}
-              {{ status = ' Ожидает оплаты' }}
-          {{ CASE }}
-              {{ icon = '⏳' }}
-              {{ status = ' Обработка' }}
+  {{ CASE 'ACTIVE' }}
+  {{ icon = '' }}
+  {{ status = 'Работает' }}
+  {{ CASE 'BLOCK' }}
+  {{ icon = '' }}
+  {{ status = 'Заблокирована' }}
+  {{ CASE 'NOT PAID' }}
+  {{ icon = '' }}
+  {{ status = 'Ожидает оплаты' }}
+  {{ CASE }}
+  {{ icon = '' }}
+  {{ status = 'Обработка' }}
+{{ END }}
+{{ TEXT = BLOCK }}
+<b>Услуга</b>: {{ us.name }}
+    {{ IF us.expire }}
+<b>Оплачена до</b>: {{ us.expire }}
+    {{ END }}
+<b>Статус</b>: {{ icon}} {{ status }}
+    {{ IF mb == 0 }}
+    {{ ELSE}}
+        {{ IF gb >= 1 }}
+Израсходовано трафика: {{ gb }} Gb.{{ mb }} Mb
+        {{ ELSE }}
+Израсходовано трафика: {{ mb }} Mb
         {{ END }}
+    {{ END }}
+{{ END }}
         "photo": "https://vpnbot.pro/images/DALL-E-2024-11-30-19-58.jpg",
-        "caption": "🔔 <b>Подписка:</b> <i>{{ item.name }} {{ item.user_service_id }}</i>\n📅 <b>Активирована:</b> {{ USE date }}{{ date.format(item.created, '%d.%m.%Yг. %H:%M') }}\n⏳ <b>Действует до:</b> {{ USE date }}{{ date.format(item.expire, '%d.%m.%Yг. %H:%M') }}",
+        "caption": "{{ TEXT.replace('\n','\n') }}",
         "parse_mode": "HTML",
         "reply_markup": {
             "inline_keyboard": [
@@ -497,7 +522,7 @@
 				[
                     {
                         "text": "🔄 Сменить тариф",
-                        "callback_data": "/change"
+                        "callback_data": "/change {{ args.0 }}"
                     }
                 ],
                 [
@@ -969,5 +994,115 @@
         }
     }
 }
+
+<% CASE '/change' %>
+{
+    "sendMessage": {
+        "parse_mode": "HTML",
+        "text":"Выберите тариф для смены:",
+        "reply_markup" : {
+            "inline_keyboard": [
+                {{ FOR item IN ref(service.api_price_list( 'category', 'vpn-%' )).nsort('cost') }}
+                    [
+                        {
+                            "text": "{{ item.name }} - {{ item.cost }} ₽",
+                            "callback_data": "/change_id {{ args.0 }}_{{ item.service_id }}"
+                        }
+                    ],
+                {{ END }}
+                [
+                    {
+                        "text": "Главное меню",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+
+<% CASE '/change_id' %>
+{{ args_split = args.0.split('_') }}
+{{ id = args_split.0 }}
+{{ next_id = args_split.1 }}
+{{ change = us.id(id).set('next', next_id ) }}
+{{ next = services.list_for_api( 'service_id', next_id ) }}
+{
+    "sendMessage": {
+        "text": "Вы сменили тариф на {{ next.name }}",
+        "parse_mode": "HTML",
+        "reply_markup" : {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "Назад",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+
+<% CASE %>
+{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
+{{ text = message.reply_to_message.caption || message.reply_to_message.text }}
+{{ chatid = text.split('#').1 }}
+{{ IF chatid }}
+{{ IF message.photo }}
+{
+    "sendPhoto": {
+        "chat_id": "{{ chatid }}",
+        "photo": "{{ message.photo.0.file_id }}",
+        "caption": "Сообщение от администрации:\n\n{{ message.caption }}."
+    }
+}
+{{ ELSIF message.text }}
+{
+    "sendMessage": {
+        "chat_id": "{{ chatid }}",
+        "text": "Сообщение от администрации:\n\n{{ message.text }}."
+    }
+}
+{{ ELSE }}
+{
+    "sendMessage": {
+        "chat_id": "{{ chatid }}",
+        "text": "Доступно только тестовые сообщении и отправка фото"
+    }
+}
+{{ END }}
+{{ ELSE }}
+{
+    "sendMessage": {
+        "chat_id": "{{ tpl.settings.admin.chat_id }}",
+        "text": "Не удалось найти пользователя или вы не ответили на сообщение"
+        }
+}
+{{ END }}
+{{ ELSE }}
+{{ IF message.photo }}
+{
+    "sendPhoto": {
+        "chat_id": "{{ tpl.settings.admin.chat_id }}",
+        "photo": "{{ message.photo.0.file_id }}",
+        "caption": "#{{ user.settings.telegram.chat_id }}#\n\n{{ message.caption }}."
+    }
+}
+{{ ELSIF message.text }}
+{
+    "sendMessage": {
+        "chat_id": "{{ tpl.settings.admin.chat_id }}",
+        "text": "#{{ user.settings.telegram.chat_id }}# \nСообщение от пользователя {{ user.full_name }}:\n\n{{ message.text }}"
+    }
+}
+{{ ELSE }}
+{
+    "sendMessage": {
+        "text": "Доступно только тестовые сообщении и отправка фото"
+    }
+}
+{{ END }}
+{{ END }}
 
 <% END %>
