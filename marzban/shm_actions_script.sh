@@ -111,7 +111,7 @@ case $EVENT in
               }
             }
             data_limit = 0
-            expire = ''
+            expire = 0
             data_limit_reset_strategy = "no_reset"
             status = "active"
             note = "SHM: login=" _  user.login _ ", name=" _ user.full_name _ ", url=https://t.me/" _ user.settings.telegram.login
