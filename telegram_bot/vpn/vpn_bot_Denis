@@ -284,10 +284,16 @@
                         "callback_data": "/xray"
                     }
                 ],
-                [
+				[
                     {
                         "text": "↩️ Назад к списку услуг",
                         "callback_data": "/list"
+                    }
+                ],
+                [
+                    {
+                        "text": "↩️ Главное Меню",
+                        "callback_data": "/menu"
                     }
                 ]
             ]
@@ -2317,7 +2323,13 @@
                         "callback_data": "/admpayment {{ itempl.user_id }} 100"
                     }
                 ],
-                           [
+                [
+                    {
+                        "text": "📝 Ввести сумму вручную",
+                        "callback_data": "/admpayment_manual {{ itempl.user_id }}"
+                    }
+                ],
+                [
                     {
                         "text": "⇦ Назад",
                         "callback_data": "/admuser {{ user.id }}"
@@ -2342,6 +2354,36 @@
     }
 }
 {{ END }}  
+
+<% CASE '/admpayment_manual' %>
+{{ IF message.chat.id == config.telegram_admin.id }}
+{{ userData = user.id(args.0) }}
+{
+    "sendMessage": {
+        "text": "💳 <b>Ручное зачисление средств</b>\n\nВведите сумму, которую хотите зачислить пользователю <b>{{ userData.full_name }}</b> (ID: <code>{{ userData.user_id }}</code>):",
+        "parse_mode": "HTML",
+        "reply_markup": {
+            "force_reply": true,
+            "input_field_placeholder": "Введите сумму (например: 150)"
+        }
+    }
+}
+{{ END }}
+
+<% CASE '/admpayment' %>
+{{ IF message.chat.id == config.telegram_admin.id }}
+{{ userData = user.id(args.0) }}
+{{ amount = args.1 }}
+{{ pay = userData.payment('money', amount, 'pay_system_id', 'manual') }}
+{
+    "sendMessage": {
+        "text": "💳 <b>Зачисление средств успешно!</b>\n\nВы успешно зачислили <b>{{ amount }}₽</b> пользователю с ID <code>{{ userData.user_id }}</code>.",
+        "parse_mode": "HTML"
+    }
+}
+{{ END }}
+
+
 <% CASE '/admpayb' %>
 {{ IF message.chat.id == config.telegram_admin.id }}
 {{ user = user.switch(args.0) }}
@@ -2394,41 +2436,7 @@
     }
 }
 {{ END }}  
-<% CASE '/admpayment' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{ user = user.switch(args.0) }}
-{{ pay = user.id(args.0).payment('money', args.1, 'pay_system_id', 'manual') }}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
-        "text": "Пользователю {{ user.full_name }} начислено {{ args.1 }}₽",
-        "reply_markup" : {
-            "inline_keyboard": [
-                       [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/admuser {{ user.id }}"
-                    }
-                ], [
-                     {
-                        "text": "Пользователи",
-                        "callback_data": "/admusers"
-                    },{
-                        "text": "Админка",
-                        "callback_data": "/adminmenu"
-                    }
-                ],
-                 [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}{{ END }} 
+
 <% CASE '/admpaymentb' %>
 {{ IF message.chat.id == config.telegram_admin.id }}
 {{ user = user.switch( args.0 ) }}
