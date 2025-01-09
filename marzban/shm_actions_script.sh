@@ -190,6 +190,21 @@ case $EVENT in
           -H "Authorization: Bearer $TOKEN"
         echo "done"
         ;;
+    UPDATE)
+        echo "UPDATE user config in SHM: vpn_mrzb_{{ us.id }}"
+
+        get_marzban_token
+        USER_CFG=$(curl -sk -XGET \
+        "$MARZBAN_HOST/api/user/us_{{ us.id }}" \
+        -H "Authorization: Bearer $TOKEN")
+
+        curl -sk -XPOST \
+            -H "session-id: $SESSION_ID" \
+            -H "Content-Type: application/json; charset=utf-8" \
+            $API_URL/shm/v1/storage/manage/vpn_mrzb_{{ us.id }} \
+            --data-binary "$USER_CFG"
+        echo "done"
+        ;;
     *)
         echo "Unknown event: $EVENT. Exit."
         exit 0
