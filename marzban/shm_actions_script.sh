@@ -65,7 +65,20 @@ case $EVENT in
         export SUDO_PASSWORD=$(pwgen -n 16 -1)
         bash -c "$(curl -sL https://github.com/danuk/shm-templates/raw/main/marzban/marzban.sh)" @ install
         echo "done"
-        echo
+
+        # Создаем админа с помощью marzban cli
+        echo "Create Marzban admin..."
+        sleep 3
+        if [[ $(grep '^SUDO_PASSWORD' /opt/marzban/.env) && $(grep '^SUDO_USERNAME' /opt/marzban/.env) ]]; then
+            echo "Get Marzban admin password & username from .env"
+            echo "Creating..."
+            marzban cli admin import-from-env --yes
+            sleep 5
+            echo "Done"
+        else
+            echo "Error: Can't get Marzban admin password & username from .env"
+        exit 1
+        fi
 
         echo "Setup Marzban..."
         sleep 5
@@ -90,47 +103,31 @@ case $EVENT in
     CREATE)
         echo "Create a new user"
 
-        PAYLOAD="$(cat <<-EOF
-        {
-          "username": "us_{{ us.id }}",
-          "proxies": {
-            "vmess": {},
-            "vless": {"flow": "xtls-rprx-vision"},
-            "trojan": {},
-            "shadowsocks": {
-              "method": "chacha20-ietf-poly1305"
+        PAYLOAD="{{ toJson(
+            username = "us_" _ us.id
+            proxies = {
+              shadowsocks = {
+                method = "chacha20-ietf-poly1305"
+              }
             }
-          },
-          "data_limit": 0,
-          "expire": null,
-          "data_limit_reset_strategy": "no_reset",
-          "status": "active",
-          "note": "SHM_info- {{ user.login }}, {{ user.full_name }}, https://t.me/{{ user.settings.telegram.login }}",
-          "inbounds": {
-            "vmess": [
-              "VMess TCP",
-              "VMess Websocket"
-            ],
-            "vless": [
-              "VLESS TCP REALITY",
-              "VLESS GRPC REALITY"
-            ],
-            "trojan": [
-              "Trojan Websocket TLS"
-            ],
-            "shadowsocks": [
-              "Shadowsocks TCP"
-            ]
-          }
-        }
-EOF
-        )"
+            data_limit = 0
+            expire = 0
+            data_limit_reset_strategy = "no_reset"
+            status = "active"
+            note = "SHM: login=" _  user.login _ ", name=" _ user.full_name _ ", url=https://t.me/" _ user.settings.telegram.login
+            inbounds = {
+              shadowsocks = [
+                "Shadowsocks TCP"
+              ]
+            }
+        ).dquote
+        }}"
 
         get_marzban_token
         USER_CFG=$(curl -sk -XPOST \
           "$MARZBAN_HOST/api/user" \
           -H "Authorization: Bearer $TOKEN" \
-          -H 'Content-Type: application/json' \
+          -H 'Content-Type: application/json; charset=utf-8' \
           -d "$PAYLOAD")
 
         if [ -z $(echo "$USER_CFG" | jq -r '.username | select( . != null )') ]; then
@@ -141,7 +138,7 @@ EOF
         echo "Upload user config to SHM: $API_URL/shm/v1/storage/manage/vpn_mrzb_{{ us.id }}"
         curl -sk -XPUT \
             -H "session-id: $SESSION_ID" \
-            -H "Content-Type: application/json" \
+            -H "Content-Type: application/json; charset=utf-8" \
             $API_URL/shm/v1/storage/manage/vpn_mrzb_{{ us.id }} \
             --data-binary "$USER_CFG"
         echo "done"
@@ -153,7 +150,7 @@ EOF
         curl -sk -XPUT \
           "$MARZBAN_HOST/api/user/us_{{ us.id }}" \
           -H "Authorization: Bearer $TOKEN" \
-          -H 'Content-Type: application/json' \
+          -H 'Content-Type: application/json; charset=utf-8' \
           -d '{"status":"active"}'
 
         echo "done"
@@ -165,7 +162,7 @@ EOF
         curl -sk -XPUT \
           "$MARZBAN_HOST/api/user/us_{{ us.id }}" \
           -H "Authorization: Bearer $TOKEN" \
-          -H 'Content-Type: application/json' \
+          -H 'Content-Type: application/json; charset=utf-8' \
           -d '{"status":"disabled"}'
 
         echo "done"
@@ -191,6 +188,21 @@ EOF
         curl -sk -XPOST \
           "$MARZBAN_HOST/api/user/us_{{ us.id }}/reset" \
           -H "Authorization: Bearer $TOKEN"
+        echo "done"
+        ;;
+    UPDATE)
+        echo "UPDATE user config in SHM: vpn_mrzb_{{ us.id }}"
+
+        get_marzban_token
+        USER_CFG=$(curl -sk -XGET \
+        "$MARZBAN_HOST/api/user/us_{{ us.id }}" \
+        -H "Authorization: Bearer $TOKEN")
+
+        curl -sk -XPOST \
+            -H "session-id: $SESSION_ID" \
+            -H "Content-Type: application/json; charset=utf-8" \
+            $API_URL/shm/v1/storage/manage/vpn_mrzb_{{ us.id }} \
+            --data-binary "$USER_CFG"
         echo "done"
         ;;
     *)

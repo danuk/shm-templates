@@ -130,7 +130,7 @@ install_marzban() {
     sed -i 's~\(XRAY_JSON = \).*~\1"/var/lib/marzban/xray_config.json"~' "$APP_DIR/.env"
     sed -i 's~\(SQLALCHEMY_DATABASE_URL = \).*~\1"sqlite:////var/lib/marzban/db.sqlite3"~' "$APP_DIR/.env"
 
-    [ -z "$SUDO_USERNAME" ] || echo "SUDO_USERNAME=$SUDO_USERNAME" >> "$APP_DIR/.env"
+    [ -z "$SUDO_USERNAME" ] || echo -e "\nSUDO_USERNAME=$SUDO_USERNAME" >> "$APP_DIR/.env"
     [ -z "$SUDO_PASSWORD" ] || echo "SUDO_PASSWORD=$SUDO_PASSWORD" >> "$APP_DIR/.env"
 
     colorized_echo green "File saved in $APP_DIR/.env"

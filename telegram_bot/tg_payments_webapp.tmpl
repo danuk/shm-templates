@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <meta name="format-detection" content="telephone=no"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="MobileOptimized" content="176"/>
+    <meta name="HandheldFriendly" content="True"/>
+    <meta name="robots" content="noindex,nofollow"/>
+    <title></title>
+    <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
+    <style>
+        body {
+            --bg-color: var(--tg-theme-bg-color, #fff);
+            font-family: sans-serif;
+            background-color: var(--bg-color);
+            color: var(--tg-theme-text-color, #222);
+            font-size: 14px;
+            margin: 0;
+            padding: 0;
+            color-scheme: var(--tg-color-scheme);
+        }
+
+        .btn {
+            font-size: 14px;
+            padding: 10px 17px;
+        }
+
+        .btn-primary {
+            background-color: var(--tg-theme-button-color, #50a8eb);
+            color: var(--tg-theme-button-text-color, #fff);
+            border: none;
+        }
+
+        .button-container {
+            display: flex;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            font-size: 14px;
+            margin: 5px 0;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            background-color: var(--tg-theme-button-color, #50a8eb);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            cursor: pointer;
+        }
+
+        button.remove {
+            width: 40px;
+            padding: 10px;
+            margin-left: 10px;
+            background-color: red;
+        }
+
+        .main-container {
+            padding: 15px;
+        }
+
+        button[disabled] {
+            opacity: 0.6;
+            cursor: auto;
+            pointer-events: none;
+        }
+
+        button.close_btn {
+            /*position: fixed;*/
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 0;
+            margin: 0;
+            padding: 16px 20px;
+            text-transform: uppercase;
+        }
+
+        input[type="number"],
+        input[type="email"],
+        .input[contenteditable] {
+            display: block;
+            box-sizing: border-box;
+            font-size: 14px;
+            width: 100%;
+            padding: 12px 20px;
+            margin: 15px 0;
+            border: 1px solid var(--tg-theme-link-color, #000);
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            border-radius: 4px;
+            color: var(--tg-theme-text-color, #222222);
+            text-align: start;
+        }
+
+        input[type="number"]::-webkit-input-placeholder {
+            color: var(--tg-theme-hint-color, #ccc);
+        }
+
+        input[type="email"]::-webkit-input-placeholder {
+            color: var(--tg-theme-hint-color, #ccc);
+        }
+
+        input[type="number"]::-moz-placeholder {
+            color: var(--tg-theme-hint-color, #ccc);
+        }
+
+        input[type="email"]::-moz-placeholder {
+            color: var(--tg-theme-hint-color, #ccc);
+        }
+
+        input[type="number"]:-ms-input-placeholder {
+            color: var(--tg-theme-hint-color, #ccc);
+        }
+
+        input[type="email"]:-ms-input-placeholder {
+            color: var(--tg-theme-hint-color, #ccc);
+        }
+
+        .input[data-placeholder] {
+            position: relative;
+        }
+
+        .input[data-placeholder]:empty:before {
+            position: absolute;
+            left: 0;
+            right: 0;
+            content: attr(data-placeholder);
+            color: var(--tg-theme-hint-color, #ccc);
+            padding: 0 20px;
+            font-weight: normal;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        section {
+            padding: 15px;
+            text-align: center;
+            background-color: var(--bg-color, #ffffff);
+        }
+
+        section .sect_row {
+            margin: 10px 0;
+        }
+
+        section + section {
+            padding: 0 15px 65px;
+        }
+
+        p {
+            margin: 40px 0 15px;
+        }
+    </style>
+</head>
+
+<body class="" style="visibility: hidden;">
+
+<section class="main-container">
+    <span id="form_amount" style="display: block;">
+        <h2>Оплата подписки</h2>
+        <h4 style="text-align:left;">Сумма к оплате:</h4>
+        <input
+            type="number"
+            step="0.01"
+            min="1"
+            class="input"
+            value=""
+            id="text_amount"
+            placeholder="введите сумму к оплате"
+            inputmode="numeric" \
+            pattern="\d*"
+            required
+        />
+    </span>
+    <span id="form_email" style="display: none;">
+        <h4 style="text-align:left;">Email для чеков:</h4>
+        <input
+            type="email"
+            class="input"
+            value=""
+            id="text_email"
+            placeholder="введите ваш Email"
+            required
+        />
+    </span>
+</section>
+
+<section id="main_section">
+    <h4 style="text-align:left;">Выберите способ оплаты:</h4>
+</section>
+
+<script type="application/javascript">
+    const ShmPayApp = {
+        initData        : Telegram.WebApp.initData || '',
+        initDataUnsafe  : Telegram.WebApp.initDataUnsafe || {},
+        MainButton      : Telegram.WebApp.MainButton,
+        ackEmail        : false,
+
+        init(options) {
+            document.body.style.visibility = '';
+            Telegram.WebApp.ready();
+            Telegram.WebApp.MainButton.setParams({
+                text      : 'Закрыть',
+                is_visible: true
+            }).onClick(ShmPayApp.close);
+
+            Telegram.WebApp.MainButton.showProgress();
+
+            let urlParams = new URLSearchParams(window.location.search);
+            let user_id = urlParams.get('user_id');
+            let amount = urlParams.get('amount');
+            let email = urlParams.get('email');
+            let ack_email = urlParams.get('ack_email');
+
+            ShmPayApp.setDefaultAmount( amount );
+            document.getElementById('text_email').value = email;
+            if (ack_email) {
+                ShmPayApp.ackEmail = true;
+                document.getElementById('form_email').style.display = 'block';
+            }
+
+            let xhrURL = new URL('{{ config.api.url }}/shm/v1/telegram/webapp/auth');
+            xhrURL.searchParams.set('uid', user_id );
+            xhrURL.searchParams.set('initData', Telegram.WebApp.initData);
+
+            let xhr = new XMLHttpRequest();
+            xhr.open('GET', xhrURL);
+            xhr.send();
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    ShmPayApp.session_id = JSON.parse(xhr.response).session_id;
+                    ShmPayApp.loadPaySystems();
+                    Telegram.WebApp.MainButton.hideProgress();
+                    Telegram.WebApp.expand();
+                } else {
+                    Telegram.WebApp.showAlert("Ошибка авторизации");
+                    Telegram.WebApp.close();
+                }
+            };
+        },
+        expand() {
+            Telegram.WebApp.expand();
+        },
+        close() {
+            Telegram.WebApp.close();
+        },
+
+        loadPaySystems() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '{{ config.api.url }}/shm/v1/user/pay/paysystems');
+            xhr.setRequestHeader('session-id', ShmPayApp.session_id );
+            xhr.send();
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    let data = JSON.parse(xhr.response).data;
+                    ShmPayApp.setDefaultAmount( data[0].amount );
+
+                    for (const pay_system of data) {
+                        let btn_container = document.createElement('div');
+                        btn_container.className = "button-container";
+                        document.getElementById("main_section").appendChild(btn_container);
+
+                        let btn_payment = document.createElement('button');
+                        btn_payment.innerHTML = pay_system.name;
+                        btn_payment.onclick = function(){ ShmPayApp.makePayment(pay_system.shm_url, pay_system.recurring) };
+                        btn_container.appendChild(btn_payment);
+
+                        if (pay_system.recurring) {
+                            let btn_remove = document.createElement('button');
+                            btn_remove.id = pay_system.paysystem;
+                            btn_remove.className = "remove";
+                            btn_remove.innerHTML = "X";
+                            btn_remove.onclick = function(){ ShmPayApp.removePayment(pay_system.pay_system) };
+                            btn_container.appendChild(btn_remove);
+                        }
+                    }
+                } else {
+                    Telegram.WebApp.showAlert("Ошибка");
+                    Telegram.WebApp.close();
+                }
+            };
+
+        },
+
+        setDefaultAmount(amount) {
+            let text_amount = document.getElementById('text_amount');
+            text_amount.value ||= amount;
+        },
+
+        makePayment(shm_url, recurring) {
+            var amount = document.getElementById('text_amount').value;
+            if ( amount < 1 ) {
+                Telegram.WebApp.showAlert("Ошибка: Некоректная сумма к оплате");
+                return;
+            };
+
+            var email = document.getElementById('text_email').value;
+            if (ShmPayApp.ackEmail) {
+                var emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailPattern.test(email)) {
+                    Telegram.WebApp.showAlert("Ошибка: Введите корректный Email");
+                    return;
+                }
+            }
+
+            if ( recurring == '1' ) {
+                Telegram.WebApp.MainButton.showProgress();
+                document.getElementById('main_section').style.display = 'none';
+
+                var xhr = new XMLHttpRequest();
+                xhr.open('GET', shm_url + amount);
+                xhr.responseType = 'json';
+
+                xhr.onload = function() {
+                    Telegram.WebApp.MainButton.hideProgress();
+                    if (xhr.status === 200) {
+                        Telegram.WebApp.showAlert( "Платеж проведен успешно" );
+                    } else {
+                        var jsonResponse = xhr.response;
+                        Telegram.WebApp.showAlert( "Ошибка: " + ( jsonResponse.msg_ru || jsonResponse.msg ) );
+                    }
+                    Telegram.WebApp.close();
+                }
+                xhr.send();
+            } else {
+                Telegram.WebApp.openLink( shm_url + amount + '&email=' +email, { try_instant_view: false } );
+                Telegram.WebApp.close();
+            }
+        },
+        removePayment(id) {
+            Telegram.WebApp.showConfirm('Отвязать сохраненный способ оплаты?', function(confirmed) {
+                if (!confirmed) return;
+
+                document.getElementById(id).style.display = 'none';
+
+                let xhrURL = new URL('{{ config.api.url }}/shm/v1/user/autopayment');
+                xhrURL.searchParams.set('pay_system', id );
+                var xhr = new XMLHttpRequest();
+                xhr.open('DELETE', xhrURL);
+
+                xhr.setRequestHeader('session-id', ShmPayApp.session_id );
+                xhr.send();
+            });
+        },
+    }
+</script>
+
+<script type="application/javascript">
+    ShmPayApp.init();
+</script>
+
+</body>
+</html>
