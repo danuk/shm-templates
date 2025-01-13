@@ -78,7 +78,7 @@
 {
     "sendPhoto": {
         "photo": "{{ config.logo.url }}",
-        "caption": "🔐 <b>Наши возможности:</b>\n\n🌍 <b>{{ config.company.name }}:</b> Быстрый, безопасный и анонимный доступ к интернету.\n\n💼 <b>Удобство:</b> <a href=\"{{ config.apk.android }}\">📲 Android</a> | <a href=\"{{ config.apk.ios }}\">📲 iOS</a>\n\n🎯 <b>Почему выбирают нас?</b>\n✔️ Простое подключение\n✔️ Надежная защита данных\n✔️ Круглосуточная поддержка",
+        "caption": "<pre>🔐 <b>Наши возможности:</b>\n\n🌍 <b>{{ config.company.name }}:</b> Быстрый, безопасный и анонимный доступ к интернету.\n\n</pre>💼 <b>Удобство:</b> <a href=\"{{ config.apk.android }}\">📲 Android</a> | <a href=\"{{ config.apk.ios }}\">📲 iOS</a>\n\n<pre>🎯 <b>Почему выбирают нас?</b>\n✔️ Простое подключение\n✔️ Надежная защита данных\n✔️ Круглосуточная поддержка</pre>",
         "parse_mode": "HTML",
         "reply_markup": {
             "inline_keyboard": [
@@ -166,7 +166,7 @@
 {
     "sendPhoto": {
         "photo": "{{ config.logo.url }}",
-        "caption": "<blockquote>💰 <b>Баланс:</b> {{ user.balance }} ₽\n🎁 <b>Бонусы:</b> {{ user.get_bonus }} ₽\n🔖 <b>Скидка:</b> {{ user.discount }}%\n👥 <b>Приглашено друзей:</b> {{ user.referrals_count }}\n💳 <b>Общий доход от рефералов:</b> {{ user.get_bonus }} ₽\n\n⏳ <b>Следующее продление:</b> {{ IF userlogs.expire }}{{ date.format(userlogs.expire, '%H:%M %d.%m.%Y') }}{{ ELSE }}неизвестно{{ END }}\n💵 <b>Ожидаемая оплата:</b> {{ forecast.total }} ₽\n\n🔒 <b>Заблокированные сервисы:</b> ({{ blocked_services.size }})\n{{ FOR service IN blocked_services }}- {{ service.name }}\n{{ END }}\n\n❗ <b>Неоплаченные сервисы:</b> ({{ expired_services.size }})\n{{ FOR service IN expired_services }}- {{ service.name }}\n{{ END }}\n\n✅ <b>Активные услуги:</b> ({{ active_services.size }})\n{{ IF active_services.size > 0 }}{{ FOR service IN active_services }}- {{ service.name }} (до {{ date.format(service.expire, '%H:%M %d.%m.%Y') }})\n{{ END }}{{ ELSE }}Нет активных услуг.{{ END }}\n\n💵 <b>Необходимо оплатить:</b> <b>{{ user.pays.forecast('blocked',1).total }} ₽</b></blockquote>",
+        "caption": "<pre>💰 <b>Баланс:</b> {{ user.balance }} ₽\n🎁 <b>Бонусы:</b> {{ user.get_bonus }} ₽\n🔖 <b>Скидка:</b> {{ user.discount }}%\n👥 <b>Приглашено друзей:</b> {{ user.referrals_count }}\n💳 <b>Общий доход от рефералов:</b> {{ user.get_bonus }} ₽\n\n⏳ <b>Следующее продление:</b> {{ IF userlogs.expire }}{{ date.format(userlogs.expire, '%H:%M %d.%m.%Y') }}{{ ELSE }}неизвестно{{ END }}\n💵 <b>Ожидаемая оплата:</b> {{ forecast.total }} ₽\n\n🔒 <b>Заблокированные сервисы:</b> ({{ blocked_services.size }})\n{{ FOR service IN blocked_services }}- {{ service.name }}\n{{ END }}\n\n❗ <b>Неоплаченные сервисы:</b> ({{ expired_services.size }})\n{{ FOR service IN expired_services }}- {{ service.name }}\n{{ END }}\n\n✅ <b>Активные услуги:</b> ({{ active_services.size }})\n{{ IF active_services.size > 0 }}{{ FOR service IN active_services }}- {{ service.name }} (до {{ date.format(service.expire, '%H:%M %d.%m.%Y') }})\n{{ END }}{{ ELSE }}Нет активных услуг.{{ END }}\n\n💵 <b>Необходимо оплатить:</b> <b>{{ user.pays.forecast('blocked',1).total }} ₽</b></pre>",
 		"parse_mode": "HTML",
         "reply_markup" : {
             "inline_keyboard": [
@@ -186,12 +186,6 @@
                 ],
                 [
                     {
-                        "text": "🌍 Полная информация",
-                        "callback_data": "/servers"
-                    }
-                ],
-                [
-                    {
                         "text": "🔄 Обновить",
                         "callback_data": "/balance"
                     }
@@ -200,53 +194,6 @@
                     {
                         "text": "⇦ Назад",
                         "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}
-
-<% CASE '/servers' %>
-{
-    "deleteMessage": { "message_id": {{ message.message_id }} }
-},
-{{ vpn_mz_lt_servers = ref(user.services.list_for_api('category', 'vpn-mz-lt')) }}
-{{ vpn_mz_usa_servers = ref(user.services.list_for_api('category', 'vpn-mz-usa')) }}
-{{ vpn_mz_spain_servers = ref(user.services.list_for_api('category', 'vpn-mz-spain')) }}
-
-{{ limit = 1 }}
-{{ offset = args.0 || 0 }}
-
-{
-    "sendMessage": {
-        "text": "<b>Сервера:</b>\n\n<b>vpn-mz-lt:</b>\n{{ IF vpn_mz_lt_servers.size > 0 }}{{ FOR server IN vpn_mz_lt_servers.slice(offset, limit) }}\n🌍 Сервер: {{ server.name }}\n💡 Статус: {{ server.status }}\n⏳ Действует до: {{ server.expire }}\n📊 Трафик: {{ server.traffic }}\n🏷️ Стоимость: {{ server.cost }} руб.\n{{ END }}{{ ELSE }}Нет серверов в категории vpn-mz-lt.\n{{ END }}\n\n<b>vpn-mz-usa:</b>\n{{ IF vpn_mz_usa_servers.size > 0 }}{{ FOR server IN vpn_mz_usa_servers.slice(offset, limit) }}\n🌍 Сервер: {{ server.name }}\n💡 Статус: {{ server.status }}\n⏳ Действует до: {{ server.expire }}\n📊 Трафик: {{ server.traffic }}\n🏷️ Стоимость: {{ server.cost }} руб.\n{{ END }}{{ ELSE }}Нет серверов в категории vpn-mz-usa.\n{{ END }}\n\n<b>vpn-mz-spain:</b>\n{{ IF vpn_mz_spain_servers.size > 0 }}{{ FOR server IN vpn_mz_spain_servers.slice(offset, limit) }}\n🌍 Сервер: {{ server.name }}\n💡 Статус: {{ server.status }}\n⏳ Действует до: {{ server.expire }}\n📊 Трафик: {{ server.traffic }}\n🏷️ Стоимость: {{ server.cost }} руб.\n{{ END }}{{ ELSE }}Нет серверов в категории vpn-mz-spain.\n{{ END }}",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "🔄 Обновить",
-                        "callback_data": "/servers {{ offset }}"
-                    }
-                ],
-                [
-                    {{ IF offset > 0 }}
-                    {
-                        "text": "⬅️ Назад",
-                        "callback_data": "/servers {{ offset - limit }}"
-                    },
-                    {{ END }}
-                    {{ IF vpn_mz_lt_servers.size > limit || vpn_mz_usa_servers.size > limit || vpn_mz_spain_servers.size > limit }}
-                    {
-                        "text": "Ещё ➡️",
-                        "callback_data": "/servers {{ offset + limit }}"
-                    }
-                    {{ END }}
-                ],
-                [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/balance"
                     }
                 ]
             ]
@@ -1118,9 +1065,16 @@ ID кошелька: {{ payMethod.account_number }}
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
+{{ TEXT = BLOCK }}
+🤝 <b>Добро пожаловать в нашу реферальную программу!</b>\n\n
+Приглашайте друзей и получайте <b>{{ config.billing.partner.income_percent }}% от каждого их платежа</b>.\n\n
+🔗 <b>Ваша реферальная ссылка:</b>\n
+<code>{{ config.tg_bot.url }}?start={{ toBase64Url(toQueryString('partner_id' = user.id)) }}</code>\n\n
+Поделитесь ссылкой с друзьями!
+{{ END }}
 {
     "sendMessage": {
-        "text": "🤝 <b>Добро пожаловать в нашу реферальную программу!</b>\n\nПриглашайте друзей и получайте <b>{{ config.billing.partner.income_percent }}% от каждого их платежа</b>.\n\n🔗 <b>Ваша реферальная ссылка:</b>\n<code>{{ config.tg_bot.url }}?start={{ toBase64Url(toQueryString( partner_id = user.id )) }}</code>\n\nПоделитесь ссылкой с друзьями!\n\n",
+        "text": "{{ TEXT.replace('\n','\n') }}",
         "reply_markup": {
             "inline_keyboard": [
                 [
@@ -1131,18 +1085,12 @@ ID кошелька: {{ payMethod.account_number }}
                 ],
                 [
                     {
-                        "text": "📈 Статистика ваших доходов",
-                        "callback_data": "/referral_stats"
+                        "text": "📤 Список приведеных",
+                        "callback_data": "/ref_list"
                     },
                     {
                         "text": "❓ Как это работает?",
                         "callback_data": "/referral_help"
-                    }
-                ],
-				[
-                    {
-                        "text": "📤 Список приведеных",
-                        "callback_data": "/ref_list"
                     }
                 ],
                 [
@@ -1160,23 +1108,30 @@ ID кошелька: {{ payMethod.account_number }}
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
-{{
-    limit = 5;
-    offset = (args.0 || 0);
-    referralsArray = ref(user.list_for_api('limit', limit, 'offset', offset, 'filter', {"partner_id": user.id}));
-}}
 
+{{
+    limit = 3;
+    offset = (args.0 || 0);
+    referralsArray = ref(user.list_for_api('admin', 1, 'limit', limit, 'offset', offset, 'filter',{"partner_id" = user.id}));
+}}
+{{ TEXT = BLOCK }}
+📃 <b>Список приглашенных пользователей</b>
+
+Всего приглашено: {{ user.referrals_count }}
+{{ END }}
 {
     "sendMessage": {
-        "text": "📃 <b>Ваши приглашённые пользователи</b>\n\n👥 <b>Всего приглашено:</b> {{ user.referrals_count }}\n\n{{ IF referralsArray.size > 0 }}{{ FOR referral IN referralsArray }}👤 <b>Имя:</b> {{ referral.full_name }}\n📅 <b>Дата регистрации:</b> {{ referral.registration_date }}\n💼 <b>Статус:</b> {{ referral.status }}\n\n{{ END }}{{ ELSE }}У вас пока нет приглашённых пользователей.\n{{ END }}",
+        "text": "{{ TEXT.replace('\n','\n') }}",
          "reply_markup": {
             "inline_keyboard": [
-                [
+			{{ FOR item in referralsArray }}
+				[
                     {
-                        "text": "🔄 Обновить",
+                        "text": "👤 {{ item.full_name }} 🌟",
                         "callback_data": "/ref_list {{ offset }}"
                     }
                 ],
+    {{ END }}
                 [
                     {{ IF offset > 0 }}
                     {
@@ -1191,41 +1146,15 @@ ID кошелька: {{ payMethod.account_number }}
                     }
                     {{ END }}
                 ],
-                [
+				[
                     {
-                        "text": "🏠 Главное меню",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}
-
-
-<% CASE '/referral_stats' %>
-{
-    "deleteMessage": { "message_id": {{ message.message_id }} }
-},
-{
-    "sendMessage": {
-        "text": "📊 <b>Статистика вашей реферальной программы</b>\n\n👥 <b>Приглашено друзей:</b> {{ user.referrals_count }}\n💳 <b>Общий доход от рефералов:</b> {{ user.get_bonus }} руб.\n\n🔗 <b>Ваша реферальная ссылка:</b>\n<code>{{ config.tg_bot.url }}?start={{ user.id }}</code>\n\n📈 <b>Как увеличить доход?</b>\nПриглашайте больше друзей! Каждый новый пользователь увеличивает вашу прибыль, а также помогает вашим друзьям открыть доступ к нашему качественному сервису.",
-        "parse_mode": "HTML",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "📤 Поделиться ссылкой",
-                        "switch_inline_query": "Присоединяйся к {{ config.company.name }} и зарабатывай с нами! 🛡 {{ config.tg_bot.url }}?start={{ user.id }}"
+                        "text": "🔄 Обновить",
+                        "callback_data": "/ref_list"
                     }
                 ],
                 [
                     {
-                        "text": "❓ Узнать больше о программе",
-                        "callback_data": "/referral_help"
-                    },
-                    {
-                        "text": "⬅️ Назад в меню",
+                        "text": "🏠 Главное меню",
                         "callback_data": "/menu"
                     }
                 ]
@@ -1319,6 +1248,7 @@ ID кошелька: {{ payMethod.account_number }}
 }
 
 <% CASE ['🖥 Инструкция по VPN'] %>
+
 {
     "sendMessage": {
         "text": "🖥 <b>Полная инструкция по подключению Hiddify</b>\n\n<b>Для Android 📱:</b>\n\n1️⃣ **Скачай приложение Hiddify** из [Google Play Store 📲](https://play.google.com/store/apps/details?id=com.hiddify).\n\n<pre><i>Фото: На экране будет кнопка «Установить» после перехода по ссылке.</i></pre>\n\n",
@@ -1370,7 +1300,7 @@ ID кошелька: {{ payMethod.account_number }}
 },
 {
     "sendPhoto": {
-        "photo": "https://link_to_image2.com"
+        "photo": "https://hkadm.github.io/hkdocs/marketplace/security/images/hiddifynext_android_2_hiddify.png"
     }
 },
 {
@@ -1397,7 +1327,7 @@ ID кошелька: {{ payMethod.account_number }}
 },
 {
     "sendPhoto": {
-        "photo": "https://link_to_image3.com"
+        "photo": "https://hkadm.github.io/hkdocs/marketplace/security/images/hiddifynext_android_2_hiddify.png"
     }
 },
 {
@@ -1424,7 +1354,7 @@ ID кошелька: {{ payMethod.account_number }}
 },
 {
     "sendPhoto": {
-        "photo": "https://link_to_image4.com"
+        "photo": "https://hkadm.github.io/hkdocs/marketplace/security/images/hiddifynext_android_2_hiddify.png"
     }
 },
 {
@@ -1451,7 +1381,7 @@ ID кошелька: {{ payMethod.account_number }}
 },
 {
     "sendPhoto": {
-        "photo": "https://link_to_image5.com"
+        "photo": "https://hkadm.github.io/hkdocs/marketplace/security/images/hiddifynext_android_2_hiddify.png"
     }
 },
 {
@@ -1474,146 +1404,6 @@ ID кошелька: {{ payMethod.account_number }}
             "one_time_keyboard": false,
             "resize_keyboard": true
         }
-    }
-},
-{
-    "sendPhoto": {
-        "photo": "https://link_to_image6.com"
-    }
-},
-{
-    "sendMessage": {
-        "text": "2️⃣ **Открой приложение Hiddify** и выбери регион «Россия» 🇷🇺 в настройках.\n\n<pre><i>Фото: Выбор региона в приложении Hiddify для iOS.</i></pre>\n\n",
-        "parse_mode": "HTML",
-        "reply_markup": {
-            "keyboard": [
-                [
-                    {
-                        "text": "❓ Помощь"
-                    }
-                ],
-                [
-                    {
-                        "text": "🌍 Главное Меню"
-                    }
-                ]
-            ],
-            "one_time_keyboard": false,
-            "resize_keyboard": true
-        }
-    }
-},
-{
-    "sendPhoto": {
-        "photo": "https://link_to_image7.com"
-    }
-},
-{
-    "sendMessage": {
-        "text": "3️⃣ **Нажми на кнопку «Старт» 🚀**, чтобы начать подключение к VPN.\n\n<pre><i>Фото: Кнопка для старта на главной странице.</i></pre>\n\n",
-        "parse_mode": "HTML",
-        "reply_markup": {
-            "keyboard": [
-                [
-                    {
-                        "text": "❓ Помощь"
-                    }
-                ],
-                [
-                    {
-                        "text": "🌍 Главное Меню"
-                    }
-                ]
-            ],
-            "one_time_keyboard": false,
-            "resize_keyboard": true
-        }
-    }
-},
-{
-    "sendPhoto": {
-        "photo": "https://link_to_image8.com"
-    }
-},
-{
-    "sendMessage": {
-        "text": "4️⃣ **Добавь подписку**: нажми на кнопку «Открыть страницу» 🔑, чтобы добавить подписку.\n\n<pre><i>Фото: Кнопка для добавления подписки на iOS.</i></pre>\n\n",
-        "parse_mode": "HTML",
-        "reply_markup": {
-            "keyboard": [
-                [
-                    {
-                        "text": "❓ Помощь"
-                    }
-                ],
-                [
-                    {
-                        "text": "🌍 Главное Меню"
-                    }
-                ]
-            ],
-            "one_time_keyboard": false,
-            "resize_keyboard": true
-        }
-    }
-},
-{
-    "sendPhoto": {
-        "photo": "https://link_to_image9.com"
-    }
-},
-{
-    "sendMessage": {
-        "text": "5️⃣ **Подключись к VPN**: когда подписка будет добавлена, нажми на кнопку для подключения 🔌.\n\n<pre><i>Фото: Кнопка для подключения к VPN в приложении для iOS.</i></pre>\n\n",
-        "parse_mode": "HTML",
-        "reply_markup": {
-            "keyboard": [
-                [
-                    {
-                        "text": "❓ Помощь"
-                    }
-                ],
-                [
-                    {
-                        "text": "🌍 Главное Меню"
-                    }
-                ]
-            ],
-            "one_time_keyboard": false,
-            "resize_keyboard": true
-        }
-    }
-},
-{
-    "sendPhoto": {
-        "photo": "https://link_to_image10.com"
-    }
-},
-{
-    "sendMessage": {
-        "text": "6️⃣ **Наслаждайся безопасным серфингом 🌍**: теперь ты подключен к VPN!\n\n<b>❗ Если возникли проблемы:</b>\n\n🔄 **Попробуй перезапустить приложение**. Это поможет, если подключение не устанавливается.\n\n<i>Фото: Пошаговая инструкция для восстановления приложения.</i>\n\n",
-        "parse_mode": "HTML",
-        "reply_markup": {
-            "keyboard": [
-                [
-                    {
-                        "text": "❓ Помощь"
-                    }
-                ],
-                [
-                    {
-                        "text": "🌍 Главное Меню"
-                    }
-                ]
-            ],
-            "one_time_keyboard": false,
-            "resize_keyboard": true
-        }
-    }
-},
-{
-    "sendPhoto": {
-        "photo": "https://link_to_image11.com"
     }
 }
 
