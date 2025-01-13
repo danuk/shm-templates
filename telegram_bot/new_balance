@@ -1,0 +1,255 @@
+<% CASE '/balance' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{{ userlogs = user.services.list_for_api('usi', {}) }}
+{{
+    limit = 5;
+    offset = args.1 || 0;
+    userData = user.id(args.0);
+    payData = userPay.comment.object;
+    payMethod = payData.payment_method;
+    payCard = payMethod.card;
+    userPays = ref(userData.pays.list_for_api('limit', limit, 'offset', offset ));
+}}
+{{ last_payment = user.payments.last() }}
+{{ forecast = user.pays.forecast }}
+{{ user_services = ref(user.services.list_for_api('category', '%')) }}
+{{ blocked_services = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'BLOCK' })) }}
+{{ expired_services = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'NOT PAID' })) }}
+{{ active_services = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'ACTIVE' })) }}
+{{ USE date }}
+
+{
+    "sendPhoto": {
+        "photo": "{{ config.logo.url }}",
+        "caption": "<blockquote>💰 <b>Баланс:</b> {{ user.balance }} ₽\n🎁 <b>Бонусы:</b> {{ user.get_bonus }} ₽\n🔖 <b>Скидка:</b> {{ user.discount }}%\n👥 <b>Приглашено друзей:</b> {{ user.referrals_count }}\n💳 <b>Общий доход от рефералов:</b> {{ user.get_bonus }} ₽\n\n⏳ <b>Следующее продление:</b> {{ IF userlogs.expire }}{{ date.format(userlogs.expire, '%H:%M %d.%m.%Y') }}{{ ELSE }}неизвестно{{ END }}\n💵 <b>Ожидаемая оплата:</b> {{ forecast.total }} ₽\n\n🔒 <b>Заблокированные сервисы:</b> ({{ blocked_services.size }})\n{{ FOR service IN blocked_services }}- {{ service.name }}\n{{ END }}\n\n❗ <b>Неоплаченные сервисы:</b> ({{ expired_services.size }})\n{{ FOR service IN expired_services }}- {{ service.name }}\n{{ END }}\n\n✅ <b>Активные услуги:</b> ({{ active_services.size }})\n{{ IF active_services.size > 0 }}{{ FOR service IN active_services }}- {{ service.name }} (до {{ date.format(service.expire, '%H:%M %d.%m.%Y') }})\n{{ END }}{{ ELSE }}Нет активных услуг.{{ END }}\n\n💵 <b>Необходимо оплатить:</b> <b>{{ user.pays.forecast('blocked',1).total }} ₽</b></blockquote>",
+		"parse_mode": "HTML",
+        "reply_markup" : {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "✚ Пополнить баланс",
+                        "web_app": {
+                            "url": "{{ config.api.url }}/shm/v1/public/tg_payments_webapp?format=html&user_id={{ user.id }}"
+                        }
+                    }
+                ],
+                [
+                    {
+                        "text": "☰ История платежей",
+                        "callback_data": "/pays {{ userData.user_id }} {{ offset - limit }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "🌍 Полная информация",
+                        "callback_data": "/servers"
+                    }
+                ],
+                [
+                    {
+                        "text": "🔄 Обновить",
+                        "callback_data": "/balance"
+                    }
+                ],
+                [
+                    {
+                        "text": "⇦ Назад",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+
+<% CASE '/servers' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{{ vpn_mz_lt_servers = ref(user.services.list_for_api('category', 'vpn-mz-lt')) }}
+{{ vpn_mz_usa_servers = ref(user.services.list_for_api('category', 'vpn-mz-usa')) }}
+{{ vpn_mz_spain_servers = ref(user.services.list_for_api('category', 'vpn-mz-spain')) }}
+
+{{ limit = 1 }}
+{{ offset = args.0 || 0 }}
+
+{
+    "sendMessage": {
+        "text": "<b>Сервера:</b>\n\n<b>vpn-mz-lt:</b>\n{{ IF vpn_mz_lt_servers.size > 0 }}{{ FOR server IN vpn_mz_lt_servers.slice(offset, limit) }}\n🌍 Сервер: {{ server.name }}\n💡 Статус: {{ server.status }}\n⏳ Действует до: {{ server.expire }}\n📊 Трафик: {{ server.traffic }}\n🏷️ Стоимость: {{ server.cost }} руб.\n{{ END }}{{ ELSE }}Нет серверов в категории vpn-mz-lt.\n{{ END }}\n\n<b>vpn-mz-usa:</b>\n{{ IF vpn_mz_usa_servers.size > 0 }}{{ FOR server IN vpn_mz_usa_servers.slice(offset, limit) }}\n🌍 Сервер: {{ server.name }}\n💡 Статус: {{ server.status }}\n⏳ Действует до: {{ server.expire }}\n📊 Трафик: {{ server.traffic }}\n🏷️ Стоимость: {{ server.cost }} руб.\n{{ END }}{{ ELSE }}Нет серверов в категории vpn-mz-usa.\n{{ END }}\n\n<b>vpn-mz-spain:</b>\n{{ IF vpn_mz_spain_servers.size > 0 }}{{ FOR server IN vpn_mz_spain_servers.slice(offset, limit) }}\n🌍 Сервер: {{ server.name }}\n💡 Статус: {{ server.status }}\n⏳ Действует до: {{ server.expire }}\n📊 Трафик: {{ server.traffic }}\n🏷️ Стоимость: {{ server.cost }} руб.\n{{ END }}{{ ELSE }}Нет серверов в категории vpn-mz-spain.\n{{ END }}",
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "🔄 Обновить",
+                        "callback_data": "/servers {{ offset }}"
+                    }
+                ],
+                [
+                    {{ IF offset > 0 }}
+                    {
+                        "text": "⬅️ Назад",
+                        "callback_data": "/servers {{ offset - limit }}"
+                    },
+                    {{ END }}
+                    {{ IF vpn_mz_lt_servers.size > limit || vpn_mz_usa_servers.size > limit || vpn_mz_spain_servers.size > limit }}
+                    {
+                        "text": "Ещё ➡️",
+                        "callback_data": "/servers {{ offset + limit }}"
+                    }
+                    {{ END }}
+                ],
+                [
+                    {
+                        "text": "⇦ Назад",
+                        "callback_data": "/balance"
+                    }
+                ]
+            ]
+        }
+    }
+}
+
+<% CASE '/pays' %>
+{
+    "sendPhoto": {
+        "photo": "{{ config.logo.url }}",
+        "caption": "☰ <b>История платежей</b>",
+        "parse_mode": "HTML",
+        "reply_markup": {
+            "inline_keyboard": [
+                {{
+                    limit = 7;
+                    offset = args.0 || 0;
+                    offset = (offset < 0) ? 0 : offset;
+                    pays = ref(user.pays.list_for_api('limit', limit, 'offset', offset));
+                }}
+                {{ IF pays.size > 0 }}
+                    {{ FOR item in pays }}
+                    {{ TEXT = BLOCK }}
+📅 Дата: {{ USE date }}{{ date.format(item.date, '%d.%m.%Y') }}  
+💰 Сумма: {{ item.money }} ₽
+                    {{ END }}
+                    [
+                        {
+                            "text": "{{ TEXT.replace('\n',' ') }}",
+                            "callback_data": "/checkpay {{ item.id }}"
+                        }
+                    ],
+                    {{ END }}
+                {{ ELSE }}
+                    [
+                        {
+                            "text": "❗️ Нет записей о платежах.",
+                            "callback_data": "/menu"
+                        }
+                    ],
+                {{ END }}
+                {{ IF pays.size == limit || offset > 0 }}
+                [
+                    {{ IF offset > 0 }}
+                    {
+                        "text": "⬅️ Назад",
+                        "callback_data": "/pays {{ offset - limit }}"
+                    },
+                    {{ END }}
+                    {{ IF pays.size == limit }}
+                    {
+                        "text": "➡️ Далее",
+                        "callback_data": "/pays {{ offset + limit }}"
+                    }
+                    {{ END }}
+                ],
+                {{ END }}
+                [
+                    {
+                        "text": "🏠 Главное меню",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+
+<% CASE '/checkpay' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{{
+    userPay = ref(pay.list_for_api('limit', 1, 'filter', {"id" = args.0})).first;
+    payData = userPay.comment.object;
+    payMethod = payData.payment_method;
+    payCard = payMethod.card;
+    userData = user.id(userPay.user_id);
+}}
+{{ TEXT = BLOCK }}
+💸 <b>Информация о платеже</b>
+🆔 <b>ID платежа:</b> {{ userPay.id }}
+👤 <b>Пользователь:</b> {{ userData.full_name.replace('"', '"') }} ({{ userData.user_id }})
+
+📅 <b>Дата платежа:</b> {{ userPay.date }}
+💳 <b>Платежная система:</b> {{ userPay.pay_system_id }}
+💰 <b>Сумма:</b> {{ userPay.money }} руб.
+
+{{ IF userPay.telegram_bot == 'telegram_bot' }}
+⭐ <b>Оплата звездами:</b> {{ userPay.currency }}
+{{ END }}
+
+{{ IF userPay.currency == 'XTR' }}
+⭐ <b>Оплата звездами:</b> {{ userPay.currency }}
+{{ END }}
+
+{{ IF userPay.comment.comment }}
+📝 <b>Комментарий к платежу:</b>
+<blockquote>{{ userPay.comment.comment }}</blockquote>
+{{ END }}
+
+{{ IF payData }}
+📂 <b>Детали платежа:</b>
+<blockquote> 🆔 <b>ID в системе:</b> {{ payData.id }}
+📊 <b>Статус:</b> {{ payData.status }}
+{{ IF payCard }}
+Тип карты: {{ payCard.card_type }}
+Номер карты: {{ payCard.first6 }}******{{ payCard.last4 }}
+Банк: {{ payCard.issuer_name }}
+Страна банка: {{ payCard.issuer_country }}
+Срок действия: {{ payCard.expiry_month }}/{{ payCard.expiry_year }}
+{{ END }}
+{{ IF payMethod.type == 'sbp' }}
+Тип оплаты: СБП
+Номер операции в СБП: {{ payMethod.sbp_operation_id }}
+Бик Банка: {{ payMethod.payer_bank_details.bic }}
+{{ END }}
+
+{{ IF payMethod.title.match('YooMoney') }}
+Кошелек YooMoney: {{ payMethod.title }}
+ID кошелька: {{ payMethod.account_number }}
+{{ END }}
+</blockquote>
+{{ END }}
+
+{{ END }}
+
+{
+    "sendMessage": {
+        "text": "{{ TEXT.replace('\n','\n') }}\n",
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "🔄 Обновить",
+                        "callback_data": "/checkpay {{ args.0 }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "⇦ Назад ⇦",
+                        "callback_data": "/pays"
+                    }
+                ]
+            ]
+        }
+    }
+}
