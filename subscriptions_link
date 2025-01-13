@@ -1,0 +1,292 @@
+в шаблон бота вставляем  в любое место
+
+<% CASE '/notifications_active' %>
+{{ item = us.id( args.0 ) }}
+{{ subscription_url = storage.read('name','vpn_mrzb_' _ args.0 ).subscription_url }}
+{{ TEXT = BLOCK }}
+🎉 <b>🎊 Услуга успешно активирована!</b> 🚀  
+
+<b>🔹 Название услуги:</b> <code>{{ item.name }}</code>
+<b>🔹 ID услуги:</b>  № <code>{{ item.user_service_id }}</code>
+<b>✅ Статус:</b> Активирована
+
+<b>📅 Дата активации:</b> {{ USE date }}{{ date.format( item.created, '%d.%m.%Yг. %H:%M') }}
+<b>⏳ До:</b> {{ USE date }}{{ date.format( item.expire, '%d.%m.%Yг. %H:%M') }}
+
+<b>👉 Для автоматического подключения перейдите по кнопке ниже.</b>
+{{ END }}
+{
+    "sendMessage": {
+        "text": "{{ TEXT.replace('\n','\n') }}\n",
+        "parse_mode": "HTML",
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "🚀 Подключить автоматически",
+                        "web_app": {
+                            "url": "{{ config.api.url }}/shm/v1/template/subscriptions_link?format=html&session_id={{ user.gen_session.id }}&uid={{ user.id }}&us_id={{ args.0 }}"
+                        }
+                    }
+                ],
+                [
+                    {
+                        "text": "🏠 Вернуться в меню",
+                        "callback_data": "/start"
+                    }
+                ]
+            ]
+        }
+    }
+}
+
+<% CASE '/notifications_block' %>
+{{ item = us.id( args.0 ) }}
+{{ subscription_url = storage.read('name','vpn_mrzb_' _ args.0 ).subscription_url }}
+{{ IF event_name == "BLOCK" }}
+{{ TEXT = BLOCK }}
+<b>🚫 Внимание! Ваша подписка заблокирована!</b>
+
+<b>🔹 Название услуги:</b> <code>{{ item.name }}</code>
+<b>🔹 ID услуги:</b> № <code>{{ item.user_service_id }}</code>
+<b>⚠️ Статус:</b> Заблокирована
+
+<b>💰 Сумма к оплате:</b> <i>{{ user.pays.forecast('blocked', 1).total }}₽</i>
+
+<b>❗ Причина блокировки:</b> <i>Недостаточно средств на счете. Пополните баланс, чтобы продолжить обслуживание.</i> 💳
+
+<b>👉 Для восстановления доступа, пожалуйста, пополните счет и свяжитесь с нашей поддержкой.</b>
+{{ END }}
+{{ END }}
+
+{
+    "sendMessage": {
+        "text": "{{ TEXT.replace('\n','\n') }}\n",
+        "parse_mode": "HTML",
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "🏠 Вернуться в меню",
+                        "callback_data": "/start"
+                    }
+                ]
+            ]
+        }
+    }
+}
+
+создаем  отдельный шаблон с  именем subscriptions_link
+
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+    <meta name="format-detection" content="telephone=no"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <meta name="MobileOptimized" content="176"/>
+    <meta name="HandheldFriendly" content="True"/>
+    <meta name="robots" content="noindex,nofollow"/>
+    <title>Подписка</title>
+    
+    <!-- Telegram WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js?1"></script>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        /* 🌟 Общие стили */
+        body {
+             background: url('https://i.ibb.co/wJH1xbb/DALL-E-2025-01-06-16-13.png') no-repeat center center fixed;
+               font-family: 'Arial', sans-serif;
+            color: #333;
+            background-size: cover;
+            margin: 0;
+            padding: 0;
+            color-scheme: var(--tg-color-scheme);
+        }
+
+        /* 🪄 Контейнер */
+        .container-custom {
+            background: #fff;
+            border-radius: 16px;
+            padding: 30px;
+            margin: 5vh auto;
+            max-width: 500px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        /* ✨ Стиль текста */
+        .text-gradient {
+            background: linear-gradient(90deg, #ff3b3f, #fd965c, #fdbf60, #30a5f2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: bold;
+        }
+
+        /* 🛎️ Кнопки */
+        .btn-custom {
+            width: 100%;
+            margin-top: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #30a5f2, #0071bc);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(90deg, #0071bc, #00497a);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(90deg, #ff3b3f, #fd965c);
+            border: none;
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(90deg, #fd965c, #fdbf60);
+        }
+
+        /* 📱 Футер */
+        .footer-btn {
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border-radius: 0;
+            padding: 16px;
+            text-transform: uppercase;
+            font-weight: bold;
+            color: #fff;
+            background: #0071bc;
+        }
+
+        /* Gradient for the buttons */
+        .gradient-container * {
+            background: linear-gradient(90deg, #ff3b3f, #fd965c, #fdbf60, #30a5f2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body>
+    {{ IF request.params.uid }}
+    {{ user = user.switch(request.params.uid) }}
+    {{ us = user.services.list_for_api('usi', request.params.us_id) }}
+    {{ key = storage.read('name', 'vpn_mrzb_' _ request.params.us_id) }}
+    {{ sub_url = storage.read('name', 'vpn_mrzb_' _ args.0 ).subscription_url }}
+    {{ bytes = http.get("$sub_url/info").used_traffic }}
+    {{ gb = bytes / 1073741824 FILTER format("%.0f") }}
+    {{ mb = (bytes % 1073741824) / 1048576 FILTER format("%.0f") }}
+    
+    {{ TEXT = BLOCK }}
+    {{ IF mb == 0 }}
+    {{ ELSE}}
+        {{ IF gb >= 1 }}
+Израсходовано трафика: {{ gb }} Gb.{{ mb }} Mb
+        {{ ELSE }}
+Израсходовано трафика: {{ mb }} Mb
+        {{ END }}
+    {{ END }}
+{{ END }}
+	
+
+    {{ USE date }}
+    {{ date_sec = date.now }}
+    {{ expire_sec = date.format(us.expire, '%s') }}
+    {{ days_left = (expire_sec - date_sec) div 86400 }}
+    {{ months = days_left div 30 }}
+    {{ days = days_left % 30 }}
+    <div class="container container-custom">
+        <h2 class="text-gradient">👋 Привет, {{ user.full_name }}</h2>
+        <br>
+        <div class="mb-4 text-start">
+            <h5>🔒 <strong>Подписка:</strong> {{ us.name }}</h5>
+            <h5>📅 <strong>Истекает:</strong> {{ us.expire }}</h5>
+            <!-- Remaining time display -->
+            <h5>
+                <strong>⏳ Осталось:</strong> 
+                {{ IF months == 0 }}
+                    {{ IF days == 1 }}1 день 🕒
+                    {{ ELSIF days == 2 or days == 3 or days == 4 }}{{ days }} дня 🕓
+                    {{ ELSE }}{{ days }} дней 🕔
+                {{ END }}
+                {{ ELSE }}
+                    {{ IF months == 1 }}1 месяц 📅 - 
+                    {{ ELSIF months == 2 or months == 3 or months == 4 }}{{ months }} месяца 📅 - 
+                    {{ ELSE }}{{ months }} месяцев 📅 - 
+                    {{ END }}
+                    {{ IF days > 0 }}
+                        {{ IF days == 1 }}1 день 🕒
+                        {{ ELSIF days == 2 or days == 3 or days == 4 }}{{ days }} дня 🕓
+                        {{ ELSE }}{{ days }} дней 🕔
+                        {{ END }}
+                    {{ END }}
+                {{ END }}
+            </h5>
+
+            <!-- Used Traffic Display -->
+            <div class="btn btn-primary btn-custom gradient-container">
+                {{ TEXT }}
+            </div>
+
+            <button class="btn btn-primary btn-custom gradient-container" onclick="ShmSubPage.openDevice(ShmSubPage.device, '{{ key.subscription_url }}');">
+                🚀 Открыть страницу подписки
+            </button>
+            <button class="btn btn-secondary btn-custom gradient-container" onclick="copyToClipboard('{{ key.subscription_url }}');">
+                📋 Скопировать ссылку
+            </button>
+        </div>
+    {{ ELSE }}
+        <div class="container text-center mt-5">
+            <h2>⚠️ Ваша сессия устарела</h2>
+            <p>Нажмите "Обновить информацию об услуге" ♻️</p>
+        </div>
+    {{ END }}
+
+
+    <!-- JavaScript -->
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text);
+            alert('Ссылка успешно скопирована!');
+        }
+
+        const ShmSubPage = {
+            MainButton: Telegram.WebApp.MainButton,
+            device: '',
+            init() {
+                Telegram.WebApp.ready();
+                Telegram.WebApp.MainButton.setParams({
+                    text: 'Закрыть',
+                    is_visible: true
+                }).onClick(ShmSubPage.close);
+                Telegram.WebApp.expand();
+            },
+            close() {
+                Telegram.WebApp.close();
+            },
+            openDevice(deviceUrl, url) {
+                Telegram.WebApp.openLink(deviceUrl + url, { try_instant_view: false });
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', () => {
+            ShmSubPage.init();
+        });
+    </script>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
