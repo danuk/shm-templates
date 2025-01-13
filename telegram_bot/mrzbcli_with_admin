@@ -47,7 +47,7 @@
                 [
                     {
                         "text": "🔙 Назад",
-                        "callback_data": "USER_NOT_FOUND"
+                        "callback_data": "/USER_NOT_FOUND"
                     }
                 ]
             ]
@@ -84,7 +84,7 @@
             "inline_keyboard": [
                 [
                     {
-                        "text": "💰 Баланс: {{ user.balance }} ₽",
+                        "text": "🪪 Профиль: {{ user.balance }} ₽",
                         "callback_data": "/balance"
                     },
                     {
@@ -162,11 +162,52 @@
 {{ expired_services = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'NOT PAID' })) }}
 {{ active_services = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'ACTIVE' })) }}
 {{ USE date }}
+{{ TEXT = BLOCK }}
+<pre>
+💰 <b>Баланс:</b> {{ user.balance }} ₽
+🎁 <b>Бонусы:</b> {{ user.get_bonus }} ₽
+🔖 <b>Скидка:</b> {{ user.discount }}%
+👥 <b>Приглашено друзей:</b> {{ user.referrals_count }}
+💳 <b>Общий доход от рефералов:</b> {{ user.get_bonus }} ₽
+
+⏳ <b>Следующее продление:</b> {{ IF userlogs.expire }}{{ date.format(userlogs.expire, '%H:%M %d.%m.%Y') }}{{ ELSE }}неизвестно{{ END }}
+💵 <b>Ожидаемая оплата:</b> {{ forecast.total }} ₽
+
+🔒 <b>Заблокированные сервисы:</b> ({{ blocked_services.size }})
+{{ IF blocked_services.size > 0 }}
+    {{ FOR service IN blocked_services }}
+    - {{ service.name }}
+    {{ END }}
+{{ ELSE }}
+    Нет заблокированных сервисов.
+{{ END }}
+
+❗ <b>Неоплаченные сервисы:</b> ({{ expired_services.size }})
+{{ IF expired_services.size > 0 }}
+    {{ FOR service IN expired_services }}
+    - {{ service.name }}
+    {{ END }}
+{{ ELSE }}
+    Нет неоплаченных сервисов.
+{{ END }}
+
+✅ <b>Активные услуги:</b> ({{ active_services.size }})
+{{ IF active_services.size > 0 }}
+    {{ FOR service IN active_services }}
+    - {{ service.name }} (до {{ date.format(service.expire, '%H:%M %d.%m.%Y') }})
+    {{ END }}
+{{ ELSE }}
+    Нет активных услуг.
+{{ END }}
+
+💵 <b>Необходимо оплатить:</b> <b>{{ user.pays.forecast('blocked',1).total }} ₽</b>
+</pre>
+{{ END }}
 
 {
     "sendPhoto": {
         "photo": "{{ config.logo.url }}",
-        "caption": "<pre>💰 <b>Баланс:</b> {{ user.balance }} ₽\n🎁 <b>Бонусы:</b> {{ user.get_bonus }} ₽\n🔖 <b>Скидка:</b> {{ user.discount }}%\n👥 <b>Приглашено друзей:</b> {{ user.referrals_count }}\n💳 <b>Общий доход от рефералов:</b> {{ user.get_bonus }} ₽\n\n⏳ <b>Следующее продление:</b> {{ IF userlogs.expire }}{{ date.format(userlogs.expire, '%H:%M %d.%m.%Y') }}{{ ELSE }}неизвестно{{ END }}\n💵 <b>Ожидаемая оплата:</b> {{ forecast.total }} ₽\n\n🔒 <b>Заблокированные сервисы:</b> ({{ blocked_services.size }})\n{{ FOR service IN blocked_services }}- {{ service.name }}\n{{ END }}\n\n❗ <b>Неоплаченные сервисы:</b> ({{ expired_services.size }})\n{{ FOR service IN expired_services }}- {{ service.name }}\n{{ END }}\n\n✅ <b>Активные услуги:</b> ({{ active_services.size }})\n{{ IF active_services.size > 0 }}{{ FOR service IN active_services }}- {{ service.name }} (до {{ date.format(service.expire, '%H:%M %d.%m.%Y') }})\n{{ END }}{{ ELSE }}Нет активных услуг.{{ END }}\n\n💵 <b>Необходимо оплатить:</b> <b>{{ user.pays.forecast('blocked',1).total }} ₽</b></pre>",
+        "caption": "{{ TEXT.replace('\n','\n') }}",
 		"parse_mode": "HTML",
         "reply_markup" : {
             "inline_keyboard": [
@@ -202,6 +243,9 @@
 }
 
 <% CASE '/pays' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
 {
     "sendPhoto": {
         "photo": "{{ config.logo.url }}",
@@ -625,6 +669,9 @@ ID кошелька: {{ payMethod.account_number }}
 
 <% CASE '/change' %>
 {
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
     "sendMessage": {
         "parse_mode": "HTML",
         "text": "📋 **Выберите тариф для смены:**\n\n🔄 Вы можете выбрать один из доступных тарифов ниже. Цены указаны в рублях (₽).",
@@ -650,6 +697,9 @@ ID кошелька: {{ payMethod.account_number }}
 }
 
 <% CASE '/change_id' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
 {{ change = us.id( args.0 ).change( service_id = args.1 ) }}
 {{ TEXT = BLOCK }}
 🎉 <b>Тариф успешно изменён!</b> 🚀
@@ -690,6 +740,9 @@ ID кошелька: {{ payMethod.account_number }}
 
 
 <% CASE '/renewal' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
 {{ us = us.id(args.0) }}
 {{ IF us.next == '-1' }}
     {{ tkas = us.set('next',) }}
@@ -916,6 +969,9 @@ ID кошелька: {{ payMethod.account_number }}
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
 {
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
     "shmServiceOrder": {
         "service_id": "{{ args.0 }}",
         "callback_data": "/list",
@@ -933,6 +989,9 @@ ID кошелька: {{ payMethod.account_number }}
 }
 
 <% CASE '/notifications_active' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
 {{ item = us.id( args.0 ) }}
 {{ subscription_url = storage.read('name','vpn_mrzb_' _ args.0 ).subscription_url }}
 {{ TEXT = BLOCK }}
@@ -973,6 +1032,9 @@ ID кошелька: {{ payMethod.account_number }}
 }
 
 <% CASE '/notifications_block' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
 {{ item = us.id( args.0 ) }}
 {{ subscription_url = storage.read('name','vpn_mrzb_' _ args.0 ).subscription_url }}
 {{ IF event_name == "BLOCK" }}
@@ -1009,6 +1071,9 @@ ID кошелька: {{ payMethod.account_number }}
 }
 
 <% CASE '/delete' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
 {{
   us = user.service.list_for_api('usi', args.0);
 }}
@@ -1250,6 +1315,9 @@ ID кошелька: {{ payMethod.account_number }}
 <% CASE ['🖥 Инструкция по VPN'] %>
 
 {
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
     "sendMessage": {
         "text": "🖥 <b>Полная инструкция по подключению Hiddify</b>\n\n<b>Для Android 📱:</b>\n\n1️⃣ **Скачай приложение Hiddify** из [Google Play Store 📲](https://play.google.com/store/apps/details?id=com.hiddify).\n\n<pre><i>Фото: На экране будет кнопка «Установить» после перехода по ссылке.</i></pre>\n\n",
         "parse_mode": "HTML",
@@ -1410,6 +1478,9 @@ ID кошелька: {{ payMethod.account_number }}
 
 
 <% CASE '/show_mz_keys' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
 {{ location = storage.read('name', 'vpn_mrzb_' _ args.0).location }}
 {{ item = us.id(args.0) }}
 {{ subscription_url = storage.read('name', 'vpn_mrzb_' _ args.0 _ location).subscription_url }}
@@ -1443,6 +1514,9 @@ ID кошелька: {{ payMethod.account_number }}
 }
 
 <% CASE '/vless_key' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
 {{ vless_tcp = storage.read('name', 'vpn_mrzb_' _ args.0).links.grep('^vless:').first }}
 {
     "printQrCode": {
@@ -1476,6 +1550,9 @@ ID кошелька: {{ payMethod.account_number }}
 }
 
 <% CASE '/trojan_key' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
 {{ trojan = storage.read('name', 'vpn_mrzb_' _ args.0).links.grep('^trojan:').first }}
 {
     "printQrCode": {
@@ -1496,101 +1573,6 @@ ID кошелька: {{ payMethod.account_number }}
                     {
                         "text": "⬅️ Назад к ключам",
                         "callback_data": "/show_mz_keys {{ args.0 }}"
-                    }
-                ]
-            ]
-        }
-    }
-}
-
-
-<% CASE '/primer' %>
-{
-    "deleteMessage": { "message_id": "{{ message.message_id }}" }
-},
-{
-    "sendMessage": {
-        "text": "Привет! Меня зовут <b>{{ config.company.name }}</b>. Я сделаю твой интернет более доступным и открытым.\n\n- 🔒 Абсолютно безопасный доступ к любым социальным сетям\n- 🌐 Обход региональных ограничений\n- 🔓 Устойчивость к блокировкам\n- 🔑 Двойное шифрование данных\n- 💳 Оплата российскими картами\n\nПринять соглашение:",
-        "parse_mode": "HTML",
-        "photo": "{{ config.logo.url }}",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "Соглашение",
-                        "web_app": {
-                            "url": "https://wwvpn.bine.life/privacy"
-                        }
-                    }
-                ],
-                [
-                    {
-                        "text": "✅ Да",
-                        "callback_data": "/register {{ args.0 }}"
-                    },
-                    {
-                        "text": "❌ Нет",
-                        "callback_data": "/disagree"
-                    }
-                ]
-            ]
-        }
-    }
-},
-{
-    "callbackQuery": {
-        "data": "/register {{ args.0 }}",
-        "sendMessage": {
-            "text": "✅ <b>Спасибо за согласие!</b>\nРегистрация начата...",
-            "parse_mode": "HTML",
-            "reply_markup": {
-                "inline_keyboard": [
-                    [
-                        {
-                            "text": "📋 Перейти в меню",
-                            "callback_data": "/menu"
-                        }
-                    ]
-                ]
-            }
-        }
-    }
-},
-{
-    "callbackQuery": {
-        "data": "/disagree",
-        "sendMessage": {
-            "text": "🚫 <b>Без принятия условий использования сервиса мы не можем предоставить услугу.</b>",
-            "parse_mode": "HTML",
-            "photo": "{{ config.logo.url }}",
-            "reply_markup": {
-                "inline_keyboard": [
-                    [
-                        {
-                            "text": "🔙 Назад",
-                            "callback_data": "USER_NOT_FOUND"
-                        }
-                    ]
-                ]
-            }
-        }
-    }
-}
-
-<% CASE '/disagree' %>
-{
-    "deleteMessage": { "message_id": "{{ message.message_id }}" }
-},
-{
-    "sendMessage": {
-        "text": "🚫 <b>Без принятия условий использования сервиса мы не можем предоставить услугу.</b>",
-        "parse_mode": "HTML",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "Назад",
-                        "callback_data": "/USER_NOT_FOUND"
                     }
                 ]
             ]
