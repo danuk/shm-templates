@@ -211,42 +211,6 @@
     }
 }
 
-<% CASE '/user_withdraws' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{
-    data = ref(wd.list_for_api('user', 10, 'filter', {"withdraw_id" = args.0})).first;
-    userData = user.id(data.user_id);
-}}
-{
-    "sendMessage": {
-        "parse_mode": "HTML",
-        "text": "<blockquote>💸 <b>Информация о списании №{{ data.withdraw_id }}</b>\n👤 <b>Пользователь:</b> {{ userData.full_name }} (ID: {{ userData.user_id }})\n🛠️ <b>Услуга:</b> {{ data.name }} (ID: {{ data.user_service_id }})\n💵 <b>Стоимость:</b> {{ data.cost }}₽\n📅 <b>Дата создания:</b> {{ data.create_date }}\n📅 <b>Дата списания:</b> {{ data.withdraw_date }}\n📅 <b>Дата окончания:</b> {{ data.end_date }}\n📆 <b>Кол-во месяцев:</b> {{ data.months }}</blockquote>",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "⬅️ Назад",
-                        "callback_data": "/balance"
-                    }
-                ],
-                [
-                    {
-                        "text": "🔍 Подробнее",
-                        "callback_data": "/withdrawDetails {{ data.withdraw_id }}"
-                    }
-                ],
-                [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}
-
-
 <% CASE '/servers' %>
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
