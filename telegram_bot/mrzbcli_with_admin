@@ -152,23 +152,26 @@
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
 {{ userlogs = user.services.list_for_api('usi', {}) }}
+{{
+    limit = 5;
+    offset = args.1 || 0;
+    userData = user.id(args.0);
+    payData = userPay.comment.object;
+    payMethod = payData.payment_method;
+    payCard = payMethod.card;
+    userPays = ref(userData.pays.list_for_api('limit', limit, 'offset', offset ));
+}}
 {{ last_payment = user.payments.last() }}
 {{ forecast = user.pays.forecast }}
 {{ user_services = ref(user.services.list_for_api('category', '%')) }}
 {{ blocked_services = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'BLOCK' })) }}
 {{ expired_services = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'NOT PAID' })) }}
 {{ active_services = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'ACTIVE' })) }}
-{{
-    data = ref(wd.list_for_api('admin', 1, 'filter', {"withdraw_id" = args.0})).first;
-    userData = user.id(data.user_id);
-}}
 {{ USE date }}
 
 {
     "sendMessage": {
-        "text": "<blockquote>💰 <b>Баланс</b>: {{ user.balance }}\n🎁 <b>Бонусы:</b> {{ user.get_bonus }}\n🔖 <b>Скидка:</b> {{ user.discount }}%\n👥 <b>Приглашено друзей:</b> {{ user.referrals_count }}\n💳 <b>Общий доход от рефералов:</b> {{ user.get_bonus }} руб.\n\n⏳ <b>Следующее продление:</b> {{ IF userlogs.expire }}{{ date.format(userlogs.expire, '%H:%M %d.%m.%Y') }}{{ ELSE }}неизвестно{{ END }}\n💵 <b>Ожидаемая оплата:</b> {{ forecast.total }} руб.\n\n🔒 <b>Заблокированные сервисы:</b> ({{ blocked_services.size }})\n{{ FOR service IN blocked_services }}- {{ service.name }}\n{{ END }}\n\n❗ <b>Неоплаченные сервисы:</b> ({{ expired_services.size }})\n{{ FOR service IN expired_services }}- {{ service.name }}\n{{ END }}\n\n✅ <b>Активные услуги:</b> ({{ active_services.size }})\n{{ IF active_services.size > 0 }}
-{{ FOR service IN active_services }}- {{ service.name }} (до {{ date.format(service.expire, '%H:%M %d.%m.%Y') }})\n{{ END }}
-{{ ELSE }}Нет активных услуг.{{ END }}\n\n💵 <b>Необходимо оплатить:</b> <b>{{ user.pays.forecast('blocked',1).total }}</b></blockquote>",
+        "text": "<blockquote>💰 <b>Баланс:</b> {{ user.balance }} ₽\n🎁 <b>Бонусы:</b> {{ user.get_bonus }} ₽\n🔖 <b>Скидка:</b> {{ user.discount }}%\n👥 <b>Приглашено друзей:</b> {{ user.referrals_count }}\n💳 <b>Общий доход от рефералов:</b> {{ user.get_bonus }} ₽\n\n⏳ <b>Следующее продление:</b> {{ IF userlogs.expire }}{{ date.format(userlogs.expire, '%H:%M %d.%m.%Y') }}{{ ELSE }}неизвестно{{ END }}\n💵 <b>Ожидаемая оплата:</b> {{ forecast.total }} ₽\n\n🔒 <b>Заблокированные сервисы:</b> ({{ blocked_services.size }})\n{{ FOR service IN blocked_services }}- {{ service.name }}\n{{ END }}\n\n❗ <b>Неоплаченные сервисы:</b> ({{ expired_services.size }})\n{{ FOR service IN expired_services }}- {{ service.name }}\n{{ END }}\n\n✅ <b>Активные услуги:</b> ({{ active_services.size }})\n{{ IF active_services.size > 0 }}{{ FOR service IN active_services }}- {{ service.name }} (до {{ date.format(service.expire, '%H:%M %d.%m.%Y') }})\n{{ END }}{{ ELSE }}Нет активных услуг.{{ END }}\n\n💵 <b>Необходимо оплатить:</b> <b>{{ user.pays.forecast('blocked',1).total }} ₽</b></blockquote>",
         "reply_markup" : {
             "inline_keyboard": [
                 [
@@ -182,7 +185,7 @@
                 [
                     {
                         "text": "☰ История платежей",
-                        "callback_data": "/pays"
+                        "callback_data": "/pays {{ userData.user_id }} {{ offset - limit }}"
                     }
                 ],
                 [
@@ -208,6 +211,41 @@
     }
 }
 
+<% CASE '/user_withdraws' %>
+{{ IF message.chat.id == config.telegram_admin.id }}
+{{
+    data = ref(wd.list_for_api('user', 10, 'filter', {"withdraw_id" = args.0})).first;
+    userData = user.id(data.user_id);
+}}
+{
+    "sendMessage": {
+        "parse_mode": "HTML",
+        "text": "<blockquote>💸 <b>Информация о списании №{{ data.withdraw_id }}</b>\n👤 <b>Пользователь:</b> {{ userData.full_name }} (ID: {{ userData.user_id }})\n🛠️ <b>Услуга:</b> {{ data.name }} (ID: {{ data.user_service_id }})\n💵 <b>Стоимость:</b> {{ data.cost }}₽\n📅 <b>Дата создания:</b> {{ data.create_date }}\n📅 <b>Дата списания:</b> {{ data.withdraw_date }}\n📅 <b>Дата окончания:</b> {{ data.end_date }}\n📆 <b>Кол-во месяцев:</b> {{ data.months }}</blockquote>",
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "⬅️ Назад",
+                        "callback_data": "/balance"
+                    }
+                ],
+                [
+                    {
+                        "text": "🔍 Подробнее",
+                        "callback_data": "/withdrawDetails {{ data.withdraw_id }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "🏠 Домой",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+
 
 <% CASE '/servers' %>
 {
@@ -217,16 +255,33 @@
 {{ vpn_mz_usa_servers = ref(user.services.list_for_api('category', 'vpn-mz-usa')) }}
 {{ vpn_mz_spain_servers = ref(user.services.list_for_api('category', 'vpn-mz-spain')) }}
 
+{{ limit = 1 }}
+{{ offset = args.0 || 0 }}
+
 {
     "sendMessage": {
-        "text": "<b>Сервера:</b>\n\n<b>vpn-mz-lt:</b>\n{{ IF vpn_mz_lt_servers.size > 0 }}{{ FOR server IN vpn_mz_lt_servers }}\n🌍 Сервер: {{ server.name }}\n💡 Статус: {{ server.status }}\n⏳ Действует до: {{ server.expire }}\n📊 Трафик: {{ server.traffic }}\n🏷️ Стоимость: {{ server.cost }} руб.\n{{ END }}{{ ELSE }}Нет серверов в категории vpn-mz-lt.\n{{ END }}\n\n<b>vpn-mz-usa:</b>\n{{ IF vpn_mz_usa_servers.size > 0 }}{{ FOR server IN vpn_mz_usa_servers }}\n🌍 Сервер: {{ server.name }}\n💡 Статус: {{ server.status }}\n⏳ Действует до: {{ server.expire }}\n📊 Трафик: {{ server.traffic }}\n🏷️ Стоимость: {{ server.cost }} руб.\n{{ END }}{{ ELSE }}Нет серверов в категории vpn-mz-usa.\n{{ END }}\n\n<b>vpn-mz-spain:</b>\n{{ IF vpn_mz_spain_servers.size > 0 }}{{ FOR server IN vpn_mz_spain_servers }}\n🌍 Сервер: {{ server.name }}\n💡 Статус: {{ server.status }}\n⏳ Действует до: {{ server.expire }}\n📊 Трафик: {{ server.traffic }}\n🏷️ Стоимость: {{ server.cost }} руб.\n{{ END }}{{ ELSE }}Нет серверов в категории vpn-mz-spain.\n{{ END }}",
+        "text": "<b>Сервера:</b>\n\n<b>vpn-mz-lt:</b>\n{{ IF vpn_mz_lt_servers.size > 0 }}{{ FOR server IN vpn_mz_lt_servers.slice(offset, limit) }}\n🌍 Сервер: {{ server.name }}\n💡 Статус: {{ server.status }}\n⏳ Действует до: {{ server.expire }}\n📊 Трафик: {{ server.traffic }}\n🏷️ Стоимость: {{ server.cost }} руб.\n{{ END }}{{ ELSE }}Нет серверов в категории vpn-mz-lt.\n{{ END }}\n\n<b>vpn-mz-usa:</b>\n{{ IF vpn_mz_usa_servers.size > 0 }}{{ FOR server IN vpn_mz_usa_servers.slice(offset, limit) }}\n🌍 Сервер: {{ server.name }}\n💡 Статус: {{ server.status }}\n⏳ Действует до: {{ server.expire }}\n📊 Трафик: {{ server.traffic }}\n🏷️ Стоимость: {{ server.cost }} руб.\n{{ END }}{{ ELSE }}Нет серверов в категории vpn-mz-usa.\n{{ END }}\n\n<b>vpn-mz-spain:</b>\n{{ IF vpn_mz_spain_servers.size > 0 }}{{ FOR server IN vpn_mz_spain_servers.slice(offset, limit) }}\n🌍 Сервер: {{ server.name }}\n💡 Статус: {{ server.status }}\n⏳ Действует до: {{ server.expire }}\n📊 Трафик: {{ server.traffic }}\n🏷️ Стоимость: {{ server.cost }} руб.\n{{ END }}{{ ELSE }}Нет серверов в категории vpn-mz-spain.\n{{ END }}",
         "reply_markup": {
             "inline_keyboard": [
                 [
                     {
                         "text": "🔄 Обновить",
-                        "callback_data": "/servers"
+                        "callback_data": "/servers {{ offset }}"
                     }
+                ],
+                [
+                    {{ IF offset > 0 }}
+                    {
+                        "text": "⬅️ Назад",
+                        "callback_data": "/servers {{ offset - limit }}"
+                    },
+                    {{ END }}
+                    {{ IF vpn_mz_lt_servers.size > limit || vpn_mz_usa_servers.size > limit || vpn_mz_spain_servers.size > limit }}
+                    {
+                        "text": "Ещё ➡️",
+                        "callback_data": "/servers {{ offset + limit }}"
+                    }
+                    {{ END }}
                 ],
                 [
                     {
@@ -239,25 +294,56 @@
     }
 }
 
+
 <% CASE '/pays' %>
-{{ sum = 0 }}
-{{ arr = ref(user.pays.list_for_api('limit', 0, 'filter', { 'date' => '2024-01-%' })) }}
 {
-    "deleteMessage": { 
-        "message_id": {{ message.message_id }} 
-    },
-    "sendPhoto": {
-        "photo": "{{ config.logo.url }}",
-        "protect_content": false,
-        "parse_mode": "HTML",
-        "caption": "💳 <b>История пополнений</b> 🧾\n\n📅 <i>Здесь вы можете отслеживать последние пополнения и использовать различные функции.</i>\n\n🔽 <b>Информация о последнем пополнении:</b>\n{{ FOR item IN ref(user.pays.list_for_api('limit', 3)) }}\n<u>📅 <b>Дата:</b> {{ item.date }} | 💵 <b>Сумма:</b> {{ item.money }} руб.</u>\n\n💳 <b>Платеж поступил с:</b> {{ item.pay_system_id }}\n{{ END }}\n\n<b>Используйте кнопки для дополнительных действий:</b>",
+    "sendMessage": {
+        "text": "☰ <b>История платежей</b>",
         "reply_markup": {
             "inline_keyboard": [
-                [ { "text": "🔄 Обновить историю", "callback_data": "/pays" } ],
-                [ 
-                    { 
-                        "text": "🔙 Назад в меню",
-                        "callback_data": "/menu" 
+                {{
+                    limit = 7;
+                    offset = args.0 || 0;
+                    offset = (offset < 0) ? 0 : offset;
+                    pays = ref(user.pays.list_for_api('limit', limit, 'offset', offset));
+                }}
+                {{ IF pays.size > 0 }}
+                    {{ FOR item in pays }}
+                    [
+                        {
+                            "text": "📅 Дата: {{ item.date }} | 💰 {{ item.money }} руб.",
+                            "callback_data": "/checkpay {{ item.id }}"
+                        }
+                    ],
+                    {{ END }}
+                {{ ELSE }}
+                    [
+                        {
+                            "text": "❗️ Нет записей о платежах.",
+                            "callback_data": "/menu"
+                        }
+                    ],
+                {{ END }}
+                {{ IF pays.size == limit || offset > 0 }}
+                [
+                    {{ IF offset > 0 }}
+                    {
+                        "text": "⬅️ Назад",
+                        "callback_data": "/pays {{ offset - limit }}"
+                    },
+                    {{ END }}
+                    {{ IF pays.size == limit }}
+                    {
+                        "text": "➡️ Далее",
+                        "callback_data": "/pays {{ offset + limit }}"
+                    }
+                    {{ END }}
+                ],
+                {{ END }}
+                [
+                    {
+                        "text": "🏠 Главное меню",
+                        "callback_data": "/menu"
                     }
                 ]
             ]
@@ -265,34 +351,87 @@
     }
 }
 
-<% CASE '/payment_stats' %>
+<% CASE '/checkpay' %>
 {
-    "deleteMessage": { 
-        "message_id": {{ message.message_id }} 
-    },
-    "sendPhoto": {
-        "photo": "{{ config.logo.url }}",
-        "protect_content": false,
-        "parse_mode": "HTML",
-        "caption": "💳 <b>Статистика операций</b> 🧾\n\n📅 <i>Фильтруйте данные по периоду, чтобы увидеть нужные операции:</i>\n\n🔽 <b>Последние пополнения:</b>\n{{ IF user.pays.list_for_api('limit', 5, 'filter', filter_period) }}\n{{ FOR item IN ref(user.pays.list_for_api('limit', 5, 'filter', filter_period)) }}\n• <u>📅 <b>Дата:</b> {{ item.date }} | 💵 <b>Сумма:</b> {{ item.money }} ₽</u>\n{{ END }}\n{{ ELSE }}\n<i>Нет записей о пополнениях за выбранный период.</i>\n{{ END }}\n\n🔽 <b>Последние выводы:</b>\n{{ IF wd.list_for_api('limit', 5, 'filter', filter_period) | length > 0 }}\n{{ FOR wd IN ref(wd.list_for_api('limit', 5, 'filter', filter_period)) }}\n• <u>📅 <b>Дата:</b> {{ wd.withdraw_date }} | 💸 <b>Сумма:</b> {{ wd.cost }} ₽</u>\n{{ END }}\n{{ ELSE }}\n<i>Нет записей о выводах за выбранный период.</i>\n{{ END }}\n\n🔽 <b>Начисленные бонусы:</b>\n{{ IF bonus.list_for_api('limit', 5, 'filter', filter_period) | length > 0 }}\n{{ FOR bonus IN ref(bonus.list_for_api('limit', 5, 'filter', filter_period)) }}\n• <u>📅 <b>Дата:</b> {{ bonus.date }} | 🎁 <b>Сумма:</b> {{ bonus.bonus }} ₽</u>\n{{ END }}\n{{ ELSE }}\n<i>Нет бонусов за выбранный период.</i>\n{{ END }}\n\n<b>Выберите действие:</b>",
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{{
+    userPay = ref(pay.list_for_api('limit', 1, 'filter', {"id" = args.0})).first;
+    payData = userPay.comment.object;
+    payMethod = payData.payment_method;
+    payCard = payMethod.card;
+    userData = user.id(userPay.user_id);
+}}
+{{ TEXT = BLOCK }}
+💸 <b>Информация о платеже</b>
+🆔 <b>ID платежа:</b> {{ userPay.id }}
+👤 <b>Пользователь:</b> {{ userData.full_name.replace('"', '"') }} ({{ userData.user_id }})
+
+📅 <b>Дата платежа:</b> {{ userPay.date }}
+💳 <b>Платежная система:</b> {{ userPay.pay_system_id }}
+💰 <b>Сумма:</b> {{ userPay.money }} руб.
+
+{{ IF userPay.telegram_bot == 'telegram_bot' }}
+⭐ <b>Оплата звездами:</b> {{ userPay.currency }}
+{{ END }}
+
+{{ IF userPay.currency == 'XTR' }}
+⭐ <b>Оплата звездами:</b> {{ userPay.currency }}
+{{ END }}
+
+{{ IF userPay.comment.comment }}
+📝 <b>Комментарий к платежу:</b>
+<blockquote>{{ userPay.comment.comment }}</blockquote>
+{{ END }}
+
+{{ IF payData }}
+📂 <b>Детали платежа:</b>
+<blockquote> 🆔 <b>ID в системе:</b> {{ payData.id }}
+📊 <b>Статус:</b> {{ payData.status }}
+{{ IF payCard }}
+Тип карты: {{ payCard.card_type }}
+Номер карты: {{ payCard.first6 }}******{{ payCard.last4 }}
+Банк: {{ payCard.issuer_name }}
+Страна банка: {{ payCard.issuer_country }}
+Срок действия: {{ payCard.expiry_month }}/{{ payCard.expiry_year }}
+{{ END }}
+{{ IF payMethod.type == 'sbp' }}
+Тип оплаты: СБП
+Номер операции в СБП: {{ payMethod.sbp_operation_id }}
+Бик Банка: {{ payMethod.payer_bank_details.bic }}
+{{ END }}
+
+{{ IF payMethod.title.match('YooMoney') }}
+Кошелек YooMoney: {{ payMethod.title }}
+ID кошелька: {{ payMethod.account_number }}
+{{ END }}
+</blockquote>
+{{ END }}
+
+{{ END }}
+
+{
+    "sendMessage": {
+        "text": "{{ TEXT.replace('\n','\n') }}\n",
         "reply_markup": {
             "inline_keyboard": [
                 [
-                    { "text": "⏳ Последние 7 дней", "callback_data": "/payment_stats?filter=7days" },
-                    { "text": "📆 Последние 30 дней", "callback_data": "/payment_stats?filter=30days" },
-                    { "text": "📜 За всё время", "callback_data": "/payment_stats?filter=all" }
+                    {
+                        "text": "🔄 Обновить",
+                        "callback_data": "/checkpay {{ args.0 }}"
+                    }
                 ],
                 [
-                    { "text": "🔄 Обновить", "callback_data": "/payment_stats?filter=" + filter_period },
-                    { "text": "💳 История пополнений", "callback_data": "/pays" }
-                ],
-                [
-                    { "text": "🔙 Назад", "callback_data": "/menu" }
+                    {
+                        "text": "⇦ Назад ⇦",
+                        "callback_data": "/pays"
+                    }
                 ]
             ]
         }
     }
 }
+
 
 <% CASE '/list' %>
 {{ hasnotpaidus = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'NOT PAID' } )).size }}
@@ -324,7 +463,7 @@
                 {{ END }}
                 [
                     {
-                        "text": "{{ item.name }} - {{ icon }} {{ status }}",
+                        "text": "№{{ item.user_service_id }} - {{ item.name }} - {{ icon }} {{ status }}",
                         "callback_data": "/service {{ item.user_service_id }}"
                     }
                 ],
@@ -386,7 +525,10 @@
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
 {{ item = us.id(args.0) }}
-{{ us = user.services.list_for_api( 'usi', args.0 ) }}
+{{ 
+    us = user.services.list_for_api('usi', args.0);
+    USE date;
+}}
 {{ EXPIRE = BLOCK }}
     {{ USE date }}
     {{ date_sec = date.now }}
@@ -433,11 +575,14 @@
   {{ status = 'Обработка' }}
 {{ END }}
 {{ TEXT = BLOCK }}
-<b>Услуга</b>: {{ us.name }}
+<b>🔑 Услуга: #<b>{{ us.user_service_id }}</b> - <code>{{ us.name }}</code></b>
     {{ IF us.expire }}
-<b>🗓️ Оплачена до</b>: {{ us.expire }}
+<b>🗓️ Оплачена до</b>: {{ date.format(us.expire, '%d.%m.%Y') }}
     {{ END }}
-<b>📊 Статус</b>: {{ icon}} {{ status }}
+<b>📊 Статус</b>: {{ icon }} {{ status }}
+{{ IF us.next != us.service_id && us.next > 0 }}
+<b>Следующий тариф ключа</b>: {{ service.id(us.next).name }}
+{{ END }}
     {{ IF mb == 0 }}
     {{ ELSE}}
         {{ IF gb >= 1 }}
@@ -458,7 +603,7 @@
                 {{ IF subscription_url.grep('^https:').first }}
                 [
                     {
-                        "text": "🔗 Показать ссылку на подписку",
+                        "text": "🔗 Подключиться",
                         "web_app": {
                             "url": "{{ config.api.url }}/shm/v1/template/subscriptions_link?format=html&session_id={{ user.gen_session.id }}&uid={{ user.id }}&us_id={{ args.0 }}"
                         }
@@ -843,11 +988,11 @@
 },
 {
     "answerCallbackQuery": {
-        "callback_query_id": {{ callback_query.id }},
-        "parse_mode":"HTML",
-        "text": "🛠 Ваш ключ создается... Пожалуйста, подождите. ⏳",
-        "show_alert": true
-    }
+         "callback_query_id": {{ callback_query.id }},
+         "parse_mode":"HTML",
+         "text": "✅ Ключ зарегистрирован.",
+         "show_alert": true
+     }
 }
 
 <% CASE '/notifications_active' %>
@@ -879,12 +1024,15 @@
 }
 
 <% CASE '/delete' %>
+{{
+  us = user.service.list_for_api('usi', args.0);
+}}
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
 {
     "sendMessage": {
-        "text": "🤔 <b>Подтвердите удаление услуги. Услугу нельзя будет восстановить!</b>",
+        "text": "🤔 <b>Подтвердите удаление ключа #{{ args.0 }}. Ключ нельзя будет восстановить!</b>",
         "reply_markup" : {
             "inline_keyboard": [
                 [
@@ -934,7 +1082,7 @@
 },
 {
     "sendMessage": {
-        "text": "🤝 <b>Добро пожаловать в нашу реферальную программу!</b>\n\nПриглашайте друзей и получайте <b>{{ config.billing.partner.income_percent }}% от каждого их платежа</b>.\n\n🔗 <b>Ваша реферальная ссылка:</b>\n<code>{{ config.tg_bot.url }}?start={{ user.id }}</code>\n\nПоделитесь ссылкой с друзьями!\n\n",
+        "text": "🤝 <b>Добро пожаловать в нашу реферальную программу!</b>\n\nПриглашайте друзей и получайте <b>{{ config.billing.partner.income_percent }}% от каждого их платежа</b>.\n\n🔗 <b>Ваша реферальная ссылка:</b>\n<code>{{ config.tg_bot.url }}?start={{ toBase64Url(toQueryString( partner_id = user.id )) }}</code>\n\nПоделитесь ссылкой с друзьями!\n\n",
         "reply_markup": {
             "inline_keyboard": [
                 [
@@ -953,6 +1101,12 @@
                         "callback_data": "/referral_help"
                     }
                 ],
+				[
+                    {
+                        "text": "📤 Список приведеных",
+                        "callback_data": "/ref_list"
+                    }
+                ],
                 [
                     {
                         "text": "🔙 Назад",
@@ -963,6 +1117,53 @@
         }
     }
 }
+
+<% CASE '/ref_list' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{{
+    limit = 5;
+    offset = (args.0 || 0);
+    referralsArray = ref(user.list_for_api('limit', limit, 'offset', offset, 'filter', {"partner_id": user.id}));
+}}
+
+{
+    "sendMessage": {
+        "text": "📃 <b>Ваши приглашённые пользователи</b>\n\n👥 <b>Всего приглашено:</b> {{ user.referrals_count }}\n\n{{ IF referralsArray.size > 0 }}{{ FOR referral IN referralsArray }}👤 <b>Имя:</b> {{ referral.full_name }}\n📅 <b>Дата регистрации:</b> {{ referral.registration_date }}\n💼 <b>Статус:</b> {{ referral.status }}\n\n{{ END }}{{ ELSE }}У вас пока нет приглашённых пользователей.\n{{ END }}",
+         "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "🔄 Обновить",
+                        "callback_data": "/ref_list {{ offset }}"
+                    }
+                ],
+                [
+                    {{ IF offset > 0 }}
+                    {
+                        "text": "⬅️ Назад",
+                        "callback_data": "/ref_list {{ offset - limit }}"
+                    },
+                    {{ END }}
+                    {{ IF referralsArray.size == limit }}
+                    {
+                        "text": "Ещё ➡️",
+                        "callback_data": "/ref_list {{ offset + limit }}"
+                    }
+                    {{ END }}
+                ],
+                [
+                    {
+                        "text": "🏠 Главное меню",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+
 
 <% CASE '/referral_stats' %>
 {
@@ -1909,7 +2110,7 @@
 				[
                     {
                         "text": "История платежей",
-                        "callback_data": "/admpayshistory {{ itemlk.id }}"
+                        "callback_data": "/listPays {{ itemlk.id }}"
                     }
                 ],
 				[
@@ -2380,6 +2581,14 @@
                     {
                         "text": "100₽",
                         "callback_data": "/admpayment {{ userData.user_id }} 100"
+                    },
+					{
+                        "text": "150₽",
+                        "callback_data": "/admpayment {{ userData.user_id }} 150"
+                    },
+					{
+                        "text": "300₽",
+                        "callback_data": "/admpayment {{ userData.user_id }} 300"
                     }
                 ],
                 {{ FOR item IN priceList }}
@@ -2417,7 +2626,6 @@
     }
 }
 {{ END }}
-
 
 <% CASE '/admpayshistory' %>
 {{ IF message.chat.id == config.telegram_admin.id }}
@@ -2478,12 +2686,6 @@
                     {
                         "text": "⬅️ Назад",
                         "callback_data": "/admuser {{ userData.user_id }}"
-                    }
-                ],
-				[
-                    {
-                        "text": "🔍 Подробнее",
-                        "callback_data": "/listPays {{ userData.user_id }}"
                     }
                 ],
                 [
@@ -2592,7 +2794,7 @@
                 [
                     {
                         "text": "(ID: {{ item.id }}), {{ item.money }}₽, {{ item.date }}",
-                        "callback_data": "/listPays{{ item.id }}"
+                        "callback_data": "/admpayshistory {{ item.id }}"
                     }
                 ],
                 {{ END }}
