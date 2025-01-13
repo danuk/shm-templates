@@ -78,13 +78,7 @@
 {
     "sendPhoto": {
         "photo": "{{ config.logo.url }}",
-        "caption": "👋 <b>Добро пожаловать, {{ user.full_name }}!</b>\n\n🚀 <b>{{ config.company.name }}</b> — быстрый, безопасный и удобный VPN для любых задач.\n\n🔽 Выберите нужный раздел ниже:",
-        "parse_mode": "HTML"
-    }
-},
-{
-    "sendMessage": {
-        "text": "🔐 <b>Наши возможности:</b>\n\n🌍 <b>{{ config.company.name }}:</b> Быстрый, безопасный и анонимный доступ к интернету.\n💼 <b>Удобство:</b> <a href=\"{{ config.apk.android }}\">📲 Android</a> | <a href=\"{{ config.apk.ios }}\">📲 iOS</a>\n🎯 <b>Почему выбирают нас?</b>\n✔️ Простое подключение\n✔️ Надежная защита данных\n✔️ Круглосуточная поддержка",
+        "caption": "🔐 <b>Наши возможности:</b>\n\n🌍 <b>{{ config.company.name }}:</b> Быстрый, безопасный и анонимный доступ к интернету.\n\n💼 <b>Удобство:</b> <a href=\"{{ config.apk.android }}\">📲 Android</a> | <a href=\"{{ config.apk.ios }}\">📲 iOS</a>\n\n🎯 <b>Почему выбирают нас?</b>\n✔️ Простое подключение\n✔️ Надежная защита данных\n✔️ Круглосуточная поддержка",
         "parse_mode": "HTML",
         "reply_markup": {
             "inline_keyboard": [
@@ -170,8 +164,10 @@
 {{ USE date }}
 
 {
-    "sendMessage": {
-        "text": "<blockquote>💰 <b>Баланс:</b> {{ user.balance }} ₽\n🎁 <b>Бонусы:</b> {{ user.get_bonus }} ₽\n🔖 <b>Скидка:</b> {{ user.discount }}%\n👥 <b>Приглашено друзей:</b> {{ user.referrals_count }}\n💳 <b>Общий доход от рефералов:</b> {{ user.get_bonus }} ₽\n\n⏳ <b>Следующее продление:</b> {{ IF userlogs.expire }}{{ date.format(userlogs.expire, '%H:%M %d.%m.%Y') }}{{ ELSE }}неизвестно{{ END }}\n💵 <b>Ожидаемая оплата:</b> {{ forecast.total }} ₽\n\n🔒 <b>Заблокированные сервисы:</b> ({{ blocked_services.size }})\n{{ FOR service IN blocked_services }}- {{ service.name }}\n{{ END }}\n\n❗ <b>Неоплаченные сервисы:</b> ({{ expired_services.size }})\n{{ FOR service IN expired_services }}- {{ service.name }}\n{{ END }}\n\n✅ <b>Активные услуги:</b> ({{ active_services.size }})\n{{ IF active_services.size > 0 }}{{ FOR service IN active_services }}- {{ service.name }} (до {{ date.format(service.expire, '%H:%M %d.%m.%Y') }})\n{{ END }}{{ ELSE }}Нет активных услуг.{{ END }}\n\n💵 <b>Необходимо оплатить:</b> <b>{{ user.pays.forecast('blocked',1).total }} ₽</b></blockquote>",
+    "sendPhoto": {
+        "photo": "{{ config.logo.url }}",
+        "caption": "<blockquote>💰 <b>Баланс:</b> {{ user.balance }} ₽\n🎁 <b>Бонусы:</b> {{ user.get_bonus }} ₽\n🔖 <b>Скидка:</b> {{ user.discount }}%\n👥 <b>Приглашено друзей:</b> {{ user.referrals_count }}\n💳 <b>Общий доход от рефералов:</b> {{ user.get_bonus }} ₽\n\n⏳ <b>Следующее продление:</b> {{ IF userlogs.expire }}{{ date.format(userlogs.expire, '%H:%M %d.%m.%Y') }}{{ ELSE }}неизвестно{{ END }}\n💵 <b>Ожидаемая оплата:</b> {{ forecast.total }} ₽\n\n🔒 <b>Заблокированные сервисы:</b> ({{ blocked_services.size }})\n{{ FOR service IN blocked_services }}- {{ service.name }}\n{{ END }}\n\n❗ <b>Неоплаченные сервисы:</b> ({{ expired_services.size }})\n{{ FOR service IN expired_services }}- {{ service.name }}\n{{ END }}\n\n✅ <b>Активные услуги:</b> ({{ active_services.size }})\n{{ IF active_services.size > 0 }}{{ FOR service IN active_services }}- {{ service.name }} (до {{ date.format(service.expire, '%H:%M %d.%m.%Y') }})\n{{ END }}{{ ELSE }}Нет активных услуг.{{ END }}\n\n💵 <b>Необходимо оплатить:</b> <b>{{ user.pays.forecast('blocked',1).total }} ₽</b></blockquote>",
+		"parse_mode": "HTML",
         "reply_markup" : {
             "inline_keyboard": [
                 [
@@ -261,8 +257,10 @@
 
 <% CASE '/pays' %>
 {
-    "sendMessage": {
-        "text": "☰ <b>История платежей</b>",
+    "sendPhoto": {
+        "photo": "{{ config.logo.url }}",
+        "caption": "☰ <b>История платежей</b>",
+		"parse_mode": "HTML",
         "reply_markup": {
             "inline_keyboard": [
                 {{
@@ -403,11 +401,25 @@ ID кошелька: {{ payMethod.account_number }}
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
+{{
+    us = user.services.list_for_api('usi', args.0);
+    USE date;
+}}
+{{ TEXT = BLOCK }}
+⭐️ <b>Ваш ID:</b> {{ user.id }} ⭐️
+
+💡 <i>Для получения подробной информации о вашем ключе, просто нажмите на его название ниже.</i>
+
+❇️ <b>Для продления или разблокировки ключа:</b> Пополните баланс. Ваши ключи будут активированы сразу после оплаты.
+
+🔑 <b>Ваши текущие ключи:</b>
+{{ END }}
+
 {
     "sendPhoto": {
         "photo": "{{ config.logo.url }}",
-		"parse_mode": "HTML",
-        "caption": "⭐️ <b>Мой ID:</b> {{ user.id }} ⭐️\n\n💡 Для получения подробной информации о вашем ключе, нажмите на его название.\n\n❇️ Для <b>разблокировки или продления</b> срока действия ключа достаточно пополнить баланс.\n\n🔑 <b>Ваши купленные ключи:</b>",
+        "parse_mode": "HTML",
+        "caption": "{{ TEXT.replace('\n','\n') }}\n",
         "reply_markup": {
             "inline_keyboard": [
                 {{ FOR item IN ref( user.services.list_for_api( 'category', '%' ) ) }}
@@ -464,6 +476,7 @@ ID кошелька: {{ payMethod.account_number }}
         }
     }
 }
+
 
 <% CASE '/hint' %>
 {
@@ -756,41 +769,47 @@ ID кошелька: {{ payMethod.account_number }}
         }
     }
 }
-
-
 <% CASE '/pricelist' %>
 
-{{ hasnotpaidus = ref(user.services.list_for_api('category', '%', 'filter',{ 'status' => 'NOT PAID' } )).size }}
-{{ hasblocked = ref(user.services.list_for_api('category', '%', 'filter',{ 'status' => 'BLOCK' } )).size }}
+{{ hasnotpaidus = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'NOT PAID' } )).size }}
+{{ hasblocked = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'BLOCK' } )).size }}
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
+{{ TEXT = BLOCK }}
+☷ <b>Выберите страну, для которой хотите заказать тарифный план:</b>
+
+<i>Нажмите на соответствующую страну, чтобы увидеть доступные тарифы.</i>
+{{ END }}
 {
     "sendMessage": {
-        "text": "🌍 **Выберите страну для тарифа**:\n\nМы предлагаем выгодные тарифы для различных стран. Выберите страну, чтобы увидеть доступные планы и цены. 💸",
-        "parse_mode": "Markdown",
+        "text": "{{ TEXT.replace('\n','\n') }}\n",
+        "parse_mode": "HTML",
         "reply_markup": {
             "inline_keyboard": [
-                [
-                    {
-                        "text": "🇺🇸 США",
-                        {{ IF hasnotpaidus > 0 || hasblocked > 0 }}
-                            "callback_data": "/hint"
-                        {{ ELSE }}
-                            "callback_data": "/location USA"
-                        {{ END }}
-                    }
-                ],
-                [
-                    {
-                        "text": "🇪🇸 Испания",
-                        {{ IF hasnotpaidus > 0 || hasblocked > 0 }}
-                            "callback_data": "/hint"
-                        {{ ELSE }}
-                            "callback_data": "/location SPAIN"
-                        {{ END }}
-                    }
-                ],
+                {{ FOR country IN ["USA", "SPAIN", "LT", "FRANCE", "GERMANY"] }}
+                    [
+                        {
+                            "text":
+                                {{ IF country == 'USA' }} "🇺🇸 США"
+                                {{ ELSE }}
+                                    {{ IF country == 'SPAIN' }} "🇪🇸 Испания"
+                                    {{ ELSE }}
+                                        {{ IF country == 'LT' }} "🇱🇹 Литва"
+                                        {{ ELSE }}
+                                            {{ IF country == 'FRANCE' }} "🇫🇷 Франция"
+                                            {{ ELSE }} "🇩🇪 Германия" {{ END }}
+                                        {{ END }}
+                                    {{ END }}
+                                {{ END }},
+                            {{ IF hasnotpaidus > 0 || hasblocked > 0 }}
+                                "callback_data": "/hint"
+                            {{ ELSE }}
+                                "callback_data": "/location {{ country }}"
+                            {{ END }}
+                        }
+                    ],
+                {{ END }}
                 [
                     {
                         "text": "↩️ Назад к меню",
@@ -802,18 +821,22 @@ ID кошелька: {{ payMethod.account_number }}
     }
 }
 
-
 <% CASE '/location' %>
 {{ selected_location = args.0 }}
-{{ hasnotpaidus = ref(user.services.list_for_api('category', '%', 'filter',{ 'status' => 'NOT PAID' } )).size }}
-{{ hasblocked = ref(user.services.list_for_api('category', '%', 'filter',{ 'status' => 'BLOCK' } )).size }}
+{{ hasnotpaidus = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'NOT PAID' } )).size }}
+{{ hasblocked = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'BLOCK' } )).size }}
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
+{{ TEXT = BLOCK }}
+🌍 **Выберите тариф для локации: {{ selected_location }}**
+
+<i>Мы предлагаем гибкие тарифы с разными сроками действия. Выберите подходящий план:</i>
+{{ END }}
 {
     "sendMessage": {
-        "text": "🌍 **Выберите тариф для локации: {{ selected_location }}**\n\nМы предлагаем гибкие тарифы с разными сроками действия. Выберите подходящий план.",
-        "parse_mode": "Markdown",
+        "text": "{{ TEXT.replace('\n','\n') }}\n",
+        "parse_mode": "HTML",
         "reply_markup": {
             "inline_keyboard": [
                 {{ IF selected_location == 'LT' }}
@@ -964,7 +987,7 @@ ID кошелька: {{ payMethod.account_number }}
 {{ subscription_url = storage.read('name','vpn_mrzb_' _ args.0 ).subscription_url }}
 {
     "sendMessage": {
-        "text": "🎉 <b>Подписка активирована!</b>\n\n<b>Название услуги:</b> {{ item.name ? item.name : 'Не указано' }}\n<b>Номер подписки:</b> {{ item.user_service_id ? item.user_service_id : 'Не указан' }}\n\n🗓 <b>Дата активации:</b> {{ USE date }}{{ date.format(item.created, '%d.%m.%Yг. %H:%M') }}\n<b>Дата окончания:</b> {{ USE date }}{{ date.format(item.expire, '%d.%m.%Yг. %H:%M') }}\n\nТеперь вы можете использовать все возможности вашей подписки.",
+        "text": "<b>🎉 Подписка активирована!</b>\n\n<b>🔹 Название услуги:</b> {{ item.name }}\n<b>🔹 ID услуги:</b> {{ item.user_service_id }}\n\n<b>✅ Статус:</b> Активирована\n\n<b>📅 Дата активации:</b> {{ USE date }}{{ date.format( item.created, '%d.%m.%Yг. %H:%M') }}\n<b>⏳ До:</b> {{ USE date }}{{ date.format( item.expire, '%d.%m.%Yг. %H:%M') }}\n\n<b>👉 Перейдите по кнопке ниже для автоматического подключения.</b>",
         "parse_mode": "HTML",
         "reply_markup": {
             "inline_keyboard": [
@@ -978,14 +1001,36 @@ ID кошелька: {{ payMethod.account_number }}
                 ],
                 [
                     {
-                        "text": "🏠 Перейти в ключи,
-                        "callback_data": "/list"
+                        "text": "🏠 Вернуться в меню",
+                        "callback_data": "/start"
                     }
                 ]
             ]
         }
     }
 }
+
+
+<% CASE '/notifications_block' %>
+{{ item = us.id( args.0 ) }}
+{{ subscription_url = storage.read('name','vpn_mrzb_' _ args.0 ).subscription_url }}
+{
+    "sendMessage": {
+        "text": "<b>🚫 Подписка заблокирована!</b>\n\n<b>🔹 Название услуги:</b> {{ item.name }}\n<b>🔹 ID услуги:</b> {{ item.user_service_id }}\n\n<b>⚠️ Статус:</b> Заблокирована\n\n<b>📅 Дата создания:</b> {{ USE date }}{{ date.format( item.created, '%d.%m.%Yг. %H:%M') }}\n<b>⏳ До:</b> {{ USE date }}{{ date.format( item.expire, '%d.%m.%Yг. %H:%M') }}\n\n<b>👉 Пожалуйста, свяжитесь с администрацией для получения дополнительной информации.</b>",
+        "parse_mode": "HTML",
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "🏠 Вернуться в меню",
+                        "callback_data": "/start"
+                    }
+                ]
+            ]
+        }
+    }
+}
+
 
 <% CASE '/delete' %>
 {{
