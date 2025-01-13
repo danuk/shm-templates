@@ -254,13 +254,12 @@
     }
 }
 
-
 <% CASE '/pays' %>
 {
     "sendPhoto": {
         "photo": "{{ config.logo.url }}",
         "caption": "☰ <b>История платежей</b>",
-		"parse_mode": "HTML",
+        "parse_mode": "HTML",
         "reply_markup": {
             "inline_keyboard": [
                 {{
@@ -271,9 +270,13 @@
                 }}
                 {{ IF pays.size > 0 }}
                     {{ FOR item in pays }}
+                    {{ TEXT = BLOCK }}
+📅 Дата: {{ USE date }}{{ date.format(item.date, '%d.%m.%Y') }}  
+💰 Сумма: {{ item.money }} ₽
+                    {{ END }}
                     [
                         {
-                            "text": "📅 Дата: {{ item.date }} | 💰 {{ item.money }} руб.",
+                            "text": "{{ TEXT.replace('\n',' ') }}",
                             "callback_data": "/checkpay {{ item.id }}"
                         }
                     ],
@@ -1022,7 +1025,6 @@ ID кошелька: {{ payMethod.account_number }}
     }
 }
 
-
 <% CASE '/notifications_block' %>
 {{ item = us.id( args.0 ) }}
 {{ subscription_url = storage.read('name','vpn_mrzb_' _ args.0 ).subscription_url }}
@@ -1034,8 +1036,7 @@ ID кошелька: {{ payMethod.account_number }}
 <b>🔹 ID услуги:</b> № <code>{{ item.user_service_id }}</code>
 <b>⚠️ Статус:</b> Заблокирована
 
-<b>💰 Сумма к оплате:</b> <i>{{ user.pays.forecast('blocked', 1).total }}₽</i>  
-<b>📅 Крайний срок оплаты:</b> <i>{{ user.pays.forecast('blocked', 1).due_date }}</i>  
+<b>💰 Сумма к оплате:</b> <i>{{ user.pays.forecast('blocked', 1).total }}₽</i>
 
 <b>❗ Причина блокировки:</b> <i>Недостаточно средств на счете. Пополните баланс, чтобы продолжить обслуживание.</i> 💳
 
@@ -1059,8 +1060,6 @@ ID кошелька: {{ payMethod.account_number }}
         }
     }
 }
-
-
 
 <% CASE '/delete' %>
 {{
