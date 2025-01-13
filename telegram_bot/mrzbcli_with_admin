@@ -985,9 +985,21 @@ ID кошелька: {{ payMethod.account_number }}
 <% CASE '/notifications_active' %>
 {{ item = us.id( args.0 ) }}
 {{ subscription_url = storage.read('name','vpn_mrzb_' _ args.0 ).subscription_url }}
+{{ TEXT = BLOCK }}
+<b>🎉 Подписка активирована!</b>
+
+<b>🔹 Название услуги:</b> <code>{{ item.name }}</code>
+<b>🔹 ID услуги:</b>  № <code>{{ item.user_service_id }}</code>
+<b>✅ Статус:</b> Активирована
+
+<b>📅 Дата активации:</b> {{ USE date }}{{ date.format( item.created, '%d.%m.%Yг. %H:%M') }}
+<b>⏳ До:</b> {{ USE date }}{{ date.format( item.expire, '%d.%m.%Yг. %H:%M') }}
+
+<b>👉 Для автоматического подключения перейдите по кнопке ниже.</b>
+{{ END }}
 {
     "sendMessage": {
-        "text": "<b>🎉 Подписка активирована!</b>\n\n<b>🔹 Название услуги:</b> {{ item.name }}\n<b>🔹 ID услуги:</b> {{ item.user_service_id }}\n\n<b>✅ Статус:</b> Активирована\n\n<b>📅 Дата активации:</b> {{ USE date }}{{ date.format( item.created, '%d.%m.%Yг. %H:%M') }}\n<b>⏳ До:</b> {{ USE date }}{{ date.format( item.expire, '%d.%m.%Yг. %H:%M') }}\n\n<b>👉 Перейдите по кнопке ниже для автоматического подключения.</b>",
+        "text": "{{ TEXT.replace('\n','\n') }}\n",
         "parse_mode": "HTML",
         "reply_markup": {
             "inline_keyboard": [
@@ -995,7 +1007,7 @@ ID кошелька: {{ payMethod.account_number }}
                     {
                         "text": "🚀 Подключить автоматически",
                         "web_app": {
-                            "url": "{{ config.api.url }}/shm/v1/template/subscriptions_link?format=html&session_id={{ user.gen_session.id }}&service_id={{ args.0 }}"
+                            "url": "{{ config.api.url }}/shm/v1/template/subscriptions_link?format=html&session_id={{ user.gen_session.id }}&uid={{ user.id }}&us_id={{ args.0 }}"
                         }
                     }
                 ],
@@ -1014,9 +1026,22 @@ ID кошелька: {{ payMethod.account_number }}
 <% CASE '/notifications_block' %>
 {{ item = us.id( args.0 ) }}
 {{ subscription_url = storage.read('name','vpn_mrzb_' _ args.0 ).subscription_url }}
+{{ TEXT = BLOCK }}
+<b>🚫 Подписка заблокирована!</b>
+
+<b>🔹 Название услуги:</b> <code>{{ item.name }}</code>
+<b>🔹 ID услуги:</b>  № <code>{{ item.user_service_id }}</code>
+<b>⚠️ Статус:</b> Заблокирована
+
+<b>📅 Дата активации:</b> {{ USE date }}{{ date.format( item.created, '%d.%m.%Yг. %H:%M') }}
+<b>⏳ До:</b> {{ USE date }}{{ date.format( item.expire, '%d.%m.%Yг. %H:%M') }}
+
+<b>👉 Для получения дополнительной информации, пожалуйста, свяжитесь с администрацией.</b>
+{{ END }}
+
 {
     "sendMessage": {
-        "text": "<b>🚫 Подписка заблокирована!</b>\n\n<b>🔹 Название услуги:</b> {{ item.name }}\n<b>🔹 ID услуги:</b> {{ item.user_service_id }}\n\n<b>⚠️ Статус:</b> Заблокирована\n\n<b>📅 Дата создания:</b> {{ USE date }}{{ date.format( item.created, '%d.%m.%Yг. %H:%M') }}\n<b>⏳ До:</b> {{ USE date }}{{ date.format( item.expire, '%d.%m.%Yг. %H:%M') }}\n\n<b>👉 Пожалуйста, свяжитесь с администрацией для получения дополнительной информации.</b>",
+        "text": "{{ TEXT.replace('\n','\n') }}\n",
         "parse_mode": "HTML",
         "reply_markup": {
             "inline_keyboard": [
