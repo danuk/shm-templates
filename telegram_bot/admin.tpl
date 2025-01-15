@@ -12,6 +12,8 @@
 
 теперь идем  в SHM > Скписок > Выбираем пользователя > settings и  добавляем role: admin
 
+Вставить до <% END %>
+
 <% CASE 'admin:menu' %>
 {{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
 {{ TEXT = BLOCK }}
@@ -310,6 +312,18 @@ Telegram: {{ userData.settings.telegram.login }}
                         "callback_data": "admin:users:id:bonuses {{ userData.user_id }}"
                     }
                 ],
+				[
+                    {
+                        "text": "🎁 Управление бонусами",
+                        "callback_data": "admin:users:id:bonuses {{ userData.user_id }}"
+                    }
+                ],
+				[
+                    {
+                        "text": "✉️ Написать пользователю 💬",
+                        "callback_data": "admin:user:msg {{ user.settings.telegram.chat_id }}"
+                    }
+                ],
                 [
                     {
                         "text": "{{ status = (userData.block == 0 ? "🔴 Заблокировать" : "🟢 Активировать"); status; }}",
@@ -337,6 +351,16 @@ Telegram: {{ userData.settings.telegram.login }}
     }
 }
 {{ END }}
+
+<% CASE 'admin:user:msg' %>
+{
+"sendMessage": {
+        "text": "#{{ args.0 }}#\nВведите сообщение для пользователя",
+        "reply_markup": {
+            "force_reply": true
+        }
+    }
+}
 
 <% CASE 'admin:users:block' %>
 {{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
@@ -1559,108 +1583,310 @@ ID начисления: {{ data.id }}
 }
 {{ END }}
 
-<% CASE DEFAULT %>
-
-
-{{ IF user.settings.state == 'awaiting_promocode' }}
-{{
-    IF user.settings.bot.reqPromo;
-        temp = user.settings.bot.reqPromo + 1;
-        temp2 = user.settings.bot.reqPromo - 1;
-        delete(msgID=[temp, temp2, user.settings.bot.reqPromo, message.message_id]);
-        ret = user.set_settings({'bot' => {'reqPromo' => message.message_id} });
-    END;
-
-    # Проверяем, что введено
-    IF message.text.match('^[a-zA-Z0-9_-]+$');
-        promocode = message.text;
-        ret = user.set_settings({'state' => ''});
-        
-        IF promo.apply(promocode);
-            TEXT = "✅ <b>Промокод $promocode применён!</b>";
-        ELSE;
-            TEXT = "⭕️ <b>Промокод $promocode не найден!</b>";
-        END;
-
-    ELSE;
-        TEXT = "❌ <b>Ошибка:</b> Промокод может содержать только буквы, цифры, тире (-) и нижнее подчёркивание (_).";
-    END;
-}}
-
+<% CASE %>
+{{ IF message.reply_to_message.chat.id == config.telegram_admin.id }}
+{{ text = message.reply_to_message.caption || message.reply_to_message.text }}
+{{ chatid = text.split('#').1 }}
+{{ IF chatid }}
+{{ IF message.photo }}
 {
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
+    "sendPhoto": {
+        "protect_content": true,
         "parse_mode": "HTML",
-        "text": "{{ TEXT.replace('\n','\n') }}",
-        "reply_markup": {
+        "chat_id": "{{ chatid }}",
+        "photo": "{{ message.photo.0.file_id }}",
+        "caption": "{{ message.text }}",
+        "reply_markup" : {
             "inline_keyboard": [
-    [
-        {
-            "text": "🏷️ Ввести ещё",
-            "callback_data": "promocode"
-        }
-    ],
-    [
-        {
-            "text": "🏠 Главное меню",
-            "callback_data": "{{ mainMenuCmd }}"
-        }
-    ]
+                 [
+                    {
+                        "text": "🏠 Личный кабинет",
+                        "callback_data": "/balance"
+                    }
+                ]
             ]
         }
     }
 }
-{{ END }}
-
-{{ ELSIF user.settings.state == 'awaiting_amount' AND user.settings.bot.switchUser }}
-    {{
-        userData = user.id(user.settings.bot.switchUser);
-        IF message.text.match('^-?\d+(\.\d+)?$');
-            amount = message.text;
-
-            IF (ret = userData.payment('money', amount, 'pay_system_id', 'manual'));
-                TEXT = "✅ <b>Баланс пользователя $userData.user_id пополнен на $amount руб.</b>\nТекущий баланс: $userData.balance руб.";
-            ELSE;
-                TEXT = "⭕️ Ошибка пополнения. Повторите попытку.";
-            END;
-
-            ret = user.set_settings({'state' => ''});
-            ret = user.set_settings({'bot' => {'switchUser' => ''} });
-        ELSE;
-            TEXT = "⭕️ Ошибка пополнения. Повторите попытку.";
-        END;
-    }}
+{{ ELSIF message.text }}
 {
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
+    "sendMessage": {
+        "protect_content": true,
         "parse_mode": "HTML",
-        "text": "{{ TEXT.replace('\n','\n') }}",
-        "reply_markup": {
+        "chat_id": "{{ chatid }}",
+        "text": "{{ message.text }}",
+        "reply_markup" : {
             "inline_keyboard": [
-[
-    {
-        "text": "ℹ️ Информация о пользователе",
-        "callback_data": "admin:users:id {{ userData.user_id }}"
-    }
-],
-[
-    {
-        "text": "🏠 Главное меню",
-        "callback_data": "{{ mainMenuCmd }}"
-    }
-]
+                 [
+                    {
+                        "text": "🏠 Личный кабинет",
+                        "callback_data": "/balance"
+                    }
+                ]
             ]
         }
     }
 }
-{{ END }}
-
+{{ ELSIF message.document }}
+{
+    "sendDocument": {
+        "protect_content": true,
+        "parse_mode": "HTML",
+        "chat_id": "{{ chatid }}",
+        "document": "{{ message.document.file_id }}",
+        "caption": "{{ message.text }}",
+        "reply_markup" : {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "🏠 Личный кабинет",
+                        "callback_data": "/balance"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ ELSIF message.video }}
+{
+    "sendVideo": {
+        "protect_content": true,
+        "parse_mode": "HTML",
+        "chat_id": "{{ chatid }}",
+        "video": "{{ message.video.file_id }}",
+        "caption": "{{ message.caption }}",
+        "reply_markup" : {
+            "inline_keyboard": [
+                 [
+                    {
+                        "text": "🏠 Личный кабинет",
+                        "callback_data": "/balance"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ ELSIF message.text_with_links }}
+{
+    "sendMessage": {
+        "protect_content": true,
+        "parse_mode": "HTML",
+        "chat_id": "{{ chatid }}",
+        "text": "{{ message.text_with_links }}",
+        "reply_markup" : {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "🏠 Личный кабинет",
+                        "callback_data": "/balance"
+                    }
+                ]
+            ]
+        }
+    }
+}
 {{ ELSE }}
-    {{ 
-        ret = user.set_settings({'bot' => {'switchUser' => ''} });
-        ret = user.set_settings({'state' => ''});
-    }}
 {
-    "deleteMessage": { "message_id": {{ message.message_id }} }
+    "sendMessage": {
+        "chat_id": "{{ chatid }}",
+        "text": "Доступны только текстовые сообщения, фото, файлы и видео"
+    }
 }
 {{ END }}
+{{ ELSE }}
+{
+    "sendMessage": {
+        "chat_id": "{{ config.telegram_admin.id }}",
+        "text": "Не удалось найти пользователя или вы не ответили на сообщение"
+    }
+}
+{{ END }}
+{{ ELSE }}
+{{ IF message.photo }}
+{
+    "sendPhoto": {
+        "protect_content": true,
+        "parse_mode": "HTML",
+        "chat_id": "{{ config.telegram_admin.id }}",
+        "photo": "{{ message.photo.0.file_id }}",
+        "caption": "#{{ user.settings.telegram.chat_id }}# \nСообщение от {{ user.full_name }} - {{ user.id }}:\n<a href=\"https://t.me/{{ user.settings.telegram.login }}\">{{ user.settings.telegram.login }}</a>\n\n{{ message.caption }}",
+        "reply_markup" : {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "Профиль пользователя",
+                        "callback_data": "admin:users:id {{ user.id }}"
+                    }
+                ],  [
+                    {
+                        "text": "Пользователи",
+                        "callback_data": "admin:users:list"
+                    },{
+                        "text": "Админка",
+                        "callback_data": "admin:menu"
+                    }
+                ],
+                 [
+                    {
+                        "text": "🏠 Домой",
+                        "callback_data": "/start"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ ELSIF message.text }}
+{
+    "sendMessage": {
+        "protect_content": true,
+        "parse_mode": "HTML",
+        "chat_id": "{{ config.telegram_admin.id }}",
+        "text": "#{{ user.settings.telegram.chat_id }}# \nСообщение от {{ user.full_name }} - {{ user.id }}:\n<a href=\"https://t.me/{{ user.settings.telegram.login }}\">{{ user.settings.telegram.login }}</a>\n\n{{ message.text }}",
+              "reply_markup" : {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "Профиль пользователя",
+                        "callback_data": "admin:users:id {{ user.id }}"
+                    }
+                ],  [
+                    {
+                        "text": "Пользователи",
+                        "callback_data": "admin:users:list"
+                    },{
+                        "text": "Админка",
+                        "callback_data": "admin:menu"
+                    }
+                ],
+                 [
+                    {
+                        "text": "🏠 Домой",
+                        "callback_data": "/start"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ ELSIF message.document }}
+{
+    "sendDocument": {
+        "protect_content": true,
+        "parse_mode": "HTML",
+        "chat_id": "{{ config.telegram_admin.id }}",
+        "document": "{{ message.document.file_id }}",
+        "caption": "#{{ user.settings.telegram.chat_id }}# \nСообщение от {{ user.full_name }} - {{ user.id }}:\n<a href=\"https://t.me/{{ user.settings.telegram.login }}\">{{ user.settings.telegram.login }}</a>\n\n{{ message.caption }}",
+            "reply_markup" : {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "Профиль пользователя",
+                        "callback_data": "admin:users:id {{ user.id }}"
+                    }
+                ],  [
+                    {
+                        "text": "Пользователи",
+                        "callback_data": "admin:users:list"
+                    },{
+                        "text": "Админка",
+                        "callback_data": "admin:menu"
+                    }
+                ],
+                 [
+                    {
+                        "text": "🏠 Домой",
+                        "callback_data": "/start"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ ELSIF message.video }}
+{
+    "sendVideo": {
+        "protect_content": true,
+        "parse_mode": "HTML",
+        "chat_id": "{{ config.telegram_admin.id }}",
+        "video": "{{ message.video.file_id }}",
+        "caption": ""#{{ user.settings.telegram.chat_id }}# \nСообщение от {{ user.full_name }} - {{ user.id }}:\n<a href=\"https://t.me/{{ user.settings.telegram.login }}\">{{ user.settings.telegram.login }}</a>\n\n{{ message.caption }}",
+         "reply_markup" : {
+            "inline_keyboard": [
+                 [
+                    {
+                        "text": "Профиль пользователя",
+                        "callback_data": "admin:users:id {{ user.id }}"
+                    }
+                ],  [
+                    {
+                        "text": "Пользователи",
+                        "callback_data": "admin:users:list"
+                    },{
+                        "text": "Админка",
+                        "callback_data": "admin:menu"
+                    }
+                ],
+                 [
+                    {
+                        "text": "🏠 Домой",
+                        "callback_data": "/start"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ ELSIF message.text_with_links }}
+{
+    "sendMessage": {
+        "protect_content": true,
+        "parse_mode": "HTML",
+        "chat_id": "{{ config.telegram_admin.id }}",
+        "text": ""#{{ user.settings.telegram.chat_id }}# \nСообщение от {{ user.full_name }} - {{ user.id }}:\n<a href=\"https://t.me/{{ user.settings.telegram.login }}\">{{ user.settings.telegram.login }}</a>\n\n{{ message.text_with_links }}",
+             "reply_markup" : {
+            "inline_keyboard": [
+                 [
+                    {
+                        "text": "Профиль пользователя",
+                        "callback_data": "admin:users:id {{ user.id }}"
+                    }
+                ],  [
+                    {
+                        "text": "Пользователи",
+                        "callback_data": "admin:users:list"
+                    },{
+                        "text": "Админка",
+                        "callback_data": "admin:menu"
+                    }
+                ],
+                 [
+                    {
+                        "text": "🏠 Домой",
+                        "callback_data": "/start"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ ELSE }}
+{
+    "sendMessage": {
+        "text": "Доступны только текстовые сообщения, фото, файлы и видео"
+    }
+}
+{{ END }}
+{{ IF message.reply_to_message }}
+{
+    "forwardMessage": {
+        "chat_id": "{{ config.telegram_admin.id }}",
+        "from_chat_id": "{{ message.chat.id }}",
+        "message_id": "{{ message.reply_to_message.message_id }}"
+    }
+}
+{{ END }}
+{{ END }}
+
+<% END %>
