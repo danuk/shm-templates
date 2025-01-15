@@ -259,6 +259,7 @@
 
 <% CASE 'admin:users:id' %>
 {{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{ user = user.switch(args.0) }}
 {{
     userData = user.id(args.0);
     userPartner = user.id(userData.partner_id);
@@ -339,7 +340,7 @@ Telegram: {{ userData.settings.telegram.login }}
                 [
                     {
                         "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); menuRole; }}",
-                        "callback_data": "admin_menu"
+                        "callback_data": "admin:menu"
                     },
                     {
                         "text": "🏠 Главное меню",
@@ -1584,7 +1585,7 @@ ID начисления: {{ data.id }}
 {{ END }}
 
 <% CASE %>
-{{ IF message.reply_to_message.chat.id == config.telegram_admin.id }}
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
 {{ text = message.reply_to_message.caption || message.reply_to_message.text }}
 {{ chatid = text.split('#').1 }}
 {{ IF chatid }}
