@@ -82,6 +82,14 @@
         "parse_mode": "HTML",
         "reply_markup": {
             "inline_keyboard": [
+				{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+                [
+                    {
+                        "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); menuRole; }}",
+                        "callback_data": "admin:menu"
+                    }
+                ],
+                {{ END }}
                 [
                     {
                         "text": "🪪 Профиль: {{ user.balance }} ₽",
@@ -104,11 +112,11 @@
                 ],
                 [
                     {
-                        "text": "🛒 Купить VPN",
+                        "text": "🛒 Купить",
                         "callback_data": "/pricelist"
                     },
                     {
-                        "text": "🔑 Мои VPN ключи",
+                        "text": "🔑 Мои ключи",
                         "callback_data": "/list"
                     }
                 ],
@@ -121,15 +129,7 @@
                         "text": "📖 Помощь и поддержка",
                         "callback_data": "/help"
                     }
-                ]
-                {{ IF message.chat.id == config.telegram_admin.id }} ,
-                [
-                    {
-                        "text": "🛠 Админ-панель",
-                        "callback_data": "/adminmenu"
-                    }
-                ]
-                {{ END }} ,
+                ],
                 [
                     {
                         "text": "🔄 Обновить меню",
@@ -1580,937 +1580,42 @@ ID кошелька: {{ payMethod.account_number }}
     }
 }
 
-<% CASE '/blocked_services' %>
-{{ blocked_services = ref(user.services.list_for_api('admin', 1, 'limit', limit, 'offset', offset, 'filter', { 'status': 'BLOCK' })) }}
-{
-    "sendMessage": {
-        "message_id": {{ message.message_id }},
-        "parse_mode": "HTML",
-        "text": "🔴 <b>Заблокированные услуги</b>\n\n{{ IF blocked_services }}{{ FOR service IN blocked_services }}🛠️ <b>Сервис:</b> {{ service.name }}\n👤 <b>Пользователь:</b> {{ service.user }}\n📆 <b>Дата блокировки:</b> {{ service.block_date }}\n\n{{ END }}{{ ELSE }}⚠️ Нет заблокированных услуг.{{ END }}",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    { "text": "🔙 Назад", "callback_data": "/adminmenu" }
-                ]
-            ]
-        }
-    }
-}
-
-<% CASE '/expired_services' %>
-{{ expired_services = ref(user.services.list_for_api('admin', 1, 'limit', limit, 'offset', offset, 'filter', { 'status': 'NOT PAID' })) }}
-{
-    "sendMessage": {
-        "message_id": {{ message.message_id }},
-        "parse_mode": "HTML",
-        "text": "🟡 <b>Неоплаченные услуги</b>\n\n{{ IF expired_services }}{{ FOR service IN expired_services }}🛠️ <b>Сервис:</b> {{ service.name }}\n👤 <b>Пользователь:</b> {{ service.user }}\n📆 <b>Дата истечения:</b> {{ service.expiry_date }}\n\n{{ END }}{{ ELSE }}⚠️ Нет неоплаченных услуг.{{ END }}",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    { "text": "🔙 Назад", "callback_data": "/adminmenu" }
-                ]
-            ]
-        }
-    }
-}
-
-<% CASE '/adminmenu' %>
-{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
-{
-    "sendMessage": {
-        "message_id": {{ message.message_id }},
-        "parse_mode": "HTML",
-        "text": "📡 <b>Админка</b>\n\nДобро пожаловать в административное меню. Выберите раздел для управления ботом:",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    { "text": "👥 Управление пользователями", "callback_data": "/admusers" },
-                    { "text": "📊 Статистика", "callback_data": "/admstats" }
-                ],
-                [
-                    { "text": "🎁 Промокоды", "callback_data": "/adminpromocodes" },
-                    { "text": "⚙️ Настройки", "callback_data": "/adminsettings" }
-                ],
-                [
-                    { "text": "📅 Отчет за месяц", "callback_data": "/monthlyreport" },
-                    { "text": "📝 Логи", "callback_data": "/adminlogs" }
-                ],
-                [
-                    { "text": "📨 Сообщение пользователю", "callback_data": "/admusermsg" },
-                    { "text": "🔒 Управление доступом", "callback_data": "/adminaccess" }
-                ],
-                [
-                    { "text": "🛠️ Техническое обслуживание", "callback_data": "/admmaintenance" },
-                    { "text": "💻 Серверы", "callback_data": "/admservers" }
-                ],
-                [
-                    { "text": "🏠 Домой", "callback_data": "/menu" }
-                ]
-            ]
-        }
-    }
-}
-{{ END }}
-
-<% CASE '/adminpromocodes' %>
-{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
-{{ promocodes = ref(service.create_for_api('get_promocodes')) }}
-{
-    "sendMessage": {
-        "message_id": {{ message.message_id }},
-        "parse_mode": "HTML",
-        "text": "🎁 <b>Управление промокодами</b>\n\nВыберите действие:",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    { "text": "📄 Список промокодов", "callback_data": "/listpromocodes" },
-                    { "text": "➕ Добавить промокод", "callback_data": "/addpromocode" }
-                ],
-                [
-                    { "text": "✏️ Редактировать промокод", "callback_data": "/editpromocode" },
-                    { "text": "🗑️ Удалить промокод", "callback_data": "/deletepromocode" }
-                ],
-                [
-                    { "text": "🔙 Назад", "callback_data": "/adminmenu" }
-                ]
-            ]
-        }
-    }
-}
-{{ ELSE }}
-{
-    "sendMessage": {
-        "text": "⛔ У вас нет доступа к этой команде."
-    }
-}
-{{ END }}
-
-<% CASE '/listpromocodes' %>
-{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
-{{ promocodes = ref(service.create_for_api('get_promocodes')) }}
-{
-    "sendMessage": {
-        "message_id": {{ message.message_id }},
-        "parse_mode": "HTML",
-        "text": "📄 <b>Список промокодов</b>\n\n{{ IF promocodes }}{{ FOR promo IN promocodes }}🎟️ <b>Код:</b> {{ promo.code }}\n📆 <b>Действует до:</b> {{ promo.expiry_date }}\n✅ <b>Использований:</b> {{ promo.uses }} / {{ promo.max_uses }}\n🛠️ <b>Статус:</b> {{ promo.is_active == 1 and 'Активен' or 'Неактивен' }}\n\n{{ END }}{{ ELSE }}⚠️ Промокоды отсутствуют.{{ END }}",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    { "text": "➕ Добавить промокод", "callback_data": "/addpromocode" },
-                    { "text": "✏️ Редактировать промокод", "callback_data": "/editpromocode" }
-                ],
-                [
-                    { "text": "🔙 Назад", "callback_data": "/adminpromocodes" }
-                ]
-            ]
-        }
-    }
-}
-{{ ELSE }}
-{
-    "sendMessage": {
-        "text": "⛔ У вас нет доступа к этой команде."
-    }
-}
-{{ END }}
-
-<% CASE '/addpromocode' %>
-{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
-{
-    "sendMessage": {
-        "message_id": {{ message.message_id }},
-        "parse_mode": "HTML",
-        "text": "📝 <b>Добавить новый промокод</b>\n\nВведите параметры нового промокода:",
-        "reply_markup": {
-            "force_reply": true
-        }
-    }
-}
-{{ ELSE }}
-{
-    "sendMessage": {
-        "text": "⛔ У вас нет доступа к этой команде."
-    }
-}
-{{ END }}
-
-<% CASE '/admservers' %>
-{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
-{{ servers = ref(service.create_for_api('servers')) }}
-{
-    "sendMessage": {
-        "message_id": {{ message.message_id }},
-        "parse_mode": "HTML",
-        "text": "🖥️ <b>Статистика серверов</b>",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    { "text": "⚙️ Настройки", "callback_data": "/adminsettings" },
-                    { "text": "🔙 Назад", "callback_data": "/adminmenu" }
-                ]
-            ]
-        }
-    }
-}
-{{ END }}
-
-<% CASE '/admstats' %>
-{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
-{{ stats = ref(service.create_for_api('stats')) }}
-{
-    "sendMessage": {
-        "message_id": {{ message.message_id }},
-        "parse_mode": "HTML",
-        "text": "📊 <b>Статистика бота</b>\n\n👥 <b>Всего пользователей:</b> {{ stats.total_users }}\n🟢 <b>Активных за сутки:</b> {{ stats.active_users }}\n📅 <b>Новых за месяц:</b> {{ stats.new_users }}\n\n🛠️ <b>Активных услуг:</b> {{ stats.active_services }}\n❌ <b>Ошибок за неделю:</b> {{ stats.error_count }}",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    { "text": "📅 Отчет за месяц", "callback_data": "/monthlyreport" },
-                    { "text": "⚙️ Настройки", "callback_data": "/adminsettings" }
-                ],
-                [
-                    { "text": "🔙 Назад", "callback_data": "/adminmenu" }
-                ]
-            ]
-        }
-    }
-}
-{{ ELSE }}
-{
-    "sendMessage": {
-        "text": "⛔ У вас нет доступа к этой команде."
-    }
-}
-{{ END }}
-
-<% CASE '/monthlyreport' %>
-{{ IF message.chat.id == config.telegram_admin.id OR message.chat.id == config.telegram_admin2.id OR message.chat.id == config.telegram_admin3.id }}
-{{ report = ref(service.create_for_api('monthly_report')) }}
-{{ servers = ref(service.create_for_api('servers')) }}
-{
-    "sendMessage": {
-        "message_id": {{ message.message_id }},
-        "parse_mode": "HTML",
-        "text": "📅 <b>Отчет за месяц</b>\n\n👥 <b>Всего пользователей:</b> {{ report.total_users }}\n🟢 <b>Активных пользователей:</b> {{ report.active_users }}\n📈 <b>Новых пользователей:</b> {{ report.new_users }}\n\n🖥️ <b>Серверы:</b>\n{{ FOR server IN servers }}🟢 <b>Сервер:</b> {{ server.name }}\n📅 <b>Дата окончания оплаты:</b> {{ server.payment_expiry_date | default('Не указана') }}\n❌ <b>Ошибки:</b> {{ server.error_count }}\n{{ IF server.payment_expiry_date <= current_date }}⚠️ <b>Оплата закончилась!</b>\n{{ END }}{{ END }}",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    { "text": "⚙️ Настройки", "callback_data": "/adminsettings" },
-                    { "text": "🔙 Назад", "callback_data": "/adminmenu" }
-                ]
-            ]
-        }
-    }
-}
-{{ ELSE }}
-{
-    "sendMessage": {
-        "text": "⛔ У вас нет доступа к этой команде."
-    }
-}
-{{ END }}
-
-<% CASE ['/admusers', '/qadmusers'] %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{
-  limit = 10
-  data = []
-}}
-{{
-  offset = args.0 || 0
-  itemsa = ref( user.list_for_api('admin',1,'limit',limit, 'offset',offset,'sort_direction'asc,'filter',{"gid" = 0}) )
-}}
-{{ FOR itema IN itemsa }}
-{{ status = (itema.block == 0 ? "🟢" : "🔴") }}
-{{ data.push(
-    [{
-      "text" = status _ itema.user_id _ '.' _ itema.full_name _ '-' _ itema.login
-      "callback_data" = '/admuser ' _ itema.user_id
-    }]
-  )
-}}
-{{ END }}
-{{ IF itemsa.size == limit }}
-{{ data.push(
-    [{
-      "text" = 'Далее ▶️',
-      "callback_data" = '/admusers ' _ (limit + offset)
-    }]
-  )
-}}
-{{ END }}
-{{ IF offset > 0 }}
-{{ data.push(
-    [{
-      "text" = '◀️ Назад',
-      "callback_data" = '/admusers ' _ (offset - limit)
-    }]
-  )
-}}
-{{ END }}
-{{ data.push(
- [{
-      "text" = 'Весь список',
-      "callback_data" = '/admusersall'
-    }], [{
-      "text" = 'Админка'
-      "callback_data" = '/adminmenu'
-    },{
-      "text" = '🏠 Домой'
-      "callback_data" = '/menu'
-    }]
-  )
-}}
-{{ IF cmd == '/qadmusers' }}
-{
-    "sendMessage": {
-{{ END }}
-{{ IF cmd == '/admusers' }}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
-{{ END }}
-    "text": "Список пользователей",
-    "reply_markup" : {
-      "inline_keyboard": {{ toJson( data ) }}
-    }
-  }
-}
-{{ END }}
-
-<% CASE ['/admuser', '/qadmuser'] %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{ user = user.switch(args.0) }}
-{{ user_services = ref(user.services.list_for_api('category','%')) }}
-{{ FOR itemlk IN ref(user.id(args.0)) }}
-{{ IF cmd == '/qadmuser' }}
-{
-    "sendMessage": {
-{{ END }}
-{{ IF cmd == '/admuser' }}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
-{{ END }}
-        "text": "{{ itemlk.full_name }}\n{{ itemlk.login }}\nЗарегистрирован: {{ itemlk.created }}\nУслуг: {{ user_services.size }}\nБаланс: {{ itemlk.balance }}₽\nСкидка: {{ itemlk.discount }}%\nБонусы: {{ itemlk.get_bonus }}{{ IF user.block == 1 }}\n🔴 Заблокирован{{ END }}",
-        "reply_markup" : {
-            "inline_keyboard": [
-                         {{ IF user.block == 0 }}
-                         {{ IF user_services.size > 0 }}
-                       [
-                    {
-                        "text": "Услуги",
-                        "callback_data": "/admservice {{ itemlk.id }}"
-                    }
-                ],{{ ELSE }} 
-                 [
-                    {
-                        "text": "Добавить услугу",
-                        "callback_data": "/admpricelist {{ itemlk.id }}"
-                    }
-                ],
-                  {{ END }} [
-                    {
-                        "text": "Платежи",
-                        "callback_data": "/admpay {{ itemlk.id }}"
-                    }
-                ],
-				[
-                    {
-                        "text": "История платежей",
-                        "callback_data": "/listPays {{ itemlk.id }}"
-                    }
-                ],
-				[
-                    {
-                        "text": "Информация о списании",
-                        "callback_data": "/withdraws {{ itemlk.id }}"
-                    }
-                ],
-                 [
-                    {
-                        "text": "Бонусы",
-                        "callback_data": "/admpayb {{ itemlk.id }}"
-                    }
-                ], [
-                    {
-                        "text": "Написать пользователю",
-                        "callback_data": "/admusermsg {{ user.settings.telegram.chat_id }}"
-                    }
-                ],{{ END }}
-                  {{ IF user.block == 0 }}
-                     [
-                    {
-                        "text": "Заблокировать",
-                        "callback_data": "/admuserblock {{ itemlk.id }}"
-                    }
-                ], {{ ELSE }}[
-                    {
-                        "text": "Разблокировать",
-                        "callback_data": "/admuseractiv {{ itemlk.id }}"
-                    }
-                ],
-               {{ END }}
-                 [
-                   {
-                        "text": "Пользователи",
-                        "callback_data": "/admusers"
-                    }, {
-                        "text": "Админка",
-                        "callback_data": "/adminmenu"
-                    }
-                ],
-                 [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]{{ END }}    
-        }
-    }
-}
-{{ END }}
-<% CASE '/admusermsg' %>
-{
-"sendMessage": {
-        "text": "#{{ args.0 }}#\nВведите сообщение для пользователя",
-        "reply_markup": {
-            "force_reply": true
-        }
-    }
-}
-
-<% CASE '/admpricelist' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{ user = user.switch(args.0) }}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
-        "text": "☷ Выберите услугу для\nПользователя: {{ user.full_name }}",
-        "reply_markup" : {
-            "inline_keyboard": [
-                {{ FOR itemprl IN ref(service.api_price_list).nsort('cost') }}
-                [
-                    {
-                        "text": "{{ itemprl.name }}.",
-                        "callback_data": "/admserviceorder {{ user.id }} 0 {{ itemprl.service_id }}"
-                    }
-                ],
-                {{ END }}
-                [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/admuser {{ user.id }}"
-                    }
-                ], [
-                   {
-                        "text": "Пользователи",
-                        "callback_data": "/admusers"
-                    }, {
-                        "text": "Админка",
-                        "callback_data": "/adminmenu"
-                    }
-                ],
-                 [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}{{ END }}
-<% CASE '/admserviceorder' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{ user = user.switch(args.0) }}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }} }
-},
-{
-    "billcpServiceOrder": {
-        "service_id": "{{ args.2 }}",
-        "callback_data": "/admuser {{ user.id }}",
-        "cb_not_enough_money": "/admuser {{ user.id }}",
-        "error": "ОШИБКА"
-    }
-}{{ END }}
-<% CASE '/admuserblock' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{ user = user.switch(args.0) }}
-{{ usisbl = user.services.list_for_api('usi', {}) }}
-{{ usblall =  us.id(usisbl.user_service_id(usisbl.user_service_id)).block }}
-{{ userblocks = user.set('block',1) }}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
-        "text": "Пользователь: {{ user.full_name }}\nЗаблокирован🔴\nУслуга: {{ usisbl.name }}\nЗаблокирована🔴",
-        "reply_markup" : {
-            "inline_keyboard": [
-                       [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/admuser {{ user.id }}"
-                    }
-                ], [
-                     {
-                        "text": "Пользователи",
-                        "callback_data": "/admusers"
-                    },{
-                        "text": "Админка",
-                        "callback_data": "/adminmenu"
-                    }
-                ],
-                 [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}
-{{ END }}
-<% CASE '/admuseractiv' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{ user = user.switch(args.0) }}
-{{ usisact = user.services.list_for_api('usi', {}) }}
-{{ activ =  us.id(usisact.user_service_id(usisact.user_service_id)).activate }}
-{{ useractivs = user.set('block',0) }}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
-        "text": "Пользователь: {{ user.full_name }}\nРазблокирован🟢\nУслуга: {{ usisact.name }}\nРазблокирована🟢",
-        "reply_markup" : {
-            "inline_keyboard": [
-                       [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/admuser {{ user.id }}"
-                    }
-                ], [
-                     {
-                        "text": "Пользователи",
-                        "callback_data": "/admusers"
-                    },{
-                        "text": "Админка",
-                        "callback_data": "/adminmenu"
-                    }
-                ],
-                 [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}
-{{ END }}
-<% CASE '/admusiblock' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{ user = user.switch(args.0) }}
-{{ usisb = user.services.list_for_api('usi', {}) }}
-{{ blocks =  us.id(usisb.user_service_id(usisb.user_service_id)).block }}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
-        "text": "Пользователь: {{ user.full_name }}\nУслуга: {{ usisb.name }}\nЗаблокировано",
-        "reply_markup" : {
-            "inline_keyboard": [
-                       [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/admuser {{ user.id }}"
-                    }
-                ], [
-                     {
-                        "text": "Пользователи",
-                        "callback_data": "/admusers"
-                    },{
-                        "text": "Админка",
-                        "callback_data": "/adminmenu"
-                    }
-                ],
-                 [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}
-{{ END }}
-<% CASE '/admusiactive' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{ user = user.switch(args.0) }}
-{{ usisa = user.services.list_for_api('usi', {}) }}
-{{ activ =  us.id(usisa.user_service_id(usisa.user_service_id)).activate }}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
-        "text": "Пользователь: {{ user.full_name }}\nУслуга: {{ usisa.name }}\nАктивировано",
-        "reply_markup" : {
-            "inline_keyboard": [
-                       [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/admuser {{ user.id }}"
-                    }
-                ], [
-                     {
-                        "text": "Пользователи",
-                        "callback_data": "/users"
-                    },{
-                        "text": "Админка",
-                        "callback_data": "/admin"
-                    }
-                ],
-                 [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}
-{{ END }}
-<% CASE '/admsmena' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{ user = user.switch(args.0) }}
-{{ ussm = user.services.list_for_api('usi', {}) }}
-{{ USE date }}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
-        "text": "Смена тарифа происходит при следующем продлении\n\n<b>Текущий тариф пользователя: {{ user.full_name }}\n</b>{{ ussm.name }}\n<b>Действует до</b>: {{ date.format(us.expire, '%H:%M %d.%m.%Y') }}  (МСК)\n\n<b>Выберите тариф на следующий период</b>",
-        "reply_markup" : {
-            "inline_keyboard": [               
-                {{ FOR itemsm IN ref(service.api_price_list).nsort('cost') }}                 
-                [
-                    {
-                        "text": "{{ itemsm.name }}.",
-                        "callback_data": "/admchoise {{ ussm.user_id }} 0 {{ itemsm.service_id }}"
-                    }
-                ],
-                {{ END }} 
-                  [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/admuser {{ user.id }}"
-                    }
-                ], [
-                   {
-                        "text": "Пользователи",
-                        "callback_data": "/admusers"
-                    }, {
-                        "text": "Админка",
-                        "callback_data": "/adminmenu"
-                    }
-                ],
-                 [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}{{ END }} 
-<% CASE '/admchoise' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{ user = user.switch(args.0) }}
-{{ itemadmch = user.services.list_for_api('usi', {}) }}
-{{ ntch = us.id(itemadmch.user_service_id).set('next', args.2) }}
-{{ USE date }}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
-        "text": "Тариф пользователя {{ user.full_name }} изменён. \n\nСмена тарифа произойдёт {{ date.format(us.expire, '%H:%M %d.%m.%Y') }}",
-        "reply_markup" : {
-            "inline_keyboard": [ 
-                  [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/admuser {{ user.id }}"
-                    }
-                ],[
-                   {
-                        "text": "Пользователи",
-                        "callback_data": "/admusers"
-                    }, {
-                        "text": "Админка",
-                        "callback_data": "/adminmenu"
-                    }
-                ],
-                 [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}{{ END }}
-<% CASE '/admchoisenull' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{ user = user.switch(args.0) }}
-{{ itemadmchn = user.services.list_for_api('usi', {}) }}
-{{ ntchn = us.id(itemadmchn.user_service_id).set('next') }}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
-        "text": "Смена тарифа: {{ itemadmchn.name }}\nПользователя: {{ user.full_name }}\nОтменена.",
-        "reply_markup" : {
-            "inline_keyboard": [ 
-                  [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/admuser {{ user.id }}"
-                    }
-                ], [
-                   {
-                        "text": "Пользователи",
-                        "callback_data": "/admusers"
-                    }, {
-                        "text": "Админка",
-                        "callback_data": "/adminmenu"
-                    }
-                ],
-                 [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}
-{{ END }}
-<% CASE '/admdelete' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{ user = user.switch(args.0) }}
-{{ usisdel = user.services.list_for_api( 'usi', {} ) }}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
-        "text": "Удаление услуги: {{ usisdel.name }}\nПользователя: {{ user.full_name }}\n\n🤔 <b>Подтвердите удаление. Ключ нельзя будет восстановить!</b>",
-        "reply_markup" : {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "🗑 ДА, УДАЛИТЬ! 🗑",
-                        "callback_data": "/admdelete_confirmed {{ user.id }}"
-                    }
-                ],
-                [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/admuser {{ user.id }}"
-                    }
-                ], [
-                   {
-                        "text": "Пользователи",
-                        "callback_data": "/admusers"
-                    }, {
-                        "text": "Админка",
-                        "callback_data": "/adminmenu"
-                    }
-                ],
-                 [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}{{ END }}
-<% CASE '/admdelete_confirmed' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{ user = user.switch(args.0) }}
-{{ usisdels = user.services.list_for_api( 'usi', {} ) }}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }} }
-},
-{
-    "billcpServiceDelete": {
-        "usi": "{{ usisdels.user_service_id }}",
-        "callback_data": "/admuser {{ user.id }}",
-        "error": "ОШИБКА"
-    }
-}
- {{ END }}
-
-<% CASE '/admpay' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{
-    userData = user.id(args.0);
-    priceList = ref(service.api_price_list('category', '%')).nsort('cost');
-}}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode": "HTML",
-        "text": "<blockquote>👤 <b>{{ userData.full_name }} (ID: {{ userData.user_id }})</b>\n💰 <b>Баланс:</b> {{ userData.balance }}₽\n\n💵 <b>Зачислить:</b></blockquote>",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "10₽",
-                        "callback_data": "/admpayment {{ userData.user_id }} 10"
-                    },
-                    {
-                        "text": "50₽",
-                        "callback_data": "/admpayment {{ userData.user_id }} 50"
-                    },
-                    {
-                        "text": "100₽",
-                        "callback_data": "/admpayment {{ userData.user_id }} 100"
-                    },
-					{
-                        "text": "150₽",
-                        "callback_data": "/admpayment {{ userData.user_id }} 150"
-                    },
-					{
-                        "text": "300₽",
-                        "callback_data": "/admpayment {{ userData.user_id }} 300"
-                    }
-                ],
-                {{ FOR item IN priceList }}
-                [
-                    {
-                        "text": "{{ item.name }} - {{ item.cost }}₽",
-                        "callback_data": "/admpayment {{ userData.user_id _ ' ' }} {{ item.cost }}"
-                    }
-                ],
-                {{ END }}
-                [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "/admuser {{ userData.user_id }}"
-                    }
-                ],
-                [
-                    {
-                        "text": "👥 Пользователи",
-                        "callback_data": "/admusers"
-                    },
-                    {
-                        "text": "⚙️ Админка",
-                        "callback_data": "/adminmenu"
-                    }
-                ],
-                [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}
-{{ END }}
-
-<% CASE '/admpayshistory' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{
-    userPay = ref(pay.list_for_api('admin', 10, 'filter', {"id" = args.0})).last;
-    payData = userPay.comment.object;
-    payMethod = payData.payment_method;
-    payCard = payMethod.card;
-    userData = user.id(userPay.user_id);
-}}
+<% CASE 'admin:menu' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
 {{ TEXT = BLOCK }}
-💸 <b>Информация о платеже ID {{ userPay.id }}</b> пользователь {{ userData.full_name }} ({{ userData.user_id }})
+<b>Меню {{ role = (user.settings.role == 'admin' ? 'Администратора' : 'Модератора'); role; }}</b>
 
-📅 <b>Дата платежа:</b> {{ userPay.date }}
-🏦 <b>Платежная система:</b> <code>{{ userPay.pay_system_id }}</code>
-💵 <b>Сумма:</b> {{ userPay.money }} руб.
-
-{{ IF userPay.comment.comment }}
-📝 <b>Комментарий к платежу</b>
-<blockquote>{{ userPay.comment.comment }}</blockquote>
-{{ END }}
-
-{{ IF payData }}
-📊 <b>Данные о платеже</b>
-<blockquote>
-🔑 <b>ID в системе:</b> {{ payData.id }}
-📊 <b>Статус:</b> {{ payData.status }}
-{{ IF payCard }}
-💳 <b>Тип карты:</b> {{ payCard.card_type }}
-🔢 <b>Номер карты:</b> {{ payCard.first6 }}******{{ payCard.last4 }}
-🏦 <b>Банк:</b> {{ payCard.issuer_name }}
-🌍 <b>Страна банка:</b> {{ payCard.issuer_country }}
-📅 <b>Срок действия:</b> {{ payCard.expiry_month }}/{{ payCard.expiry_year }}
-{{ END }}
-{{ IF payMethod.type == 'sbp' }}
-💼 <b>Тип оплаты:</b> СБП
-🔢 <b>Номер операции в СБП:</b> {{ payMethod.sbp_operation_id }}
-🏦 <b>БИК банка:</b> {{ payMethod.payer_bank_details.bic }}
-{{ END }}
-
-{{ IF payMethod.title.match('YooMoney') }}
-💼 <b>Кошелек YooMoney:</b> {{ payMethod.title }}
-🔑 <b>ID кошелька:</b> {{ payMethod.account_number }}
-{{ END }}
-</blockquote>
-{{ END }}
+🛑 <i>Будьте осторожны с выбором действий!</i>
 
 {{ END }}
-
-
 {
     "sendMessage": {
+        "message_id": {{ message.message_id }},
         "parse_mode": "HTML",
-        "text": "<blockquote>{{ TEXT.replace('\n','\n') }}\n</blockquote>",
+        "text": "{{ TEXT.replace('\n','\n') }}",
         "reply_markup": {
             "inline_keyboard": [
                 [
                     {
-                        "text": "⬅️ Назад",
-                        "callback_data": "/admuser {{ userData.user_id }}"
-                    }
-                ],
-                [
-                    {
-                        "text": "👥 Пользователи",
-                        "callback_data": "/admusers"
+                        "text": "👥 Управление пользователями",
+                        "callback_data": "admin:users:list"
                     },
                     {
-                        "text": "⚙️ Админка",
-                        "callback_data": "/adminmenu"
+                        "text": "🏠 Главное меню",
+                        "callback_data": "/menu"
                     }
                 ],
+                {{ IF user.settings.role == 'admin' || (user.settings.role == 'moderator' && user.settings.moderate.settings == 1 )}}
                 [
                     {
-                        "text": "🏠 Домой",
+                        "text": "⚙️ Настройки бота",
+                        "callback_data": "admin:settings"
+                    }
+                ],
+                {{ END }}
+                [
+                    {
+                        "text": "🏠 Главное меню",
                         "callback_data": "/menu"
                     }
                 ]
@@ -2518,128 +1623,42 @@ ID кошелька: {{ payMethod.account_number }}
         }
     }
 }
-{{ ELSE }}
-{
-    "sendMessage": {
-        "parse_mode": "HTML",
-        "text": "❌ Ошибка: У вас нет прав для просмотра этой информации."
-    }
-}
 {{ END }}
 
 
-<% CASE '/withdraws' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{
-    data = ref(wd.list_for_api('admin', 10, 'filter', {"withdraw_id" = args.0})).first;
-    userData = user.id(data.user_id);
-}}
+
+<% CASE 'admin:settings' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
+{{ TEXT = BLOCK }}
+<b>Конфигурация бота</b>
+
+Запретить оформления новых ключей, если есть неоплаченные: {{ notPaidStatus = (checkNotPaidServices == 0 ? '⭕️ Выключено' : '🟢 Включено'); notPaidStatus; }}
+
+Тип сообщений: {{ messageTypeStatus = (defaultMessageType == 'editMessageText' ? '✏️ Редактирование' : '🆕 Новое сообщение'); messageTypeStatus; }}
+{{ END }}
+
 {
     "sendMessage": {
         "parse_mode": "HTML",
-        "text": "<blockquote>💸 <b>Информация о списании №{{ data.withdraw_id }}</b>\n👤 <b>Пользователь:</b> {{ userData.full_name }} (ID: {{ userData.user_id }})\n🛠️ <b>Услуга:</b> {{ data.name }} (ID: {{ data.user_service_id }})\n💵 <b>Стоимость:</b> {{ data.cost }}₽\n📅 <b>Дата создания:</b> {{ data.create_date }}\n📅 <b>Дата списания:</b> {{ data.withdraw_date }}\n📅 <b>Дата окончания:</b> {{ data.end_date }}\n📆 <b>Кол-во месяцев:</b> {{ data.months }}</blockquote>",
+        "text": "{{ TEXT.replace('\n','\n') }}",
         "reply_markup": {
             "inline_keyboard": [
                 [
                     {
-                        "text": "⬅️ Назад",
-                        "callback_data": "/admuser {{ userData.user_id }}"
+                        "text": "Изменить запрет оформления",
+                        "callback_data": "admin:settings:change_notpaid"
                     }
                 ],
                 [
                     {
-                        "text": "🔍 Подробнее",
-                        "callback_data": "/listWithdraws {{ userData.user_id }}"
+                        "text": "Изменить тип сообщений",
+                        "callback_data": "admin:settings:change_msg"
                     }
                 ],
                 [
                     {
-                        "text": "👥 Пользователи",
-                        "callback_data": "/admusers"
-                    },
-                    {
-                        "text": "⚙️ Админка",
-                        "callback_data": "/adminmenu"
-                    }
-                ],
-                [
-                    {
-                        "text": "🏠 Домой",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}
-{{ ELSE }}
-{
-    "sendMessage": {
-        "parse_mode": "HTML",
-        "text": "❌ Ошибка: У вас нет прав для просмотра этой информации."
-    }
-}
-{{ END }}
-
-
-<% CASE '/listPays' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{
-    limit = 5;
-    offset = args.1 || 0;
-    userData = user.id(args.0);
-    payData = userPay.comment.object;
-    payMethod = payData.payment_method;
-    payCard = payMethod.card;
-    userPays = ref(userData.pays.list_for_api('limit', limit, 'offset', offset ));
-}}
-
-{
-    "sendMessage": {
-        "parse_mode": "HTML",
-        "text": "👨‍💻 <b>Управление платежами пользователя {{ userData.full_name }} (ID: {{ userData.user_id }})</b>\n\n💼 <b>Последние платежи:</b>\n{{ FOR item in userPays }}🔹 <b>ID:</b> {{ item.id }} | 💵 <b>Сумма:</b> {{ item.money }}₽ | 📅 <b>Дата:</b> {{ item.date }} | 🏦 <b>Платёжная система:</b> {{ pay.pay_system_id }}\n{{ END }}",
-        "reply_markup": {
-            "inline_keyboard": [
-                {{ FOR item in userPays }}
-                [
-                    {
-                        "text": "(ID: {{ item.id }}), {{ item.money }}₽, {{ item.date }}",
-                        "callback_data": "/admpayshistory {{ item.id }}"
-                    }
-                ],
-                {{ END }}
-                {{ IF offset > 0 }}
-                [
-                    {
-                        "text": "⬅️ Назад",
-                        "callback_data": "/listPays {{ userData.user_id }} {{ offset - limit }}"
-                    }
-                ],
-                {{ END }}
-                {{ IF userPays.size == limit }}
-                [
-                    {
-                        "text": "Ещё ➡️",
-                        "callback_data": "/listPays {{ userData.user_id }} {{ limit + offset }}"
-                    }
-                ],
-                {{ END }}
-                [
-                    {
-                        "text": "➕ Добавить платеж",
-                        "callback_data": "/admpay {{ userData.user_id }}"
-                    }
-                ],
-                [
-                    {
-                        "text": "⬅️ Информация о пользователе",
-                        "callback_data": "/admusr {{ userData.user_id }}"
-                    }
-                ],
-                [
-                    {
-                        "text": "👨‍💻 Меню",
-                        "callback_data": "/adminmenu"
+                        "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); menuRole; }}",
+                        "callback_data": "admin:menu"
                     },
                     {
                         "text": "🏠 Главное меню",
@@ -2650,49 +1669,1301 @@ ID кошелька: {{ payMethod.account_number }}
         }
     }
 }
-{{ ELSE }}
+{{ END }}
+
+
+<% CASE 'admin:settings:change' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
+{{ TEXT = BLOCK }}
+<b>Конфигурация бота</b>
+
+Запретить оформления новых ключей, если есть неоплаченные: {{ notPaidStatus = (checkNotPaidServices == 0 ? '⭕️ Выключено' : '🟢 Включено'); notPaidStatus; }}
+
+Тип сообщений: {{ messageTypeStatus = (defaultMessageType == 'editMessageText' ? '✏️ Редактирование' : '🆕 Новое сообщение'); messageTypeStatus; }}
+{{ END }}
+
 {
     "sendMessage": {
         "parse_mode": "HTML",
-        "text": "❌ Ошибка: У вас нет прав для просмотра этой информации."
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "Изменить запрет оформления",
+                        "callback_data": "admin:settings:change_notpaid"
+                    }
+                ],
+                [
+                    {
+                        "text": "Изменить тип сообщений",
+                        "callback_data": "admin:settings:change_msg"
+                    }
+                ],
+                [
+                    {
+                        "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); menuRole; }}",
+                        "callback_data": "admin:menu"
+                    },
+                    {
+                        "text": "🏠 Главное меню",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
     }
 }
 {{ END }}
 
-<% CASE '/admpayment' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
+<% CASE 'admin:settings:change' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
+
+{{ IF args.0 == 'notpaid' }}
+{{      
+        IF checkNotPaidServices == 0;
+            ret = user.id(1).storage.save('bot_configuration', 'checkNotPaidServices' => 1, 'messageType' => defaultMessageType, 'menuCmd' => mainMenuCmd );
+        ELSIF checkNotPaidServices == 1;
+            ret = user.id(1).storage.save('bot_configuration', 'checkNotPaidServices' => 0, 'messageType' => defaultMessageType, 'menuCmd' => mainMenuCmd );
+        END;
+}}
+{
+    "answerCallbackQuery": {
+         "callback_query_id": {{ callback_query.id }},
+         "parse_mode":"HTML",
+         "text": "✅ Запрет оформления новых ключей изменен!",
+        "show_alert": true
+     }
+},
+{
+    "shmRedirectCallback": {
+        "callback_data": "admin:settings"
+    }
+}
+{{ ELSIF args.0 == 'msg' }}
+{{
+    IF defaultMessageType == 'sendMessage';
+        ret = user.id(1).storage.save('bot_configuration', 'checkNotPaidServices' => checkNotPaidServices, 'messageType' => 'editMessageText', 'menuCmd' => 'menu' );
+    ELSIF defaultMessageType == 'editMessageText';
+        ret = user.id(1).storage.save('bot_configuration', 'checkNotPaidServices' => checkNotPaidServices, 'messageType' => 'sendMessage', 'menuCmd' => 'start' );
+    END;
+}}
+{
+    "answerCallbackQuery": {
+         "callback_query_id": {{ callback_query.id }},
+         "parse_mode":"HTML",
+         "text": "✅ Тип сообщений изменен!",
+        "show_alert": true
+     }
+},
+{
+    "shmRedirectCallback": {
+        "callback_data": "admin:settings"
+    }
+}
+{{ END }}
+
+
+<% CASE 'admin:users:list' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    limit = 7;
+    offset = (args.0 || 0);
+    users = ref(user.list_for_api('admin', 1, 'limit', limit, 'offset', offset, 'filter',{"gid" = 0}));
+    getCountUsers = ref(user.list_for_api('admin', 1, filter, {"gid" = 0})).size;
+}}
+{{ TEXT = BLOCK }}
+👨‍💻 Пользователи
+
+👤 Всего пользователей: {{ getCountUsers - 1 }}
+{{ END }}
+{
+    "sendMessage": {
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "reply_markup": {
+            "inline_keyboard": [
+                {{ FOR item IN users }}
+                    {{ status = (item.block == 0 ? "🟢" : "🔴") }}
+                    [
+                        {
+                            "text": "{{ status _' '_ item.full_name.replace('"', '\"')  }} ({{ item.user_id _'-'_ item.login }})",
+                            "callback_data": "admin:users:id {{ item.user_id _' '_ offset }}"
+                        }
+                    ],
+                {{ END }}
+                {{ IF users.size == limit || offset > 0 }}
+                    [
+                        {{ IF offset > 0 }}
+                            {
+                                "text": "⬅️ Назад",
+                                "callback_data": "admin:users:list {{ offset - limit }}"
+                            },
+                        {{ END }}
+                        {{ IF users.size == limit }}
+                            {
+                                "text": "Ещё ➡️",
+                                "callback_data": "admin:users:list {{ limit + offset }}"
+                            }
+                        {{ END }}
+                    ],
+                {{ END }}
+                [
+                    {
+                        "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); menuRole; }}",
+                        "callback_data": "admin:menu"
+                    },
+                    {
+                        "text": "🏠 Главное меню",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ END }}
+
+<% CASE 'admin:users:id' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
 {{
     userData = user.id(args.0);
-    amount = args.1;
-    comment = "Пополнение администратором через Telegram"
+    userPartner = user.id(userData.partner_id);
+    userServices = ref(userData.services.list_for_api('category', '%'));
+    offset = args.1;
 }}
-{{ IF amount > 0 }}
+
+{{ TEXT = BLOCK }}
+👤 <b>Информация о пользователе</b>
+
+Статус: {{ userStatus = (userData.block == 0 ? "🟢 Активен" : "🔴 Заблокирован"); userStatus; }}
+
+Имя: {{ userData.full_name.replace('"', '\"') }}
+ID: {{ userData.user_id }}
+Telegram: {{ userData.settings.telegram.login }}
+Логин: {{ userData.login }}
+
+Дата регистрации: {{ userData.created }}
+Дата последнего входа: {{ userData.last_login }}
+Кто пригласил: {{ userPartner ? userPartner.full_name + " - " + userPartner.login : "❌ Нет данных" }}
+
+Баланс: {{ userData.balance }} руб.  
+Бонусы: {{ userData.get_bonus }} руб.  
+Скидка: {{ userData.discount }}
+
+Кол-во подписок: {{ userServices.size }}
+
+{{ END }}
+
+{
+    "sendMessage": {
+        "parse_mode": "HTML",
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "🔐 Управление подписками",
+                        "callback_data": "admin:users:id:subs {{ userData.user_id _' '_ offset }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "💸 Управление платежами",
+                        "callback_data": "admin:users:id:pays {{ userData.user_id }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "🎁 Управление бонусами",
+                        "callback_data": "admin:users:id:bonuses {{ userData.user_id }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "{{ status = (userData.block == 0 ? "🔴 Заблокировать" : "🟢 Активировать"); status; }}",
+                        "callback_data": "admin:users:block {{ userData.user_id }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "⬅️ Назад",
+                        "callback_data": "admin:users:list {{ args.1 }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); menuRole; }}",
+                        "callback_data": "admin_menu"
+                    },
+                    {
+                        "text": "🏠 Главное меню",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ END }}
+
+<% CASE 'admin:users:block' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
+{{ checkModeratorRights(right="blockUser") }}
+
 {{
-    pay = userData.payment('money', amount, 'TG_Admin', 'Admin', comment);
-    userData = user.id(args.0);
+    # Arguments 
+    #   0. - id of user
+
+    # Variables
+        userData = user.id(args.0);
 }}
+{{ retcode = (userData.block == 1 ? "0" : "1"); }}
+{{ ret = userData.set(block = retcode) }}
+{
+    "answerCallbackQuery": {
+         "callback_query_id": {{ callback_query.id }},
+         "parse_mode":"HTML",
+         "text": "✅ Пользователь {{ userData.full_name.replace('"', '\"')  }} ({{ userData.user_id }}) {{ status = (userData.block == 1 ? "🔴 заблокирован" : "🟢 активирован"); status; }}",
+         "show_alert": true
+     }
+},
+{
+    "shmRedirectCallback": {
+        "callback_data": "admin:users:id {{ userData.user_id }}"
+    }
+}
+
+<% CASE 'admin:users:id:subs' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
+{{
+    limit = 7;
+    last_offset = (args.1 || 0);
+    offset = (args.2 || 0);
+    userData = user.id(args.0);
+    userServices = ref(userData.services.list_for_api('limit', limit, 'offset', offset));
+}}
+{{ TEXT = BLOCK }}
+🔐 Управление подписками
+
+Имя: {{ userData.full_name.replace('"', '\"')  }}
+ID: {{ userData.user_id }}
+Telegram: {{ userData.settings.telegram.login }}
+Логин: {{ userData.login }}
+
+{{ IF userServices.size <= 0}}
+<b>У пользователя нет подписок!</b>
+{{ END }}
+{{ END }}
 {
     "editMessageText": {
         "message_id": {{ message.message_id }},
         "parse_mode": "HTML",
-        "text": "✅ <b>{{ userData.full_name }}</b>\n💰 <b>Баланс пополнен на:</b> {{ amount }}₽\n💳 <b>Новый баланс:</b> {{ userData.balance }}₽",
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "reply_markup": {
+            "inline_keyboard": [
+                {{ FOR item in userServices }}
+                    {{ status = (item.status == 'ACTIVE' ? "🟢" : "🔴") }}
+                    [
+                        {
+                            "text": "{{ status; item.user_service_id _' - '_ item.name  }}",
+                            "callback_data": "admin:subs:id {{ item.user_service_id _ ' ' _ item.user_id }}"
+                        }
+                    ],
+                {{ END }}
+
+                {{ IF userServices.size == limit }}
+                    [
+                        {
+                            "text": "Ещё ➡️",
+                            "callback_data": "admin:users:list {{ limit + offset }}"
+                        }
+                    ],
+                {{ END }}
+
+                {{ IF offset > 0 }}
+                    [
+                        {
+                            "text": "⬅️ Назад",
+                            "callback_data": "admin:users:list {{ offset - limit }}"
+                        }
+                    ],
+                {{ END }}
+
+                [
+                    {
+                        "text": "➕ Добавить услугу",
+                        "callback_data": "admin:subs:add {{ userData.user_id }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "➕ Добавить услугу (бесплатно)",
+                        "callback_data": "admin:subs:add:free {{ userData.user_id }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "⬅️ Информация о пользователе",
+                        "callback_data": "admin:users:id {{ userData.user_id _' '_ last_offset }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); menuRole }}",
+                        "callback_data": "admin:menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ END }}
+
+<% CASE ['admin:users:id:subs'] %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
+{{
+    limit = 7;
+    last_offset = (args.1 || 0);
+    offset = (args.2 || 0);
+    userData = user.id(args.0);
+    userServices = ref(userData.services.list_for_api('limit', limit, 'offset', offset));
+}}
+
+{{ TEXT = BLOCK }}
+🔐 <b>Управление подписками</b>
+
+👤 Имя: {{ userData.full_name.replace('"', '\"')  }}
+🆔 ID: {{ userData.user_id }}  
+📱 Telegram: {{ userData.settings.telegram.login }}
+🔑 Логин: {{ userData.login }}  
+
+{{ IF userServices.size <= 0 }}
+<b>У пользователя нет подписок!</b>
+{{ END }}
+{{ END }}
+
+{
+    "editMessageText": {
+        "message_id": {{ message.message_id }},
+        "parse_mode": "HTML",
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "reply_markup": {
+            "inline_keyboard": [
+                {{ FOR item in userServices }}
+                {{ status = (item.status == 'ACTIVE' ? "🟢" : "🔴") }}
+                [
+                    {
+                        "text": "{{ status }} {{ item.user_service_id }} - {{ item.name }}",
+                        "callback_data": "admin:subs:id {{ item.user_service_id _ ' ' _ item.user_id }}"
+                    }
+                ],
+                {{ END }}
+
+                {{ IF userServices.size == limit }}
+                [
+                    {
+                        "text": "➡️ Ещё",
+                        "callback_data": "admin:users:list {{ limit + offset }}"
+                    }
+                ],
+                {{ END }}
+
+                {{ IF offset > 0 }}
+                [
+                    {
+                        "text": "⬅️ Назад",
+                        "callback_data": "admin:users:list {{ offset - limit }}"
+                    }
+                ],
+                {{ END }}
+
+                [
+                    {
+                        "text": "➕ Добавить услугу",
+                        "callback_data": "admin:subs:add {{ userData.user_id }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "➕ Добавить услугу (бесплатно)",
+                        "callback_data": "admin:subs:add:free {{ userData.user_id }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "⬅️ Информация о пользователе",
+                        "callback_data": "admin:users:id {{ userData.user_id _' '_ last_offset }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); menuRole; }}",
+                        "callback_data": "admin:menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ END }}
+
+
+<% CASE '/admsubsadd' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
+{{
+    # Variables
+    userData = user.id(args.0);
+    servicesArray = ref(service.list_for_api).nsort('service_id');
+}}
+
+{{ TEXT = BLOCK }}
+➕ Выберите услугу для создания пользователю {{ userData.full_name.replace('"', '\"') }} ({{ userData.user_id }})
+{{ END }}
+
+{
+    "editMessageText": {
+        "message_id": {{ message.message_id }},
+        "parse_mode": "HTML",
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "reply_markup": {
+            "inline_keyboard": [
+                {{ FOR item in servicesArray }}
+                    [
+                        {
+                            "text": "{{ item.name }} - {{ item.descr }} - {{ item.cost }} ₽",
+                            "callback_data": "admin:subs:add:confirm {{ userData.user_id }} {{ item.service_id }}"
+                        }
+                    ],
+                {{ END }}
+                [
+                    {
+                        "text": "⬅️ Назад",
+                        "callback_data": "admin:users:id:subs {{ userData.user_id }} {{ args.1 }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "⬅️ Информация о пользователе",
+                        "callback_data": "admin:users:id {{ userData.user_id }} {{ last_offset }}"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ END }}
+
+
+<% CASE 'admin:subs:add' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
+{{
+    # Переменные
+    userData = user.id(args.0);
+    servicesArray = ref(service.list_for_api).nsort('service_id');
+    last_offset = args.1 || 0;
+}}
+
+{{ TEXT = BLOCK }}
+➕ <b>Выберите услугу для пользователя</b>  
+👤 Имя: {{ userData.full_name.replace('"', '\"') }}  
+🆔 ID: {{ userData.user_id }}
+
+{{ IF servicesArray.size == 0 }}
+⚠️ <b>Нет доступных услуг для добавления.</b>
+{{ END }}
+{{ END }}
+
+{
+    "editMessageText": {
+        "message_id": {{ message.message_id }},
+        "parse_mode": "HTML",
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "reply_markup": {
+            "inline_keyboard": [
+                {{ FOR item in servicesArray }}
+                [
+                    {
+                        "text": "{{ item.name _' '_ item.descr }} - {{ item.cost }} ₽",
+                        "callback_data": "admin:subs:add:confirm {{ userData.user_id _' '_ item.service_id }}"
+                    }
+                ],
+                {{ END }}
+
+                [
+                    {
+                        "text": "⬅️ Назад",
+                        "callback_data": "admin:users:id:subs {{ userData.user_id _' '_ args.1 }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "⬅️ Информация о пользователе",
+                        "callback_data": "admin:users:id {{ userData.user_id _' '_ last_offset }}"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ END }}
+
+
+<% CASE 'admin:subs:add:free' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
+{{
+    # Variables
+    userData = user.id(args.0);
+    servicesArray = ref(service.list_for_api).nsort('service_id');
+}}
+{{ TEXT = BLOCK }}
+➕ Выберите услугу с 0 стоимостью для создания пользователю {{ userData.full_name.replace('"', '\"')  }} ({{ userData.user_id }})
+{{ END }}
+
+{
+    "editMessageText": {
+        "message_id": {{ message.message_id }},
+        "parse_mode": "HTML",
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "reply_markup": {
+            "inline_keyboard": [
+    {{ FOR item in servicesArray }}
+        [
+            {
+                "text": "{{ item.name _' '_ item.descr }} - {{ item.cost }} ₽",
+                "callback_data": "admin:subs:add:confirm {{ userData.user_id _' '_ item.service_id _' free' }}"
+            }
+        ],
+    {{ END }}
+    [
+        {
+            "text": "⬅️ Назад",
+            "callback_data": "admin:users:id:subs {{ userData.user_id _' '_ args.1 }}"
+        }
+    ],
+    [
+        {
+            "text": "⬅️ Информация о пользователе",
+            "callback_data": "admin:users:id {{ userData.user_id _' '_ last_offset }}"
+        }
+    ]
+            ]
+        }
+    }
+}
+{{ END }}
+
+
+<% CASE '/admusermsg' %>
+{
+"sendMessage": {
+        "text": "#{{ args.0 }}#\nВведите сообщение для пользователя",
+        "reply_markup": {
+            "force_reply": true
+        }
+    }
+}
+
+<% CASE 'admin:subs:id' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
+{{
+    # Arguments:
+        # 0 - ID of user service id 
+        # 1 - ID of user
+    # Variables:
+    USE date;
+    userData = user.id(args.1);
+    userService = userData.us.id(args.0);
+    userServiceData = service.id(userService.service_id);
+    userServiceNext = service.id(userService.next);
+    userSubUrl = (userData.storage.read('name', 'vpn_mrzb_'_ userService.user_service_id).subscription_url || "https://notfound.com");
+    subData = http.get(userSubUrl _'/info');
+}}
+{{ TEXT = BLOCK }}
+🔐 Подписка {{ userServiceData.name }} пользователя {{ userData.full_name.replace('"', '\"') }} ({{ userData.user_id }})
+
+ID: {{ userService.user_service_id }}
+ID списания: {{ userService.withdraw_id }}
+Статус: {{ userService.status }}
+Создана: {{ userService.created }}
+Заканчивается: {{ userService.expire }}
+Следующий тариф: {{ userServiceNext.name }}
+
+Последний онлайн: {{ subData.online_at ? date.format(subData.online_at, '%d.%m.%Y %R') : 'нет информации' }}
+
+{{ END }}
+
+{
+    "editMessageText": {
+        "message_id": {{ message.message_id }},
+        "parse_mode": "HTML",
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "🔗 Подписка {{ userService.user_service_id }} - {{ userServiceData.name }}",
+                        "web_app": {
+                            "url": "{{ userSubUrl }}"
+                        }
+                    }
+                ],
+                {{ IF userService.status == 'ACTIVE' || userService.status == 'BLOCK' }}
+                    [
+                        {
+                            "text": "{{ status = (userService.status == 'ACTIVE' ? "🔴 Заблокировать" : "🟢 Активировать"); status; }}",
+                            "callback_data": "admin:subs:change:status {{ userService.user_service_id }}"
+                        }
+                    ],
+                {{ ELSIF userService.status == 'PROGRESS' }}
+                    [
+                        {
+                            "text": "⏳ Ожидание (обновите)",
+                            "callback_data": "admin:subs:id {{ userService.user_service_id }}"
+                        }
+                    ],
+                {{ END }}
+                {{ IF userService.status == 'BLOCK' || userService.status == 'NOT PAID' }}
+                    [
+                        {
+                            "text": "❌ Удалить подписку",
+                            "callback_data": "admin:subs:delete {{ userService.user_service_id }}"
+                        }
+                    ],
+                {{ END }}
+                [
+                    {
+                        "text": "🫰 Информация о списании",
+                        "callback_data": "admin:withdraws:id {{ userService.withdraw_id }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "⎘ Сменить текущ. тариф",
+                        "callback_data": "admin:subs:change:current {{ userService.user_service_id }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "⎘ Сменить след. тариф",
+                        "callback_data": "admin:subs:change:next {{ userService.user_service_id }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "⬅️ Назад",
+                        "callback_data": "admin:users:id:subs {{ userData.user_id }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); menuRole; }}",
+                        "callback_data": "admin:menu"
+                    },
+                    {
+                        "text": "🏠 Главное меню",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ END }}
+
+<% CASE 'admin:subs:change:current' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    userService = ref(us.list_for_api('admin', 1, 'filter', {"user_service_id" = args.0})).first;
+    userData = user.id(userService.user_id);
+    userServiceData = service.id(userService.service_id);
+}}
+{{ TEXT = BLOCK }}
+⎘ Выберите тариф на изменение для подписки {{ userServiceData.name }} пользователя {{ userData.full_name.replace('"', '\"')  }} ({{ userData.user_id }})
+
+{{ END }}
+
+{
+    "editMessageText": {
+        "message_id": {{ message.message_id }},
+        "parse_mode": "HTML",
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "reply_markup": {
+            "inline_keyboard": [
+                {{ FOR list IN ref(service.api_price_list).nsort('service_id') }}
+                    [
+                        {
+                            "text": "{{ list.name _' '_ list.descr }} - {{ list.cost }} ₽",
+                            "callback_data": "admin:subs:change:current:confirm {{ userService.user_service_id _ ' ' _ list.service_id }}"
+                        }
+                    ],
+                {{ END }}
+                [
+                    {
+                        "text": "⬅️ Назад",
+                        "callback_data": "admin:subs:id {{ userService.user_service_id }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); menuRole; }}",
+                        "callback_data": "admin:menu"
+                    },
+                    {
+                        "text": "🏠 Главное меню",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ END }}
+
+<% CASE 'admin:subs:change:current:confirm' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    nextService = args.1;
+    data = ref(us.list_for_api('admin', 1, 'filter', {"user_service_id" = args.0})).first;
+    userData = user.id(data.user_id);
+    serviceData = service.id(data.service_id);
+    userServiceNext = service.id(nextService);
+}}
+{{ TEXT = BLOCK }}
+✅ Тариф для подписки {{ serviceData.name }} ({{ data.user_service_id }}) пользователя {{ userData.full_name.replace('"', '\"')  }} ({{ userData.user_id }}) изменён на {{ userServiceNext.name }}
+{{ END }}
+{
+    "answerCallbackQuery": {
+         "callback_query_id": {{ callback_query.id }},
+         "parse_mode":"HTML",
+         "text": "{{ TEXT.replace('\n','\n') }}",
+         "show_alert": true
+     }
+},
+{
+    "shmRedirectCallback": {
+        "callback_data": "admin:subs:id {{ data.user_service_id }}"
+    }
+}
+{{ ret = userData.us.id(data.user_service_id).change('service_id' = nextService) }}
+
+
+<% CASE 'admin:subs:change:next' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    userService = ref(us.list_for_api('admin', 1, 'filter', {"user_service_id" = args.0})).first;
+    userData = user.id(userService.user_id);
+    userServiceData = service.id(userService.service_id);
+    userServiceNext = service.id(userService.next);
+}}
+{{ TEXT = BLOCK }}
+⎘ Выберите следующий тариф для подписки {{ userServiceData.name }} пользователя {{ userData.full_name.replace('"', '\"')  }} ({{ userData.user_id }})
+
+{{ IF userService.next != userService.service_id || userService.next != 0 }}
+Следующий тариф: {{ userServiceNext.name }} ({{ userService.next }})
+{{ END }}
+{{ END }}
+
+{
+    "editMessageText": {
+        "message_id": {{ message.message_id }},
+        "parse_mode": "HTML",
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "reply_markup": {
+            "inline_keyboard": [
+                {{ FOR list IN ref(service.api_price_list).nsort('service_id') }}
+                    [
+                        {
+                            "text": "{{ list.name _' '_ list.descr }} - {{ list.cost }} ₽",
+                            "callback_data": "admin:subs:change:next:confirm {{ userService.user_service_id _ ' ' _ list.service_id }}"
+                        }
+                    ],
+                {{ END }}
+                [
+                    {
+                        "text": "⬅️ Назад",
+                        "callback_data": "admin:subs:id {{ userService.user_service_id }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); menuRole; }}",
+                        "callback_data": "admin:menu"
+                    },
+                    {
+                        "text": "🏠 Главное меню",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ END }}
+
+<% CASE 'admin:subs:change:next:confirm' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    nextService = args.1;
+    data = ref(us.list_for_api('admin', 1, 'filter', {"user_service_id" = args.0})).first;
+    userData = user.id(data.user_id);
+    serviceData = service.id(data.service_id);
+    userServiceNext = service.id(nextService);
+}}
+{{ ret = userData.us.id(data.user_service_id).set("next", nextService) }}
+{{ TEXT = BLOCK }}
+✅ Следующий тариф для подписки {{ serviceData.name }} ({{ data.user_service_id }}) пользователя {{ userData.full_name.replace('"', '\"') }} ({{ userData.user_id }}) изменён на {{ userServiceNext.name }}
+{{ END }}
+{
+    "answerCallbackQuery": {
+         "callback_query_id": {{ callback_query.id }},
+         "parse_mode":"HTML",
+         "text": "{{ TEXT.replace('\n','\n') }}",
+         "show_alert": true
+     }
+},
+{
+    "shmRedirectCallback": {
+        "callback_data": "admin:subs:id {{ data.user_service_id }}"
+    }
+}
+{{ END }}
+
+<% CASE 'admin:subs:change:status' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    data = ref(us.list_for_api('admin', 1, 'filter', {"user_service_id" = args.0})).first;
+    userData = user.id(data.user_id);
+    serviceData = service.id(data.service_id);
+}}
+{{ IF data.status == 'ACTIVE' }}
+    {{ ret = userData.us.id(data.user_service_id).block }}
+{{ ELSIF data.status == 'BLOCK' }}
+    {{ ret = userData.us.id(data.user_service_id).activate }}
+{{ END }}
+{
+    "answerCallbackQuery": {
+         "callback_query_id": {{ callback_query.id }},
+         "parse_mode":"HTML",
+         "text": "✅ Услуга {{ serviceData.name }} ({{ data.user_service_id }}) пользователя {{ userData.full_name.replace('"', '\"')  }} ({{ userData.user_id }}) {{ status = (data.status == 'ACTIVE' ? "🔴 заблокирована" : "🟢 активирована"); status; }}",
+        "show_alert": true
+     }
+},
+{
+    "shmRedirectCallback": {
+        "callback_data": "admin:subs:id {{ data.user_service_id }}"
+    }
+}
+{{ END }}
+
+<% CASE 'admin:subs:delete' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    data = ref(us.list_for_api('admin', 1, 'filter', {"user_service_id" = args.0})).first;
+    userData = user.id(data.user_id);
+    serviceData = service.id(data.service_id);
+}}
+{{ IF data.status == 'BLOCK' || data.status == 'NOT PAID' }}
+    {{ ret = userData.us.id(data.user_service_id).delete }}
+{{ END }}
+{
+    "answerCallbackQuery": {
+         "callback_query_id": {{ callback_query.id }},
+         "parse_mode":"HTML",
+         "text": "❌ Услуга {{ serviceData.name }} ({{ data.user_service_id }}) пользователя {{ userData.full_name.replace('"', '\"')  }} ({{ userData.user_id }}) удалена!",
+        "show_alert": true
+     }
+},
+{
+    "shmRedirectCallback": {
+        "callback_data": "admin:users:id:subs {{ userData.user_id }}"
+    }
+}
+{{ END }}
+
+<% CASE 'admin:users:id:pays' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    limit = 5;
+    offset = args.1 || 0;
+    userData = user.id(args.0);
+    userPays = ref(userData.pays.list_for_api('limit', limit, 'offset', offset ));
+}}
+{{ TEXT = BLOCK }}
+👨‍💻 Управление платежами пользователя {{ userData.full_name.replace('"', '\"') }} ({{ userData.user_id }})
+
+{{ END }}
+{
+    "editMessageText": {
+        "message_id": {{ message.message_id }},
+        "parse_mode": "HTML",
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "reply_markup": {
+            "inline_keyboard": [
+                {{ FOR item in userPays }}
+                    [
+                        {
+                            "text": "(ID: {{ item.id }}), {{ item.money }} руб, {{ item.date }}",
+                            "callback_data": "admin:pays:id {{ item.id }}"
+                        }
+                    ],
+                {{ END }}
+                {{ IF offset > 0 }}
+                    [
+                        {
+                            "text": "⬅️ Назад",
+                            "callback_data": "admin:users:id:pays {{ userData.user_id _' ' }} {{ offset - limit }}"
+                        }
+                    ],
+                {{ END }}
+                {{ IF userPays.size == limit }}
+                    [
+                        {
+                            "text": "Ещё ➡️",
+                            "callback_data": "admin:users:id:pays {{ userData.user_id _' ' }} {{ limit + offset }}"
+                        }
+                    ],
+                {{ END }}
+                [
+                    {
+                        "text": "➕ Добавить платеж",
+                        "callback_data": "admin:pays:add {{ userData.user_id }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "⬅️ Информация о пользователе",
+                        "callback_data": "admin:users:id {{ userData.user_id }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "👨‍💻👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); menuRole; }}",
+                        "callback_data": "admin:menu"
+                    },
+                    {
+                        "text": "🏠 Главное меню",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ END }}
+
+<% CASE 'admin:pays:id' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    userPay = ref(pay.list_for_api('admin', 1, 'filter', {"id" = args.0})).first;
+    payData = userPay.comment.object;
+    payMethod = payData.payment_method;
+    payCard = payMethod.card;
+    userData = user.id(userPay.user_id);
+	partnerData = user.id(data.comment.from_user_id);
+}}
+{{ TEXT = BLOCK }}
+💸 Информация о платеже ID {{ userPay.id }} пользователя {{ userData.full_name.replace('"', '\"')  }} ({{ userData.user_id }})
+
+Дата платежа: {{ userPay.date }}
+Платежная система: {{ userPay.pay_system_id }}
+Сумма: {{ userPay.money }} руб.
+
+{{ IF data.comment.from_user_id }}
+<blockquote>{{ data.comment.percent }}% от {{ userData.full_name.replace('"', '\"')  }} ({{ partnerData.user_id }})</blockquote>
+{{ END }}
+
+{{ IF data.comment.msg }}
+<blockquote>{{ data.comment.msg }}</blockquote>
+{{ END }}
+
+{{ IF userPay.comment.comment }}
+<b>Комментарий к платежу</b>
+<blockquote>{{ userPay.comment.comment }}</blockquote>
+{{ END }}
+
+{{ IF payData }}
+<b>Данные о платеже</b>
+<blockquote>
+ID в системе: {{ payData.id }}
+Статус: {{ payData.status }}
+{{ IF payCard }}
+Тип карты: {{ payCard.card_type }}
+Номер карты: {{ payCard.first6 }}******{{ payCard.last4 }}
+Банк: {{ payCard.issuer_name }}
+Страна банка: {{ payCard.issuer_country }}
+Срок действия: {{ payCard.expiry_month }}/{{ payCard.expiry_year }}
+{{ END }}
+{{ IF payMethod.type == 'sbp' }}
+Тип оплаты: СБП
+Номер операции в СБП: {{ payMethod.sbp_operation_id }}
+Бик Банка: {{ payMethod.payer_bank_details.bic }}
+{{ END }}
+
+{{ IF payMethod.title.match('YooMoney') }}
+Кошелек YooMoney: {{ payMethod.title }}
+ID кошелька: {{ payMethod.account_number }}
+{{ END }}
+</blockquote>
+{{ END }}
+
+{{ END }}
+
+{
+    "editMessageText": {
+        "message_id": {{ message.message_id }},
+        "parse_mode": "HTML",
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "reply_markup": {
+            "inline_keyboard": [
+    [
+        {
+            "text": "⬅️ Назад",
+            "callback_data": "admin:users:id:pays {{ userPay.user_id }}"
+        }
+    ],
+    [
+        {
+            "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); menuRole; }}",
+            "callback_data": "admin:menu"
+        },
+        {
+            "text": "🏠 Главное меню",
+            "callback_data": "/menu"
+        }
+    ]
+            ]
+        }
+    }
+}
+{{ END }}
+
+<% CASE 'admin:pays:add' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    userData = user.id(args.0);
+}}
+{{ TEXT = BLOCK }}
+💸 Выберите сумму, которую хотите начислить пользователю {{ userData.full_name.replace('"', '\"')  }} ({{ userData.user_id }})
+Текущий баланс: {{ userData.balance }} руб.
+
+{{ END }}
+{
+    "editMessageText": {
+        "message_id": {{ message.message_id }},
+        "parse_mode": "HTML",
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "10 руб",
+                        "callback_data": "admin:pays:add:confirm {{ userData.user_id }} 10"
+                    },
+                    {
+                        "text": "20 руб",
+                        "callback_data": "admin:pays:add:confirm {{ userData.user_id }} 20"
+                    }
+                ],
+                [
+                    {
+                        "text": "50 руб",
+                        "callback_data": "admin:pays:add:confirm {{ userData.user_id }} 50"
+                    },
+                    {
+                        "text": "100 руб",
+                        "callback_data": "admin:pays:add:confirm {{ userData.user_id }} 100"
+                    }
+                ],
+                [
+                    {{ FOR item IN ref(service.api_price_list('category', '%')).nsort('cost') }}
+                        {
+                            "text": "{{ item.name }} - {{ item.cost }}₽",
+                            "callback_data": "admin:pays:add:confirm {{ userData.user_id _ ' ' }} {{ item.cost }}"
+                        },
+                    {{ END }}
+                ],
+                [
+                    {
+                        "text": "Ввести свою сумму",
+                        "callback_data": "admin:pays:add:manual {{ userData.user_id }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "⬅️ Назад",
+                        "callback_data": "admin:users:id:pays {{ userData.user_id }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); menuRole; }}",
+                        "callback_data": "admin:menu"
+                    },
+                    {
+                        "text": "🏠 Главное меню",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ END }}
+
+<% CASE 'admin:pays:add:manual' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    userData = user.id(args.0);
+
+    ret = user.set_settings({'state' => 'awaiting_amount'});
+    ret = user.set_settings({'bot' => {'switchUser' => userData.user_id} });
+}}
+
+{{ TEXT = BLOCK }}
+💬 Введите сумму для пополнения баланса пользователя {{ userData.full_name.replace('"', '\"') }}
+{{ END }}
+
+
+
+<% CASE 'admin:pays:add:confirm' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    userData = user.id(args.0);
+    amount = args.1;
+    pay = userData.payment('money', amount, 'pay_system_id', 'Ручное начисление от администратора')
+}}
+{
+    "answerCallbackQuery": {
+         "callback_query_id": {{ callback_query.id }},
+         "parse_mode":"HTML",
+         "text": "Баланс пользователя {{ userData.full_name.replace('"', '\"')  }} ({{ userData.user_id }}) пополнен на {{ amount }} руб. Текущий баланс - {{ userData.balance }}",
+         "show_alert": true
+     }
+},
+{
+    "shmRedirectCallback": {
+        "callback_data": "admin:pays:add {{ userData.user_id }}"
+    }
+}
+{{ END }}
+
+<% CASE 'admin:users:id:bonuses' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    limit = 5;
+    offset = (args.1 || 0);
+    userData = user.id(args.0);
+    userBonuses = ref(bonus.list_for_api('admin', 1, 'limit', limit, 'offset', offset, 'filter', {"user_id" = userData.user_id}));
+}}
+{{ TEXT = BLOCK }}
+👨‍💻 Управление бонусами пользователя {{ userData.full_name.replace('"', '\"')  }} ({{ userData.user_id }})
+
+Баланс бонусов: {{ userData.get_bonus }} руб.
+{{ END }}
+
+{
+    "editMessageText": {
+        "message_id": {{ message.message_id }},
+        "parse_mode": "HTML",
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "reply_markup": {
+            "inline_keyboard": [
+                {{ FOR item in userBonuses }}
+                    [
+                        {
+                            "text": "ID: {{ item.id }} — {{ item.bonus }} руб.",
+                            "callback_data": "admin:bonuses:id {{ item.id _ ' ' _ offset }}"
+                        }
+                    ],
+                {{ END }}
+                {{ IF offset > 0 }}
+                    [
+                        {
+                            "text": "⬅️ Назад",
+                            "callback_data": "admin:users:id:bonuses {{ userData.user_id _' ' }} {{ offset - limit }}"
+                        }
+                    ],
+                {{ END }}
+                {{ IF userBonuses.size == limit }}
+                    [
+                        {
+                            "text": "Ещё ➡️",
+                            "callback_data": "admin:users:id:bonuses {{ userData.user_id _' ' }} {{ limit + offset }}"
+                        }
+                    ],
+                {{ END }}
+                [
+                    {
+                        "text": "➕ Добавить бонусы",
+                        "callback_data": "admin:bonuses:add {{ userData.user_id }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "⬅️ Информация о пользователе",
+                        "callback_data": "admin:users:id {{ userData.user_id }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); menuRole; }}",
+                        "callback_data": "admin:menu"
+                    },
+                    {
+                        "text": "🏠 Главное меню",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ END }}
+
+
+<% CASE 'admin:bonuses:id' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    offset = args.1;
+    data = ref(bonus.list_for_api('admin', 1, 'limit', limit, 'offset', offset, 'filter', {"id" = args.0})).first;
+    userData = user.id(data.user_id);
+    partnerData = user.id(data.comment.from_user_id)
+}}
+{{ TEXT = BLOCK }}
+💸 Информация о начислении бонусов ID {{ data.id }} пользователю {{ userData.full_name.replace('"', '\"')  }} ({{ userData.user_id }})
+
+ID начисления: {{ data.id }}
+Дата начисления: {{ data.date }}
+Сумма начисления: {{ data.bonus }} руб.
+
+{{ IF data.comment.from_user_id }}
+<blockquote>{{ data.comment.percent }}% от {{ userData.full_name.replace('"', '\"')  }} ({{ partnerData.user_id }})</blockquote>
+{{ END }}
+
+{{ IF data.comment.msg }}
+<blockquote>{{ data.comment.msg }}</blockquote>
+{{ END }}
+{{ END }}
+{
+    "editMessageText": {
+        "message_id": {{ message.message_id }},
+        "parse_mode": "HTML",
+        "text": "{{ TEXT.replace('\n','\n') }}",
         "reply_markup": {
             "inline_keyboard": [
                 [
                     {
                         "text": "⬅️ Назад",
-                        "callback_data": "/admpay {{ userData.user_id }}"
+                        "callback_data": "admin:users:id:bonuses {{ userData.user_id _ ' ' _ offset }}"
                     }
                 ],
                 [
                     {
-                        "text": "⚙️ Админка",
-                        "callback_data": "/adminmenu"
-                    }
-                ],
-                [
+                        "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); menuRole; }}",
+                        "callback_data": "admin:menu"
+                    },
                     {
-                        "text": "🏠 Домой",
+                        "text": "🏠 Главное меню",
                         "callback_data": "/menu"
                     }
                 ]
@@ -2700,97 +2971,81 @@ ID кошелька: {{ payMethod.account_number }}
         }
     }
 }
-{{ ELSE }}
+{{ END }}
+
+
+<% CASE 'admin:bonuses:add' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    userData = user.id(args.0);
+}}
+{{ TEXT = BLOCK }}
+💸 Выберите кол-во бонусов, которые хотите начислить пользователю {{ userData.full_name.replace('"', '\"')  }} ({{ userData.user_id }})
+Текущий баланс бонусов {{ userData.get_bonus }} руб.
+
+{{ END }}
 {
-    "sendMessage": {
+    "editMessageText": {
+        "message_id": {{ message.message_id }},
         "parse_mode": "HTML",
-        "text": "❌ Ошибка: Сумма для пополнения должна быть больше 0."
-    }
-}
-{{ END }}
-
-<% CASE '/admpayb' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{ user = user.switch(args.0) }}
-{{ FOR itemplb IN ref(user.id(args.0)) }}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
-        "text": "<code>{{ itemplb.full_name }}\nБонусов: {{ itemplb.get_bonus }}</code>\n\nЗачислить бонусов:",
-        "reply_markup" : {
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "reply_markup": {
             "inline_keyboard": [
-                       [
+                [
                     {
-                        "text": "10",
-                        "callback_data": "/admpaymentb {{ itemplb.user_id }} 10"
-                    }
-                ], [
+                        "text": "10 руб",
+                        "callback_data": "admin:bonuses:add:confirm {{ userData.user_id }} 10"
+                    },
                     {
-                        "text": "50",
-                        "callback_data": "/admpaymentb {{ itemplb.user_id }} 50"
-                    }
-                ], [
+                        "text": "20 руб",
+                        "callback_data": "admin:bonuses:add:confirm {{ userData.user_id }} 20"
+                    },
                     {
-                        "text": "100",
-                        "callback_data": "/admpaymentb {{ itemplb.user_id }} 100"
-                    }
-                ],
-                          [
+                        "text": "30 руб",
+                        "callback_data": "admin:bonuses:add:confirm {{ userData.user_id }} 30"
+                    },
                     {
-                        "text": "⇦ Назад",
-                        "callback_data": "/admuser {{ user.id }}"
-                    }
-                ],  [
-                    {
-                        "text": "Пользователи",
-                        "callback_data": "/admusers"
-                    },{
-                        "text": "Админка",
-                        "callback_data": "/adminmenu"
+                        "text": "40 руб",
+                        "callback_data": "admin:bonuses:add:confirm {{ userData.user_id }} 40"
                     }
                 ],
-                 [
+                [
                     {
-                        "text": "🏠 Домой",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]{{ END }}    
-        }
-    }
-}
-{{ END }}  
-
-
-<% CASE '/admpaymentb' %>
-{{ IF message.chat.id == config.telegram_admin.id }}
-{{ user = user.switch( args.0 ) }}
-{{ bon = user.add_bonus( args.1 ) }}
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode":"HTML",
-        "text": "💰 Пользователю {{ user.full_name }} (ID: <code>{{ user.id }})</code> начислено {{ args.1 }}₽ бонусов.",
-        "reply_markup" : {
-            "inline_keyboard": [
-                       [
+                        "text": "50 руб",
+                        "callback_data": "admin:bonuses:add:confirm {{ userData.user_id }} 50"
+                    },
                     {
-                        "text": "⇦ Назад",
-                        "callback_data": "/admuser {{ user.id }}"
-                    }
-                ],  [
+                        "text": "100 руб",
+                        "callback_data": "admin:bonuses:add:confirm {{ userData.user_id }} 100"
+                    },
                     {
-                        "text": "Пользователи",
-                        "callback_data": "/admusers"
-                    },{
-                        "text": "Админка",
-                        "callback_data": "/adminmenu"
+                        "text": "150 руб",
+                        "callback_data": "admin:bonuses:add:confirm {{ userData.user_id }} 150"
+                    },
+                    {
+                        "text": "200 руб",
+                        "callback_data": "admin:bonuses:add:confirm {{ userData.user_id }} 200"
                     }
                 ],
-                 [
+                [
                     {
-                        "text": "🏠 Домой",
+                        "text": "Убрать {{ userData.get_bonus }}",
+                        "callback_data": "admin:bonuses:add:confirm {{ userData.user_id }} -{{ userData.get_bonus }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "⬅️ Назад",
+                        "callback_data": "admin:users:id:bonuses {{ userData.user_id }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); menuRole; }}",
+                        "callback_data": "admin:menu"
+                    },
+                    {
+                        "text": "🏠 Главное меню",
                         "callback_data": "/menu"
                     }
                 ]
@@ -2800,66 +3055,131 @@ ID кошелька: {{ payMethod.account_number }}
 }
 {{ END }}
 
-<% CASE %>
-{{ IF message.reply_to_message.chat.id == tpl.settings.admin.chat_id }}
-    {{ text = message.reply_to_message.caption || message.reply_to_message.text }}
-    {{ chatid = text.split('#').1 }}
-    
-    {{ IF chatid }}
-        {{ IF message.photo }}
-            {
-                "sendPhoto": {
-                    "chat_id": "{{ chatid }}",
-                    "photo": "{{ message.photo.0.file_id }}",
-                    "caption": "<blockquote><b>Сообщение от администрации:</b></blockquote>\n\n<blockquote>{{ message.caption }}</blockquote>"
-                }
-            }
-        {{ ELSIF message.text }}
-            {
-                "sendMessage": {
-                    "chat_id": "{{ chatid }}",
-                    "text": "<blockquote><b>Сообщение от администрации:</b></blockquote>\n\n<pre>{{ message.text }}</pre>\n\n"
-                }
-            }
-        {{ ELSE }}
-            {
-                "sendMessage": {
-                    "chat_id": "{{ chatid }}",
-                    "text": "Доступно только тестовые сообщении и отправка фото"
-                }
-            }
-        {{ END }}
-    {{ ELSE }}
-        {
-            "sendMessage": {
-                "chat_id": "{{ tpl.settings.admin.chat_id }}",
-                "text": "Не удалось найти пользователя или вы не ответили на сообщение"
-            }
-        }
-    {{ END }}
+
+<% CASE 'admin:bonuses:add:confirm' %>
+{{
+    userData = user.id(args.0);
+    amount = args.1;
+}}
+
+{{ IF amount < 0 }}
+    {{ ret = userData.set_bonus('bonus', amount, 'comment', {'msg' => 'Ручная корректировка от администратора'}); }}
 {{ ELSE }}
-    {{ IF message.photo }}
-        {
-            "sendPhoto": {
-                "chat_id": "{{ tpl.settings.admin.chat_id }}",
-                "photo": "{{ message.photo.0.file_id }}",
-                "caption": "<blockquote><b>#{{ user.settings.telegram.chat_id }}#</b></blockquote>\n\n<blockquote>{{ message.caption }}</blockquote>\n\n<i>Сообщение от пользователя {{ user.full_name }}.</i>"
+    {{ ret = userData.set_bonus('bonus', amount, 'comment', {'msg' => 'Ручное начисление от администратора'}); }}
+    {
+        "sendMessage": {
+            "chat_id": {{ userData.settings.telegram.chat_id }},
+            "text": "🎁 Вам начислено {{ amount }} бонусов на счет от администратора",
+            "parse_mode": "HTML",
+            "reply_markup": {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "👤 Личный кабинет",
+                            "callback_data": "cabinet"
+                        }
+                    ]
+                ]
             }
         }
-    {{ ELSIF message.text }}
+    },
+{{ END }}
+
+{
+    "answerCallbackQuery": {
+         "callback_query_id": {{ callback_query.id }},
+         "parse_mode":"HTML",
+         "text": "Баланс бонусов пользователя {{ userData.full_name.replace('"', '\"')  }} ({{ userData.user_id }}) пополнен на {{ amount }} руб. Текущий баланс - {{ userData.get_bonus }}",
+         "show_alert": true
+     }
+},
+{
+    "shmRedirectCallback": {
+        "callback_data": "admin:bonuses:add {{ userData.user_id }}"
+    }
+}
+
+
+<% CASE 'admin:withdraws:id' %>
+{{
+    data = ref(wd.list_for_api('admin', 1, 'filter', {"withdraw_id" = args.0})).first;
+    userData = user.id(data.user_id);
+}}
+{{ TEXT = BLOCK }}
+💸 Информация о списании №{{ data.withdraw_id }}
+
+Пользователь: {{ userData.full_name.replace('"', '\"')  }} ({{ userData.user_id }})
+
+Услуга: {{ data.name }} ({{ data.user_service_id }})
+Стоимость: {{ data.cost }}
+Дата создания: {{ data.create_date }}
+Дата списания: {{ data.withdraw_date }}
+Дата окончания по списанию: {{ data.end_date }}
+Кол-во месяцев: {{ data.months }}
+
+<b>Списание:</b>
+<blockquote>
+Скидка: {{ data.discount }}%
+Бонусов: {{ data.bonus }} руб
+<b>Всего: {{ data.total }}</b>
+
+</blockquote>
+{{ END }}
+
+{
+    "editMessageText": {
+        "message_id": {{ message.message_id }},
+        "parse_mode": "HTML",
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "reply_markup": {
+            "inline_keyboard": [
+    [
         {
-            "sendMessage": {
-                "chat_id": "{{ tpl.settings.admin.chat_id }}",
-                "text": "<blockquote><b>#{{ user.settings.telegram.chat_id }}# \nСообщение от пользователя {{ user.full_name }}:</b></blockquote>\n\n<pre>{{ message.text }}</pre>"
-            }
+            "text": "⬅️ Назад",
+            "callback_data": "admin:subs:id {{ data.user_service_id _ ' ' _  userData.user_id }}"
         }
-    {{ ELSE }}
+    ],
+    [
         {
-            "sendMessage": {
-                "text": "Доступно только тестовые сообщении и отправка фото"
-            }
+            "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); menuRole; }}",
+            "callback_data": "admin:menu"
+        },
+        {
+            "text": "🏠 Главное меню",
+            "callback_data": "/menu"
         }
-    {{ END }}
+    ]
+]
+        }
+    }
+}
+
+
+<% CASE '/admuserblock_toggle' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    # Arguments 
+    #   0. - id of user
+
+    # Variables
+        userData = user.id(args.0);
+}}
+{{ retcode = (userData.block == 1 ? "0" : "1"); }}
+{{ ret = userData.set(block = retcode) }}
+
+{
+    "answerCallbackQuery": {
+        "callback_query_id": {{ callback_query.id }},
+        "parse_mode": "HTML",
+        "text": "✅ Пользователь {{ userData.full_name.replace('"', '\"')  }} ({{ userData.user_id }}) {{ status = (userData.block == 1 ? "🔴 заблокирован" : "🟢 активирован"); status; }}",
+        "show_alert": true
+    }
+},
+{
+    "shmRedirectCallback": {
+        "callback_data": "/admuser {{ userData.user_id }}"
+    }
+}
 {{ END }}
 
 <% END %>
