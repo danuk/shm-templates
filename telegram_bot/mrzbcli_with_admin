@@ -1,3 +1,8 @@
+<% IF cmd && cmd != 'USER_NOT_FOUND' %>
+    <%  IF ! user.settings.free_used %>
+    <% user_adjust = user.set_settings({ 'free_used' => 'none' }) %>
+    <% END %>
+<% END %>
 <% SWITCH cmd %>
 <% CASE 'USER_NOT_FOUND' %>
 {
@@ -75,6 +80,7 @@
     }
 },
 {{ END }}
+{{ user_services = ref(user.services.list_for_api('filter', { 'category' => '%', status => 'ACTIVE' } )) }}
 {
     "sendPhoto": {
         "photo": "{{ config.logo.url }}",
@@ -110,6 +116,14 @@
                         }
                     }
                 ],
+                {{ IF user.settings.free_used == 'none' && user_services.size == 0}}
+                [
+                    {
+                        "text": "🎁 ОФОРМИ БЕСПЛАТНЫЙ КЛЮЧ ПРЯМО СЕЙЧАС",
+                        "callback_data": "/pricelist"
+                    }
+                ],
+                {{ END }}
                 [
                     {
                         "text": "🛒 Купить",
@@ -120,6 +134,20 @@
                         "callback_data": "/list"
                     }
                 ],
+                {{ IF user_services.size > 0}}
+                {{ user_service_data = user_services.0}}
+                {{ subscription_url = storage.read('name', 'vpn_mrzb_' _ user_service_data.user_service_id).subscription_url }}
+                    {{ IF user_service_data.category.grep('^(vpn-mz-lt|vpn-mz-usa|vpn-mz-spain)') }}
+                    [
+                        {
+                            "text": "⚠️ Инструкция по подключению",
+                            "web_app": {
+                                "url": "{{ subscription_url }}"
+                            }
+                        }
+                    ],
+                    {{ END }}
+                {{ END }}
                 [
                     {
                         "text": "🤝 Реферальная программа",
@@ -1475,8 +1503,6 @@ ID кошелька: {{ payMethod.account_number }}
     }
 }
 
-
-
 <% CASE '/show_mz_keys' %>
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
@@ -1825,6 +1851,7 @@ ID кошелька: {{ payMethod.account_number }}
 
 <% CASE 'admin:users:id' %>
 {{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{ user = user.switch(args.0) }}
 {{
     userData = user.id(args.0);
     userPartner = user.id(userData.partner_id);
@@ -1878,6 +1905,18 @@ Telegram: {{ userData.settings.telegram.login }}
                         "callback_data": "admin:users:id:bonuses {{ userData.user_id }}"
                     }
                 ],
+				[
+                    {
+                        "text": "🎁 Управление бонусами",
+                        "callback_data": "admin:users:id:bonuses {{ userData.user_id }}"
+                    }
+                ],
+				[
+                    {
+                        "text": "✉️ Написать пользователю 💬",
+                        "callback_data": "admin:user:msg {{ user.settings.telegram.chat_id }}"
+                    }
+                ],
                 [
                     {
                         "text": "{{ status = (userData.block == 0 ? "🔴 Заблокировать" : "🟢 Активировать"); status; }}",
@@ -1893,7 +1932,7 @@ Telegram: {{ userData.settings.telegram.login }}
                 [
                     {
                         "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); menuRole; }}",
-                        "callback_data": "admin_menu"
+                        "callback_data": "admin:menu"
                     },
                     {
                         "text": "🏠 Главное меню",
@@ -1906,10 +1945,18 @@ Telegram: {{ userData.settings.telegram.login }}
 }
 {{ END }}
 
+<% CASE 'admin:user:msg' %>
+{
+"sendMessage": {
+        "text": "#{{ args.0 }}#\nВведите сообщение для пользователя",
+        "reply_markup": {
+            "force_reply": true
+        }
+    }
+}
+
 <% CASE 'admin:users:block' %>
 {{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
-{{ checkModeratorRights(right="blockUser") }}
-
 {{
     # Arguments 
     #   0. - id of user
@@ -1932,6 +1979,7 @@ Telegram: {{ userData.settings.telegram.login }}
         "callback_data": "admin:users:id {{ userData.user_id }}"
     }
 }
+{{ END }}
 
 <% CASE 'admin:users:id:subs' %>
 {{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
@@ -2107,53 +2155,6 @@ Telegram: {{ userData.settings.telegram.login }}
 }
 {{ END }}
 
-
-<% CASE '/admsubsadd' %>
-{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
-{{
-    # Variables
-    userData = user.id(args.0);
-    servicesArray = ref(service.list_for_api).nsort('service_id');
-}}
-
-{{ TEXT = BLOCK }}
-➕ Выберите услугу для создания пользователю {{ userData.full_name.replace('"', '\"') }} ({{ userData.user_id }})
-{{ END }}
-
-{
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode": "HTML",
-        "text": "{{ TEXT.replace('\n','\n') }}",
-        "reply_markup": {
-            "inline_keyboard": [
-                {{ FOR item in servicesArray }}
-                    [
-                        {
-                            "text": "{{ item.name }} - {{ item.descr }} - {{ item.cost }} ₽",
-                            "callback_data": "admin:subs:add:confirm {{ userData.user_id }} {{ item.service_id }}"
-                        }
-                    ],
-                {{ END }}
-                [
-                    {
-                        "text": "⬅️ Назад",
-                        "callback_data": "admin:users:id:subs {{ userData.user_id }} {{ args.1 }}"
-                    }
-                ],
-                [
-                    {
-                        "text": "⬅️ Информация о пользователе",
-                        "callback_data": "admin:users:id {{ userData.user_id }} {{ last_offset }}"
-                    }
-                ]
-            ]
-        }
-    }
-}
-{{ END }}
-
-
 <% CASE 'admin:subs:add' %>
 {{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
 {{
@@ -2207,7 +2208,6 @@ Telegram: {{ userData.settings.telegram.login }}
 }
 {{ END }}
 
-
 <% CASE 'admin:subs:add:free' %>
 {{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
 {{
@@ -2251,7 +2251,6 @@ Telegram: {{ userData.settings.telegram.login }}
     }
 }
 {{ END }}
-
 
 <% CASE '/admusermsg' %>
 {
@@ -2920,7 +2919,6 @@ ID кошелька: {{ payMethod.account_number }}
 }
 {{ END }}
 
-
 <% CASE 'admin:bonuses:id' %>
 {{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
 {{
@@ -2972,7 +2970,6 @@ ID начисления: {{ data.id }}
     }
 }
 {{ END }}
-
 
 <% CASE 'admin:bonuses:add' %>
 {{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
@@ -3055,7 +3052,6 @@ ID начисления: {{ data.id }}
 }
 {{ END }}
 
-
 <% CASE 'admin:bonuses:add:confirm' %>
 {{
     userData = user.id(args.0);
@@ -3098,7 +3094,6 @@ ID начисления: {{ data.id }}
         "callback_data": "admin:bonuses:add {{ userData.user_id }}"
     }
 }
-
 
 <% CASE 'admin:withdraws:id' %>
 {{
@@ -3154,7 +3149,6 @@ ID начисления: {{ data.id }}
     }
 }
 
-
 <% CASE '/admuserblock_toggle' %>
 {{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
 {{
@@ -3180,6 +3174,312 @@ ID начисления: {{ data.id }}
         "callback_data": "/admuser {{ userData.user_id }}"
     }
 }
+{{ END }}
+
+<% CASE %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{ text = message.reply_to_message.caption || message.reply_to_message.text }}
+{{ chatid = text.split('#').1 }}
+{{ IF chatid }}
+{{ IF message.photo }}
+{
+    "sendPhoto": {
+        "protect_content": true,
+        "parse_mode": "HTML",
+        "chat_id": "{{ chatid }}",
+        "photo": "{{ message.photo.0.file_id }}",
+        "caption": "{{ message.text }}",
+        "reply_markup" : {
+            "inline_keyboard": [
+                 [
+                    {
+                        "text": "🏠 Личный кабинет",
+                        "callback_data": "/balance"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ ELSIF message.text }}
+{
+    "sendMessage": {
+        "protect_content": true,
+        "parse_mode": "HTML",
+        "chat_id": "{{ chatid }}",
+        "text": "{{ message.text }}",
+        "reply_markup" : {
+            "inline_keyboard": [
+                 [
+                    {
+                        "text": "🏠 Личный кабинет",
+                        "callback_data": "/balance"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ ELSIF message.document }}
+{
+    "sendDocument": {
+        "protect_content": true,
+        "parse_mode": "HTML",
+        "chat_id": "{{ chatid }}",
+        "document": "{{ message.document.file_id }}",
+        "caption": "{{ message.text }}",
+        "reply_markup" : {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "🏠 Личный кабинет",
+                        "callback_data": "/balance"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ ELSIF message.video }}
+{
+    "sendVideo": {
+        "protect_content": true,
+        "parse_mode": "HTML",
+        "chat_id": "{{ chatid }}",
+        "video": "{{ message.video.file_id }}",
+        "caption": "{{ message.caption }}",
+        "reply_markup" : {
+            "inline_keyboard": [
+                 [
+                    {
+                        "text": "🏠 Личный кабинет",
+                        "callback_data": "/balance"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ ELSIF message.text_with_links }}
+{
+    "sendMessage": {
+        "protect_content": true,
+        "parse_mode": "HTML",
+        "chat_id": "{{ chatid }}",
+        "text": "{{ message.text_with_links }}",
+        "reply_markup" : {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "🏠 Личный кабинет",
+                        "callback_data": "/balance"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ ELSE }}
+{
+    "sendMessage": {
+        "chat_id": "{{ chatid }}",
+        "text": "Доступны только текстовые сообщения, фото, файлы и видео"
+    }
+}
+{{ END }}
+{{ ELSE }}
+{
+    "sendMessage": {
+        "chat_id": "{{ config.telegram_admin.id }}",
+        "text": "Не удалось найти пользователя или вы не ответили на сообщение"
+    }
+}
+{{ END }}
+{{ ELSE }}
+{{ IF message.photo }}
+{
+    "sendPhoto": {
+        "protect_content": true,
+        "parse_mode": "HTML",
+        "chat_id": "{{ config.telegram_admin.id }}",
+        "photo": "{{ message.photo.0.file_id }}",
+        "caption": "#{{ user.settings.telegram.chat_id }}# \nСообщение от {{ user.full_name }} - {{ user.id }}:\n<a href=\"https://t.me/{{ user.settings.telegram.login }}\">{{ user.settings.telegram.login }}</a>\n\n{{ message.caption }}",
+        "reply_markup" : {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "Профиль пользователя",
+                        "callback_data": "admin:users:id {{ user.id }}"
+                    }
+                ],  [
+                    {
+                        "text": "Пользователи",
+                        "callback_data": "admin:users:list"
+                    },{
+                        "text": "Админка",
+                        "callback_data": "admin:menu"
+                    }
+                ],
+                 [
+                    {
+                        "text": "🏠 Домой",
+                        "callback_data": "/start"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ ELSIF message.text }}
+{
+    "sendMessage": {
+        "protect_content": true,
+        "parse_mode": "HTML",
+        "chat_id": "{{ config.telegram_admin.id }}",
+        "text": "#{{ user.settings.telegram.chat_id }}# \nСообщение от {{ user.full_name }} - {{ user.id }}:\n<a href=\"https://t.me/{{ user.settings.telegram.login }}\">{{ user.settings.telegram.login }}</a>\n\n{{ message.text }}",
+              "reply_markup" : {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "Профиль пользователя",
+                        "callback_data": "admin:users:id {{ user.id }}"
+                    }
+                ],  [
+                    {
+                        "text": "Пользователи",
+                        "callback_data": "admin:users:list"
+                    },{
+                        "text": "Админка",
+                        "callback_data": "admin:menu"
+                    }
+                ],
+                 [
+                    {
+                        "text": "🏠 Домой",
+                        "callback_data": "/start"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ ELSIF message.document }}
+{
+    "sendDocument": {
+        "protect_content": true,
+        "parse_mode": "HTML",
+        "chat_id": "{{ config.telegram_admin.id }}",
+        "document": "{{ message.document.file_id }}",
+        "caption": "#{{ user.settings.telegram.chat_id }}# \nСообщение от {{ user.full_name }} - {{ user.id }}:\n<a href=\"https://t.me/{{ user.settings.telegram.login }}\">{{ user.settings.telegram.login }}</a>\n\n{{ message.caption }}",
+            "reply_markup" : {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "Профиль пользователя",
+                        "callback_data": "admin:users:id {{ user.id }}"
+                    }
+                ],  [
+                    {
+                        "text": "Пользователи",
+                        "callback_data": "admin:users:list"
+                    },{
+                        "text": "Админка",
+                        "callback_data": "admin:menu"
+                    }
+                ],
+                 [
+                    {
+                        "text": "🏠 Домой",
+                        "callback_data": "/start"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ ELSIF message.video }}
+{
+    "sendVideo": {
+        "protect_content": true,
+        "parse_mode": "HTML",
+        "chat_id": "{{ config.telegram_admin.id }}",
+        "video": "{{ message.video.file_id }}",
+        "caption": ""#{{ user.settings.telegram.chat_id }}# \nСообщение от {{ user.full_name }} - {{ user.id }}:\n<a href=\"https://t.me/{{ user.settings.telegram.login }}\">{{ user.settings.telegram.login }}</a>\n\n{{ message.caption }}",
+         "reply_markup" : {
+            "inline_keyboard": [
+                 [
+                    {
+                        "text": "Профиль пользователя",
+                        "callback_data": "admin:users:id {{ user.id }}"
+                    }
+                ],  [
+                    {
+                        "text": "Пользователи",
+                        "callback_data": "admin:users:list"
+                    },{
+                        "text": "Админка",
+                        "callback_data": "admin:menu"
+                    }
+                ],
+                 [
+                    {
+                        "text": "🏠 Домой",
+                        "callback_data": "/start"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ ELSIF message.text_with_links }}
+{
+    "sendMessage": {
+        "protect_content": true,
+        "parse_mode": "HTML",
+        "chat_id": "{{ config.telegram_admin.id }}",
+        "text": ""#{{ user.settings.telegram.chat_id }}# \nСообщение от {{ user.full_name }} - {{ user.id }}:\n<a href=\"https://t.me/{{ user.settings.telegram.login }}\">{{ user.settings.telegram.login }}</a>\n\n{{ message.text_with_links }}",
+             "reply_markup" : {
+            "inline_keyboard": [
+                 [
+                    {
+                        "text": "Профиль пользователя",
+                        "callback_data": "admin:users:id {{ user.id }}"
+                    }
+                ],  [
+                    {
+                        "text": "Пользователи",
+                        "callback_data": "admin:users:list"
+                    },{
+                        "text": "Админка",
+                        "callback_data": "admin:menu"
+                    }
+                ],
+                 [
+                    {
+                        "text": "🏠 Домой",
+                        "callback_data": "/start"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ ELSE }}
+{
+    "sendMessage": {
+        "text": "Доступны только текстовые сообщения, фото, файлы и видео"
+    }
+}
+{{ END }}
+{{ IF message.reply_to_message }}
+{
+    "forwardMessage": {
+        "chat_id": "{{ config.telegram_admin.id }}",
+        "from_chat_id": "{{ message.chat.id }}",
+        "message_id": "{{ message.reply_to_message.message_id }}"
+    }
+}
+{{ END }}
 {{ END }}
 
 <% END %>
