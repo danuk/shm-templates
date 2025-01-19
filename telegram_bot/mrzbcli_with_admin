@@ -211,17 +211,22 @@
 {{ active_services = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'ACTIVE' })) }}
 {{ USE date }}
 {{ TEXT = BLOCK }}
-<pre>
-💰 <b>Баланс:</b> {{ user.balance }} ₽
-🎁 <b>Бонусы:</b> {{ user.get_bonus }} ₽
-🔖 <b>Скидка:</b> {{ user.discount }}%
-👥 <b>Приглашено друзей:</b> {{ user.referrals_count }}
-💳 <b>Общий доход от рефералов:</b> {{ user.get_bonus }} ₽
+💰 <b>Баланс:</b> {{ user.balance }} ₽  
+🎁 <b>Бонусы:</b> {{ user.get_bonus }} ₽  
+🔖 <b>Скидка:</b> {{ user.discount }}%  
+👥 <b>Приглашено друзей:</b> {{ user.referrals_count }}  
+💳 <b>Общий доход от рефералов:</b> {{ user.get_bonus }} ₽  
 
-⏳ <b>Следующее продление:</b> {{ IF userlogs.expire }}{{ date.format(userlogs.expire, '%H:%M %d.%m.%Y') }}{{ ELSE }}неизвестно{{ END }}
-💵 <b>Ожидаемая оплата:</b> {{ forecast.total }} ₽
+⏳ <b>Следующее продление:</b> 
+{{ IF userlogs.expire }} 
+  <i>{{ date.format(userlogs.expire, '%H:%M %d.%m.%Y') }}</i> 
+{{ ELSE }} 
+  <i>неизвестно</i> 
+{{ END }}  
 
-🔒 <b>Заблокированные сервисы:</b> ({{ blocked_services.size }})
+💵 <b>Ожидаемая оплата:</b> <i>{{ forecast.total }} ₽</i>  
+
+<b>🔒 Заблокированные сервисы:</b>
 {{ IF blocked_services.size > 0 }}
     {{ FOR service IN blocked_services }}
     - {{ service.name }}
@@ -230,7 +235,8 @@
     Нет заблокированных сервисов.
 {{ END }}
 
-❗ <b>Неоплаченные сервисы:</b> ({{ expired_services.size }})
+
+<b>❗ Неоплаченные сервисы:</b>
 {{ IF expired_services.size > 0 }}
     {{ FOR service IN expired_services }}
     - {{ service.name }}
@@ -239,7 +245,7 @@
     Нет неоплаченных сервисов.
 {{ END }}
 
-✅ <b>Активные услуги:</b> ({{ active_services.size }})
+<b>✅ Активные услуги:</b>
 {{ IF active_services.size > 0 }}
     {{ FOR service IN active_services }}
     - {{ service.name }} (до {{ date.format(service.expire, '%H:%M %d.%m.%Y') }})
@@ -249,15 +255,14 @@
 {{ END }}
 
 💵 <b>Необходимо оплатить:</b> <b>{{ user.pays.forecast('blocked',1).total }} ₽</b>
-</pre>
 {{ END }}
 
 {
     "sendPhoto": {
         "photo": "{{ config.logo.url }}",
         "caption": "{{ TEXT.replace('\n','\n') }}",
-		"parse_mode": "HTML",
-        "reply_markup" : {
+        "parse_mode": "HTML",
+        "reply_markup": {
             "inline_keyboard": [
                 [
                     {
@@ -265,6 +270,28 @@
                         "web_app": {
                             "url": "{{ config.api.url }}/shm/v1/public/tg_payments_webapp?format=html&user_id={{ user.id }}"
                         }
+                    }
+                ],
+                [
+                    {
+                        "text": "100 руб",
+                        "url": "{{ config.api.url }}/shm/pay_systems/yookassa.cgi?action=create&amount=100&user_id={{ user.id }}"
+                    },
+                    {
+                        "text": "200 руб",
+                        "url": "{{ config.api.url }}/shm/pay_systems/yookassa.cgi?action=create&amount=200&user_id={{ user.id }}"
+                    },
+                    {
+                        "text": "300 руб",
+                        "url": "{{ config.api.url }}/shm/pay_systems/yookassa.cgi?action=create&amount=300&user_id={{ user.id }}"
+                    },
+                    {
+                        "text": "500 руб",
+                        "url": "{{ config.api.url }}/shm/pay_systems/yookassa.cgi?action=create&amount=500&user_id={{ user.id }}"
+                    },
+                    {
+                        "text": "1000 руб",
+                        "url": "{{ config.api.url }}/shm/pay_systems/yookassa.cgi?action=create&amount=1000&user_id={{ user.id }}"
                     }
                 ],
                 [
@@ -289,6 +316,7 @@
         }
     }
 }
+
 
 <% CASE '/pays' %>
 {
