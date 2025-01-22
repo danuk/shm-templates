@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="format-detection" content="telephone=no">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="MobileOptimized" content="176">
+    <meta name="HandheldFriendly" content="True">
+    <meta name="robots" content="noindex,nofollow">
+    <title>Подписка</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            background: url('https://i.ibb.co/wJH1xbb/DALL-E-2025-01-06-16-13.png') no-repeat center center fixed;
+            background-size: cover;
+            font-family: Arial, sans-serif;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container-custom {
+            background: #fff;
+            border-radius: 16px;
+            padding: 30px;
+            margin: 5vh auto;
+            max-width: 500px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .btn-custom {
+            width: 100%;
+            margin-top: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(90deg, #30a5f2, #0071bc);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(90deg, #0071bc, #00497a);
+        }
+
+        @media (max-width: 576px) {
+            .container-custom {
+                padding: 20px;
+                max-width: 90%;
+            }
+
+            .btn-custom {
+                font-size: 14px;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+    <body>
+    {{ IF request.params.uid }}
+    {{ user = user.switch(request.params.uid) }}
+    {{ us = user.services.list_for_api('usi', request.params.us_id) }}
+    {{ key = storage.read('name', 'vpn_mrzb_' _ request.params.us_id) }}
+    {{ sub_url = storage.read('name', 'vpn_mrzb_' _ args.0 ).subscription_url }}
+    {{ bytes = http.get("$sub_url/info").used_traffic }}
+    {{ gb = bytes / 1073741824 FILTER format("%.0f") }}
+    {{ mb = (bytes % 1073741824) / 1048576 FILTER format("%.0f") }}
+    
+    {{ TEXT = BLOCK }}
+    {{ IF mb == 0 }}
+    {{ ELSE}}
+        {{ IF gb >= 1 }}
+Израсходовано трафика: {{ gb }} Gb.{{ mb }} Mb
+        {{ ELSE }}
+Израсходовано трафика: {{ mb }} Mb
+        {{ END }}
+    {{ END }}
+{{ END }}
+	
+
+    {{ USE date }}
+    {{ date_sec = date.now }}
+    {{ expire_sec = date.format(us.expire, '%s') }}
+    {{ days_left = (expire_sec - date_sec) div 86400 }}
+    {{ months = days_left div 30 }}
+    {{ days = days_left % 30 }}
+    <div class="container container-custom">
+                <strong>⏳ Осталось:</strong> 
+                {{ IF months == 0 }}
+                    {{ IF days == 1 }}1 день 🕒
+                    {{ ELSIF days == 2 or days == 3 or days == 4 }}{{ days }} дня 🕓
+                    {{ ELSE }}{{ days }} дней 🕔
+                {{ END }}
+                {{ ELSE }}
+                    {{ IF months == 1 }}1 месяц 📅 - 
+                    {{ ELSIF months == 2 or months == 3 or months == 4 }}{{ months }} месяца 📅 - 
+                    {{ ELSE }}{{ months }} месяцев 📅 - 
+                    {{ END }}
+                    {{ IF days > 0 }}
+                        {{ IF days == 1 }}1 день 🕒
+                        {{ ELSIF days == 2 or days == 3 or days == 4 }}{{ days }} дня 🕓
+                        {{ ELSE }}{{ days }} дней 🕔
+                        {{ END }}
+                    {{ END }}
+                {{ END }}
+            </h5>
+            </div>
+        </div>
+    {{ END }}
+    <div class="container container-custom">
+ <h2>👋 Привет, {{ user.full_name }}</h2>
+         <p>🔒 Подписка: {{ us.name }}</p>
+        <p>📅 Истекает: {{ us.expire }}</p>
+ 
+ <div class="container container-custom">
+       <!-- Links for different devices -->
+<div id="device-buttons" style="display: none;">
+    <p id="device-info">Определяем ваше устройство...</p>
+    
+    <!-- Auto-connect link -->
+    <a id="auto-connect-link" class="btn btn-primary btn-custom" href="#" style="display: none;" target="_blank">
+        🌐 Автоматическое подключение
+    </a>
+    
+    <!-- Download app link -->
+    <a id="download-link" class="btn btn-success btn-custom" href="#" style="display: none;" target="_blank">
+        📥 Скачать приложение
+    </a>
+</div>
+
+
+    <!-- Copy subscription URL -->
+    <button class="btn btn-primary btn-custom" onclick="copyToClipboard('{{ key.subscription_url }}');">📋 Скопировать ссылку</button>
+    </div>
+ 
+</div>
+
+<!-- Scripts -->
+<script>
+    // Copy text to clipboard
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text)
+            .then(() => alert('Ссылка успешно скопирована!'))
+            .catch(err => alert('Ошибка при копировании ссылки: ' + err));
+    }
+	
+    function detectDevice() {
+        const userAgent = navigator.userAgent.toLowerCase();
+        const deviceInfo = document.getElementById('device-info');
+        const installMessage = document.getElementById('install-message');
+        const autoConnectLink = document.getElementById('auto-connect-link');
+		const downloadLink = document.getElementById('download-link');
+        const deviceButtons = document.getElementById('device-buttons');
+
+        let autoConnectEnabled = false;
+
+        if (userAgent.includes('iphone') || userAgent.includes('ipad')) {
+            deviceInfo.textContent = 'Вы используете устройство Apple (iPhone/iPad).';
+            autoConnectLink.href = "hiddify://install-config/?url={{ key.subscription_url }}";
+            autoConnectLink.textContent = "🌐 Автоматическое подключение для iPhone";
+            autoConnectLink.style.display = "block";
+            autoConnectEnabled = true;
+        } else if (userAgent.includes('android')) {
+            deviceInfo.textContent = 'Вы используете Android-устройство.';
+            autoConnectLink.href = "hiddify://install-config/?url={{ key.subscription_url }}";
+            autoConnectLink.textContent = "🌐 Автоматическое подключение для Android";
+            autoConnectLink.style.display = "block";
+            autoConnectEnabled = true;
+        } else {
+            deviceInfo.textContent = 'Вы используете ПК.';
+            autoConnectLink.href = "hiddify://install-config/?url={{ key.subscription_url }}";
+            autoConnectLink.textContent = "🌐 Автоматическое подключение для ПК";
+            autoConnectLink.style.display = "block";
+            autoConnectEnabled = true;
+        }
+
+        deviceButtons.style.display = 'block';
+
+        // Show install message if auto-connect is available
+        if (autoConnectEnabled) {
+            installMessage.style.display = 'block';
+        }
+    }
+
+    window.onload = detectDevice;
+</script>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
