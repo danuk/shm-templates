@@ -46,7 +46,7 @@
                 {
                     "text": "💰 Пополнить баланс",
                     "web_app": {
-                    "url": "{{ config.api.url }}/shm/v1/template/tg_payments?format=html&session_id={{ user.gen_session.id }}"
+                    "url": "{{ config.api.url }}/shm/v1/public/tg_payments_webapp?format=html&user_id={{ user.id }}"
                 }
                 }
                 ],
@@ -115,50 +115,107 @@
         }
     }
 }
-<% CASE ['/list'] %>
+<% CASE '/list' %>
+{{ hasnotpaidus = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'NOT PAID' } )).size }}
+{{ hasblocked = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'BLOCK' } )).size }}
 {
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "text": "🔑  Выберите свой ключ",
-        "reply_markup" : {
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{{
+    us = user.services.list_for_api('usi', args.0);
+    USE date;
+}}
+{{ TEXT = BLOCK }}
+⭐️ <b>Ваш ID:</b> {{ user.id }} ⭐️
+
+💡 <i>Для получения подробной информации о вашем ключе, просто нажмите на его название ниже.</i>
+
+❇️ <b>Для продления или разблокировки ключа:</b> Пополните баланс. Ваши ключи будут активированы сразу после оплаты.
+
+🔑 <b>Ваши текущие ключи:</b>
+{{ END }}
+
+{
+    "sendPhoto": {
+        "photo": "{{ config.logo.url }}",
+        "parse_mode": "HTML",
+        "caption": "{{ TEXT.replace('\n','\n') }}\n",
+        "reply_markup": {
             "inline_keyboard": [
-                {{ FOR item IN ref( user.services.list_for_api( 'category', 'vpn-%' ) ) }}
+                {{ FOR item IN ref( user.services.list_for_api( 'category', '%' ) ) }}
                 {{ SWITCH item.status }}
                   {{ CASE 'ACTIVE' }}
                   {{ icon = '✅' }}
-                  {{ status = 'Работает' }}
+                  {{ status = ' Работает' }}
                   {{ CASE 'BLOCK' }}
                   {{ icon = '❌' }}
-                  {{ status = 'Заблокирована' }}
+                  {{ status = ' Заблокирована' }}
                   {{ CASE 'NOT PAID' }}
                   {{ icon = '💰' }}
-                  {{ status = 'Ожидает оплаты' }}
+                  {{ status = ' Ожидает оплаты' }}
                   {{ CASE }}
                   {{ icon = '⏳' }}
-                  {{ status = 'Обработка' }}
+                  {{ status = ' Обработка' }}
                 {{ END }}
                 [
                     {
-                        "text": "{{ item.name }} - {{ icon }} {{ status }}",
+                        "text": "№{{ item.user_service_id }} - {{ item.name }} - {{ icon }} {{ status }}",
                         "callback_data": "/service {{ item.user_service_id }}"
                     }
                 ],
                 {{ END }}
                 [
                     {
-                        "text": "✚ Получить новый ключ",
-                        "callback_data": "/pricelist"
+                        "text": "🛒 Купить новый ключ 🛒",
+                        {{ IF hasnotpaidus > 0 || hasblocked > 0 }}
+                            "callback_data": "/hint"
+                        {{ ELSE }}
+                            "callback_data": "/pricelist"
+                        {{ END }}
                     }
                 ],
                 [
-                    {"text": "⇦ Назад",
+                    {
+                        "text": "🔄 Обновить список 🔄",
+                        "callback_data": "/list"
+                    }
+                ],
+                [
+                    {
+                        "text": "🔌 Как подключить ключ? 🔌",
+                        "url": "https://telegra.ph/Instrukciya-dlya-iPhoneiPad-11-27"
+                    }
+                ],
+                [
+                    {
+                        "text": "⇦ Назад в меню ⇦",
                         "callback_data": "/menu"
-                     }
+                    }
                 ]
-           ]
+            ]
         }
     }
 }
+
+<% CASE '/hint' %>
+{
+    "sendMessage": {
+        "chat_id": {{ message.chat.id }},
+        "parse_mode": "HTML",
+        "text": "⚠️ **Внимание!** Чтобы продолжить, пожалуйста, выполните одно из следующих действий:\n\n1️⃣ Оплатите  💳  все неоплаченные услуги.\n2️⃣ Удалите  🗑️  все заблокированные услуги.\n\nЭто необходимо для корректной работы вашей учетной записи. Спасибо за понимание! 🙏",
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "Перейти в меню",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+
 <% CASE [ '/service', '/back', '/install' ]%>
 {{ us = user.services.list_for_api( 'usi', args.0 ) }}
 {{ data_limit = storage.read('name','us_' _ args.0 ).data_limit }}
@@ -272,20 +329,51 @@
     }
 }
 <% CASE '/pricelist' %>
+{{ hasnotpaidus = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'NOT PAID' } )).size }}
+{{ hasblocked = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'BLOCK' } )).size }}
 {
-        "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "text": "☷ Выберите период для заказа",
-        "reply_markup" : {
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{{ TEXT = BLOCK }}
+<i>Мы предлагаем гибкие тарифы с разными сроками действия. Выберите подходящий план:</i>
+{{ END }}
+{
+    "sendMessage": {
+        "text": "{{ TEXT.replace('\n','\n') }}\n",
+        "reply_markup": {
             "inline_keyboard": [
-            {{ FOR item IN ref(service.api_price_list( 'category', 'vpn-%' ).nsort('cost')) }}
+                {{ FOR item IN ref(service.api_price_list).nsort('service_id') }}
                 [
                     {
-                        "text": "{{ item.name }} - {{ item.cost }} руб.",
-                        "callback_data": "/serviceorder {{ item.service_id }}"
+                        "text": "{{ item.name }} - {{ item.cost }} руб/мес.",
+                        {{ IF hasnotpaidus > 0 || hasblocked > 0 }}
+                            "callback_data": "/hint"
+                        {{ ELSE }}
+                            "callback_data": "/serviceorder {{ item.service_id }}"
+                        {{ END }}
                     }
                 ],
-            {{ END }}
+                [
+                    {
+                        "text": "{{ item.name }} - {{ item.cost * 6 }} руб/6 мес.",
+                        {{ IF hasnotpaidus > 0 || hasblocked > 0 }}
+                            "callback_data": "/hint"
+                        {{ ELSE }}
+                            "callback_data": "/serviceorder {{ item.service_id }} duration:6"
+                        {{ END }}
+                    }
+                ],
+                [
+                    {
+                        "text": "{{ item.name }} - {{ item.cost * 12 }} руб/12 мес.",
+                        {{ IF hasnotpaidus > 0 || hasblocked > 0 }}
+                            "callback_data": "/hint"
+                        {{ ELSE }}
+                            "callback_data": "/serviceorder {{ item.service_id }} duration:12"
+                        {{ END }}
+                    }
+                ],
+                {{ END }}
                 [
                     {
                         "text": "⇦ Назад",
