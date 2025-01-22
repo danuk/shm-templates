@@ -120,78 +120,102 @@
          <p>🔒 Подписка: {{ us.name }}</p>
         <p>📅 Истекает: {{ us.expire }}</p>
  
- <div class="container container-custom">
-       <!-- Links for different devices -->
-<div id="device-buttons" style="display: none;">
-    <p id="device-info">Определяем ваше устройство...</p>
-    
-    <!-- Auto-connect link -->
-    <a id="auto-connect-link" class="btn btn-primary btn-custom" href="#" style="display: none;" target="_blank">
-        🌐 Автоматическое подключение
-    </a>
-    
-    <!-- Download app link -->
-    <a id="download-link" class="btn btn-success btn-custom" href="#" style="display: none;" target="_blank">
-        📥 Скачать приложение
-    </a>
-</div>
-
-
-    <!-- Copy subscription URL -->
-    <button class="btn btn-primary btn-custom" onclick="copyToClipboard('{{ key.subscription_url }}');">📋 Скопировать ссылку</button>
+<div class="container container-custom">
+    <!-- Device Information -->
+    <div id="device-info-container">
+        <p id="device-info">Определяем ваше устройство...</p>
     </div>
- 
+
+    <!-- Links and Buttons -->
+    <div id="device-buttons" style="display: none;">
+        <!-- Auto-connect link -->
+        <a id="auto-connect-link" class="btn btn-primary btn-custom" href="#" style="display: none;" target="_blank">
+            🌐 Автоматическое подключение
+        </a>
+
+        <!-- Download app link -->
+        <a id="download-link" class="btn btn-success btn-custom" href="#" style="display: none;" target="_blank">
+            📥 Скачать приложение
+        </a>
+
+        <!-- Copy subscription URL -->
+        <button class="btn btn-primary btn-custom" onclick="copyToClipboard('{{ key.subscription_url }}');">📋 Скопировать ссылку</button>
+    </div>
 </div>
 
 <!-- Scripts -->
 <script>
-    // Copy text to clipboard
-    function copyToClipboard(text) {
-        navigator.clipboard.writeText(text)
-            .then(() => alert('Ссылка успешно скопирована!'))
-            .catch(err => alert('Ошибка при копировании ссылки: ' + err));
+    function checkHiddifyInstalled(autoConnectUrl) {
+        const downloadLink = document.getElementById('download-link');
+        let appOpened = false;
+
+        // Attempt to open the custom URI scheme
+        const timeout = setTimeout(() => {
+            if (!appOpened) {
+                console.log('App is not installed');
+                downloadLink.style.display = 'block'; // Show download link
+            }
+        }, 1500);
+
+        // Try to open the app
+        const hiddenFrame = document.createElement('iframe');
+        hiddenFrame.style.display = 'none';
+        hiddenFrame.src = autoConnectUrl;
+
+        hiddenFrame.onload = () => {
+            appOpened = true;
+            clearTimeout(timeout);
+            console.log('App is installed');
+            downloadLink.style.display = 'none'; // Hide download link
+        };
+
+        document.body.appendChild(hiddenFrame);
+
+        // Clean up iframe after the attempt
+        setTimeout(() => {
+            document.body.removeChild(hiddenFrame);
+        }, 2000);
     }
-	
+
     function detectDevice() {
         const userAgent = navigator.userAgent.toLowerCase();
         const deviceInfo = document.getElementById('device-info');
-        const installMessage = document.getElementById('install-message');
         const autoConnectLink = document.getElementById('auto-connect-link');
-		const downloadLink = document.getElementById('download-link');
+        const downloadLink = document.getElementById('download-link');
         const deviceButtons = document.getElementById('device-buttons');
 
-        let autoConnectEnabled = false;
+        let platform;
+        let downloadUrl = '#';
+        let autoConnectUrl = `hiddify://install-config/?url={{ key.subscription_url }}`;
 
+        // Detect platform
         if (userAgent.includes('iphone') || userAgent.includes('ipad')) {
-            deviceInfo.textContent = 'Вы используете устройство Apple (iPhone/iPad).';
-            autoConnectLink.href = "hiddify://install-config/?url={{ key.subscription_url }}";
-            autoConnectLink.textContent = "🌐 Автоматическое подключение для iPhone";
-            autoConnectLink.style.display = "block";
-            autoConnectEnabled = true;
+            platform = 'Apple (iPhone/iPad)';
+            downloadUrl = 'https://apps.apple.com/ru/app/hiddify-proxy-vpn/id6596777532'; // App Store link
         } else if (userAgent.includes('android')) {
-            deviceInfo.textContent = 'Вы используете Android-устройство.';
-            autoConnectLink.href = "hiddify://install-config/?url={{ key.subscription_url }}";
-            autoConnectLink.textContent = "🌐 Автоматическое подключение для Android";
-            autoConnectLink.style.display = "block";
-            autoConnectEnabled = true;
+            platform = 'Android';
+            downloadUrl = 'https://play.google.com/store/apps/details?id=app.hiddify.com&hl=ru'; // Play Store link
         } else {
-            deviceInfo.textContent = 'Вы используете ПК.';
-            autoConnectLink.href = "hiddify://install-config/?url={{ key.subscription_url }}";
-            autoConnectLink.textContent = "🌐 Автоматическое подключение для ПК";
-            autoConnectLink.style.display = "block";
-            autoConnectEnabled = true;
+            platform = 'ПК';
+            downloadUrl = 'https://admin.mrzbcli.ru/shm/v1/template/subscriptions_apps?format=html'; // PC download link
         }
+
+        // Update UI based on platform
+        deviceInfo.textContent = `Вы используете устройство: ${platform}`;
+        autoConnectLink.href = autoConnectUrl;
+        autoConnectLink.style.display = 'block';
+        downloadLink.href = downloadUrl;
 
         deviceButtons.style.display = 'block';
 
-        // Show install message if auto-connect is available
-        if (autoConnectEnabled) {
-            installMessage.style.display = 'block';
-        }
+        // Check if the app is installed
+        checkHiddifyInstalled(autoConnectUrl);
     }
 
+    // Initialize on page load
     window.onload = detectDevice;
 </script>
+
 
     <!-- Bootstrap 5 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
