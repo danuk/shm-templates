@@ -16,6 +16,76 @@
     {{ END }}
     {{ STOP }}
 {{ END }}
+
+{{ MACRO redirect BLOCK }}
+    {
+        "shmRedirectCallback": { "callback_data": "{{ callback }}" }
+    }
+    {{ STOP }}
+{{ END }}
+
+{{ BLOCK checkAdminRights }}
+    {{ IF user.settings.role != "admin" && user.settings.role != "moderator" }}
+        {{ sendAlert(code=403, errtext='⭕️ Раздел закрыт', redirect=mainMenuCmd) }}
+    {{ END }}
+{{ END }}
+
+{{ MACRO checkModeratorRights BLOCK }}
+    {{ IF user.settings.role == "moderator" && user.settings.moderate.$right != 1 }}
+        {{ sendAlert(code=403, errtext="⭕️ Доступ запрещён!", redirect=mainMenuCmd) }}
+    {{ END }}
+{{ END }}
+
+{{ MACRO send BLOCK }}
+    {{
+        messageType =
+            (cmd == '/start') ? 'sendMessage' :
+            (cmd == '/menu' && mainMenuCmd == '/menu') ? 'editMessageText' :
+            (mainMenuCmd == 'start' || cmd == 'start') ? 'sendMessage' :
+            (edit == 0) ? 'sendMessage' :
+            (edit == 1) ? 'editMessageText' :
+            (defaultMessageType == 'editMessageText' ) ? 'editMessageText' :
+            defaultMessageType;
+
+        # Clear state
+        ret = user.set_settings({'state' => ''});
+
+        IF user.settings.bot.reqPromo > 0;
+            delete(msgID=[user.settings.bot.reqPromo]);
+            ret = user.set_settings({'bot' => {'reqPromo' => ''} });
+        END;
+
+        IF (cmd != '/start' && !edit && messageType != 'editMessageText' );
+            delete(msgID=[message.message_id]);
+        END; 
+        
+        # variable check for admin rights to access admin menu
+        IF admin == 1;
+            PROCESS checkAdminRights;
+        END;
+    }}
+    {
+        "sendChatAction": {
+            "chat_id": "{{ user.settings.telegram.chat_id }}",
+            "action": "typing"
+        }
+    },
+    {
+        "{{messageType}}": {
+            {{ IF messageType == 'editMessageText'}}
+                "message_id": "{{ message.message_id }}",
+            {{ END }}
+            "parse_mode": "HTML",
+            "text": "{{ TEXT.replace('\n','\n') }}",
+            "reply_markup": {
+                "inline_keyboard": [
+                    {{ BUTTONS }}
+                ]
+            }
+        }
+    }
+{{ END }}
+
 <% SWITCH cmd %>
 <% CASE 'USER_NOT_FOUND' %>
 {
@@ -75,7 +145,7 @@
 💳 Удобные платежи: поддержка СБП и T-PAY.
 📊 Статистика и отчёты в удобном формате.
 🔄 Смена тарифов без админа.
-📡 Настройка VPN: WireGuard, TLS и др.
+📡 Настройка VPN: TLS и др.
 
 💡 Почему стоит попробовать?
 🕒 Экономьте время — всё под рукой.
@@ -97,35 +167,15 @@
                     }
                 ],
                 {{ END }}
-                {{ IF user_services.size > 0 }}
-                {{ FOR user_service_data IN user_services }}
-                [
-                    {
-                        "text": "⚠️ Подключится {{ user_service_data.name }} 🆔 {{ user_service_data.user_service_id }}",
-                        "web_app": {
-                            "url": "{{ config.api.url }}/shm/v1/template/subscriptions_link?format=html&session_id={{ user.gen_session.id }}&uid={{ user.id }}&us_id={{ user_service_data.user_service_id }}"
-                        }
-                    }
-                ],
-                {{ END }}
-				{{ END }}
                 [
                     {
                         "text": "🪪 Профиль: {{ user.balance }} ₽",
-                        "callback_data": "/balance"
+                        "callback_data": "/profile"
                     },
                     {
                         "text": "➕ Пополнить баланс",
                         "web_app": {
                             "url": "{{ config.api.url }}/shm/v1/public/tg_payments_webapp?format=html&user_id={{ user.id }}"
-                        }
-                    }
-                ],
-                [
-                    {
-                        "text": "🎁 Ввести промокод",
-                        "web_app": {
-                            "url": "{{ config.api.url }}/shm/v1/public/promo?format=html&user_id={{ user.id }}"
                         }
                     }
                 ],
@@ -149,17 +199,169 @@
                         "callback_data": "/help"
                     }
                 ],
-				[
+                [
                     {
-                        "text": "🚀 Speedtest",
+                        "text": "🔄 Обновить меню",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+
+<% CASE '/profile' %>
+{{
+    limit = 5;
+    offset = args.1 || 0;
+    userData = user.id(args.0);
+    userPays = ref(userData.pays.list_for_api('limit', limit, 'offset', offset ));
+}}
+{{ active_services = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'ACTIVE' })) }}
+
+{{ TEXT = BLOCK }}
+<b>👤 Личный кабинет</b>
+
+<b>🔹 Имя:</b> {{ user.full_name }}
+<b>🔹 Логин:</b> {{ user.login }}
+<b>🔹 ID:</b> {{ user.id }}
+<b>💰 Баланс:</b> {{ user.balance }} ₽
+
+<b>🚀 Активные услуги:</b>
+{{ IF active_services.size > 0 }}
+{{ FOR service IN active_services }}
+- <code>{{ service.name }}</code> (до {{ service.expire }})
+{{ END }}
+{{ ELSE }}
+Нет активных услуг.
+{{ END }}
+
+<b>👉 Выберите действие:</b>
+{{ END }}
+
+{
+    "sendMessage": {
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "parse_mode": "HTML",
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "💳 Пополнить баланс",
                         "web_app": {
-                            "url": "https://speedtest.mrzbcli.ru"
+                            "url": "{{ config.api.url }}/shm/v1/public/tg_payments_webapp?format=html&user_id={{ user.id }}"
+                        }
+                    },
+                    {
+                        "text": "📜 История операций",
+                        "callback_data": "/pays {{ userData.id }} {{ offset - limit }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "🎁 Ввести промокод",
+                        "web_app": {
+                            "url": "{{ config.api.url }}/shm/v1/public/promo?format=html&user_id={{ user.id }}"
                         }
                     }
                 ],
                 [
                     {
-                        "text": "🔄 Обновить меню",
+                        "text": "🚀 Управление услугами",
+                        "callback_data": "/manage_services"
+                    },
+                    {
+                        "text": "🏠 Вернуться в меню",
+                        "callback_data": "/menu"
+                    }
+                ],
+                {{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
+                [
+                    {
+                        "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'Администратора' : 'Модератора'); menuRole; }}",
+                        "callback_data": "admin:menu"
+                    }
+                ]
+                {{ END }}
+            ]
+        }
+    }
+}
+
+
+<% CASE '/manage_services' %>
+{{ active_services = user.services.list_for_api('filter', { 'status' => 'ACTIVE' }) }}
+{{ expired_services = user.services.list_for_api('filter', { 'status' => 'NOT PAID' }) }}
+{{ TEXT = BLOCK }}
+🚀 <b>Управление услугами</b>
+
+<b>✅ Активные услуги:</b>
+{{ IF active_services.size > 0 }}
+{{ FOR service IN active_services }}
+- <b>{{ service.name }}</b> (до {{ service.expire }})
+{{ END }}
+{{ ELSE }}
+<i>Нет активных услуг.</i>
+{{ END }}
+
+<b>❗ Неоплаченные услуги:</b>
+{{ IF expired_services.size > 0 }}
+{{ FOR service IN expired_services }}
+- <b>{{ service.name }}</b> (истёк {{ service.expire }})
+{{ END }}
+{{ ELSE }}
+<i>Нет неоплаченных услуг.</i>
+{{ END }}
+
+<b>👉 Выберите действие:</b>
+{{ END }}
+
+{
+    "sendMessage": {
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "parse_mode": "HTML",
+        "reply_markup": {
+            "inline_keyboard": [
+                {{
+                    limit = 5;
+                    offset = args.0 || 0;
+                    offset = (offset < 0) ? 0 : offset;
+                    active_services = ref(user.services.list_for_api('filter', { 'status' => 'ACTIVE' }, 'limit', limit, 'offset', offset));
+                    expired_services = ref(user.services.list_for_api('filter', { 'status' => 'NOT PAID' }, 'limit', limit, 'offset', offset));
+                    total_services = ref(user.services.list_for_api('count', { 'status' => 'ACTIVE' }));
+                    total_expired = ref(user.services.list_for_api('count', { 'status' => 'NOT PAID' }));
+                    total_pages_active = total_services / limit;
+                    total_pages_expired = total_expired / limit;
+                }}
+                {{ IF offset > 0 || active_services.size == limit }}
+                [
+                    {{ IF offset > 0 }}
+                    {
+                        "text": "⬅️ Назад",
+                        "callback_data": "/manage_services {{ offset - limit }}"
+                    },
+                    {{ END }}
+                    {{ IF active_services.size == limit }}
+                    {
+                        "text": "➡️ Далее",
+                        "callback_data": "/manage_services {{ offset + limit }}"
+                    }
+                    {{ END }}
+                ],
+                {{ END }}
+                [
+                    {
+                        "text": "🛒 Купить услугу",
+                        "callback_data": "/pricelist"
+                    },
+                    {
+                        "text": "🔄 Обновить",
+                        "callback_data": "/manage_services"
+                    }
+                ],
+                [
+                    {
+                        "text": "🏠 Вернуться в меню",
                         "callback_data": "/menu"
                     }
                 ]
@@ -250,6 +452,12 @@
                         "web_app": {
                             "url": "{{ config.api.url }}/shm/v1/public/tg_payments_webapp?format=html&user_id={{ user.id }}"
                         }
+                    },
+                    {
+                        "text": "🎁 Ввести промокод",
+                        "web_app": {
+                            "url": "{{ config.api.url }}/shm/v1/public/promo?format=html&user_id={{ user.id }}"
+                        }
                     }
                 ],
                 [
@@ -296,7 +504,7 @@
                 {{ IF pays.size > 0 }}
                     {{ FOR item in pays }}
                     {{ TEXT = BLOCK }}
-					  📅 Дата: {{ USE date }}{{ date.format(item.date, '%d.%m.%Y') }}  
+					  📅 Дата: {{ USE date }}{{ date.format(item.date, '%d.%m.%Y') }}
 					  💰 Сумма: {{ item.money }} ₽
                     {{ END }}
                     [
@@ -379,21 +587,21 @@
 <blockquote> 🆔 <b>ID в системе:</b> {{ payData.id }}
 📊 <b>Статус:</b> {{ payData.status }}
 {{ IF payCard }}
-Тип карты: {{ payCard.card_type }}
-Номер карты: {{ payCard.first6 }}******{{ payCard.last4 }}
-Банк: {{ payCard.issuer_name }}
-Страна банка: {{ payCard.issuer_country }}
-Срок действия: {{ payCard.expiry_month }}/{{ payCard.expiry_year }}
+💳 Тип карты: {{ payCard.card_type }}
+🔢 Номер карты: {{ payCard.first6 }}******{{ payCard.last4 }}
+🏦 Банк: {{ payCard.issuer_name }}
+🌍 Страна банка: {{ payCard.issuer_country }}
+📅 Срок действия: {{ payCard.expiry_month }}/{{ payCard.expiry_year }}
 {{ END }}
 {{ IF payMethod.type == 'sbp' }}
-Тип оплаты: СБП
-Номер операции в СБП: {{ payMethod.sbp_operation_id }}
-Бик Банка: {{ payMethod.payer_bank_details.bic }}
+🏦 Тип оплаты: СБП
+🔢 Номер операции в СБП: {{ payMethod.sbp_operation_id }}
+🏦 Бик Банка: {{ payMethod.payer_bank_details.bic }}
 {{ END }}
 
 {{ IF payMethod.title.match('YooMoney') }}
-Кошелек YooMoney: {{ payMethod.title }}
-ID кошелька: {{ payMethod.account_number }}
+💰 Кошелек YooMoney: {{ payMethod.title }}
+🆔 ID кошелька: {{ payMethod.account_number }}
 {{ END }}
 </blockquote>
 {{ END }}
@@ -428,10 +636,6 @@ ID кошелька: {{ payMethod.account_number }}
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
-{{
-    us = user.services.list_for_api('usi', args.0);
-    USE date;
-}}
 {{ TEXT = BLOCK }}
 ⭐️ <b>Ваш ID:</b> {{ user.id }} ⭐️
 
@@ -441,33 +645,36 @@ ID кошелька: {{ payMethod.account_number }}
 
 🔑 <b>Ваши текущие ключи:</b>
 {{ END }}
-
 {
-    "sendPhoto": {
-        "photo": "{{ config.logo.url }}",
-        "parse_mode": "HTML",
-        "caption": "{{ TEXT.replace('\n','\n') }}\n",
-        "reply_markup": {
+    "sendMessage": {
+        "text": "{{ TEXT.replace('\n','\n') }}\n",
+        "reply_markup" : {
             "inline_keyboard": [
                 {{ FOR item IN ref( user.services.list_for_api( 'category', '%' ) ) }}
                 {{ SWITCH item.status }}
                   {{ CASE 'ACTIVE' }}
                   {{ icon = '✅' }}
-                  {{ status = ' Работает' }}
+                  {{ status = 'Работает' }}
                   {{ CASE 'BLOCK' }}
                   {{ icon = '❌' }}
-                  {{ status = ' Заблокирована' }}
+                  {{ status = 'Заблокирована' }}
                   {{ CASE 'NOT PAID' }}
                   {{ icon = '💰' }}
-                  {{ status = ' Ожидает оплаты' }}
+                  {{ status = 'Ожидает оплаты' }}
                   {{ CASE }}
                   {{ icon = '⏳' }}
-                  {{ status = ' Обработка' }}
+                  {{ status = 'Обработка' }}
                 {{ END }}
                 [
                     {
-                        "text": "№{{ item.user_service_id }} - {{ item.name }} - {{ icon }} {{ status }}",
+                        "text": "{{ icon }} {{ status }} - {{ item.name }}. {{ user.full_name }} - ({{ item.user_service_id }})",
+                        {{ IF item.status == 'NOT PAID' }}
+                        "callback_data": "/balance {{ item.user_service_id }}"
+                        {{ ELSIF item.category != 'vpn-mz-tv' }}
                         "callback_data": "/service {{ item.user_service_id }}"
+                        {{ ELSIF item.category == 'vpn-mz-tv' }}
+                        "callback_data": "/setup_android {{ item.user_service_id }}"
+                        {{ END }}
                     }
                 ],
                 {{ END }}
@@ -481,16 +688,10 @@ ID кошелька: {{ payMethod.account_number }}
                         {{ END }}
                     }
                 ],
-                [
+				[
                     {
                         "text": "🔄 Обновить список 🔄",
                         "callback_data": "/list"
-                    }
-                ],
-                [
-                    {
-                        "text": "🔌 Как подключить ключ? 🔌",
-                        "url": "https://telegra.ph/Instrukciya-dlya-iPhoneiPad-11-27"
                     }
                 ],
                 [
@@ -503,7 +704,6 @@ ID кошелька: {{ payMethod.account_number }}
         }
     }
 }
-
 
 <% CASE '/hint' %>
 {
@@ -535,28 +735,31 @@ ID кошелька: {{ payMethod.account_number }}
 }}
 {{ EXPIRE = BLOCK }}
     {{ USE date }}
-    {{ date_sec = date.now }}
-    {{ expire_sec = date.format(us.expire, '%s') }}
-    {{ days_left = (expire_sec - date_sec) div 86400 }}
-    {{ months = days_left div 30 }}
-    {{ days = days_left % 30 }}
-        {{ IF months == 0 }}
-            {{ IF days == 1 }} 1 день
-            {{ ELSIF days == 2 or days == 3 or days == 4 }} {{ days }} дня
-            {{ ELSE }} {{ days }} дней
-            {{ END }}
+    {{ now = date.now }}
+    {{ created = date.format(us.created, '%s') }}
+    {{ expire = date.format(us.expire, '%s') }}
+    {{ remaining = expire - now }}
+    {{ IF remaining > 0 }}
+        {{ years = remaining DIV (365 * 24 * 60 * 60) }}
+        {{ remaining = remaining MOD (365 * 24 * 60 * 60) }}
+        {{ months = remaining DIV (30 * 24 * 60 * 60) }}
+        {{ remaining = remaining MOD (30 * 24 * 60 * 60) }}
+        {{ days = remaining DIV (24 * 60 * 60) }}
+        {{ remaining = remaining MOD (24 * 60 * 60) }}
+        {{ hours = remaining DIV (60 * 60) }}
+        {{ remaining = remaining MOD (60 * 60) }}
+        {{ minutes = remaining DIV 60 }}
+        {{ seconds = remaining MOD 60 }}
+        {{ IF years > 0 }}
+            {{ "📅 Осталось: " _ years _ " г " _ months _ " мес." }}
+        {{ ELSIF months > 0 }}
+            {{ "📅 Осталось: " _ months _ " мес " _ days _ " дн " _ hours _ " ч " _ minutes _ " мин " _ seconds _ " с" }}
         {{ ELSE }}
-            {{ IF months == 1 }}1 месяц - 
-            {{ ELSIF months == 2 or months == 3 or months == 4 }}{{ months }} месяца - 
-            {{ ELSE }}{{ months }} месяцев - 
-            {{ END }}
-            {{ IF days > 0 }}
-                {{ IF days == 1 }} 1 день
-                {{ ELSIF days == 2 or days == 3 or days == 4 }} {{ days }} дня
-                {{ ELSE }} {{ days }} дней
-                {{ END }}
-            {{ END }}
+            {{ "📅 Осталось: " _ days _ " дн " _ hours _ " ч " _ minutes _ " мин " _ seconds _ " с" }}
         {{ END }}
+    {{ ELSE }}
+        Услуга истекла.
+    {{ END }}
 {{ END }}
 {{ sub_url = storage.read('name','vpn_mrzb_' _ args.0 ).subscription_url }}
 {{ bytes = http.get("$sub_url/info").used_traffic }}
@@ -597,7 +800,7 @@ ID кошелька: {{ payMethod.account_number }}
     {{ END }}
 {{ END }}
         "photo": "https://vpnbot.pro/images/DALL-E-2024-11-30-19-58.jpg",
-        "caption": "{{ TEXT.replace('\n','\n') }}\n📅 Осталось: <b>{{ EXPIRE }}</b>",
+        "caption": "{{ TEXT.replace('\n','\n') }}\n <b>{{ EXPIRE }}</b>",
         "parse_mode": "HTML",
         "reply_markup": {
             "inline_keyboard": [
@@ -820,7 +1023,44 @@ ID кошелька: {{ payMethod.account_number }}
         "text": "{{ TEXT.replace('\n','\n') }}\n",
         "reply_markup": {
             "inline_keyboard": [
-                {{ FOR item IN ref(service.api_price_list).nsort('service_id') }}
+                {{ FOR item IN ref(service.api_price_list).nsort('cost') }}
+                [
+                    {
+                        "text": "{{ item.name }} - {{ item.cost }} руб/мес.",
+                        {{ IF hasnotpaidus > 0 || hasblocked > 0 }}
+                            "callback_data": "/hint"
+                        {{ ELSE }}
+                            "callback_data": "/serviceorder {{ item.service_id }}"
+                        {{ END }}
+                    }
+                ],
+                {{ END }}
+                [
+					{
+                        "text": "⇦ Назад",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+
+<% CASE '/pricelist_android_tv' %>
+{{ hasnotpaidus = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'NOT PAID' } )).size }}
+{{ hasblocked = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'BLOCK' } )).size }}
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{{ TEXT = BLOCK }}
+<i>Мы предлагаем гибкие тарифы с разными сроками действия. Выберите подходящий план:</i>
+{{ END }}
+{
+    "sendMessage": {
+        "text": "{{ TEXT.replace('\n','\n') }}\n",
+        "reply_markup": {
+            "inline_keyboard": [
+                {{ FOR item IN ref( user.services.list_for_api( 'category', 'vpn-mz-tv' ) ) }}
                 [
                     {
                         "text": "{{ item.name }} - {{ item.cost }} руб/мес.",
@@ -853,9 +1093,9 @@ ID кошелька: {{ payMethod.account_number }}
                 ],
                 {{ END }}
                 [
-                    {
+					{
                         "text": "⇦ Назад",
-                        "callback_data": "/menu"
+                        "callback_data": "/list_android_tv"
                     }
                 ]
             ]
@@ -888,14 +1128,14 @@ ID кошелька: {{ payMethod.account_number }}
 {{ item = us.id( args.0 ) }}
 {{ subscription_url = storage.read('name','vpn_mrzb_' _ args.0 ).subscription_url }}
 {{ TEXT = BLOCK }}
-🎉 <b>🎊 Услуга успешно активирована!</b> 🚀  
+🎉 <b>🎊 Услуга успешно активирована!</b> 🚀
 
 <b>🔹 Название услуги:</b> <code>{{ item.name }}</code>
-<b>🔹 ID услуги:</b>  № <code>{{ item.user_service_id }}</code>
+<b>🔹 ID услуги:</b> № <code>{{ item.user_service_id }}</code>
 <b>✅ Статус:</b> Активирована
 
-<b>📅 Дата активации:</b> {{ USE date }}{{ date.format( item.created, '%d.%m.%Yг. %H:%M') }}
-<b>⏳ До:</b> {{ USE date }}{{ date.format( item.expire, '%d.%m.%Yг. %H:%M') }}
+<b>📅 Дата активации:</b> {{ USE date }}{{ date.format(item.created, '%d.%m.%Yг. %H:%M') }}
+<b>⏳ До:</b> {{ USE date }}{{ date.format(item.expire, '%d.%m.%Yг. %H:%M') }}
 
 <b>👉 Для автоматического подключения перейдите по кнопке ниже.</b>
 {{ END }}
@@ -1969,6 +2209,124 @@ ID кошелька: {{ payMethod.account_number }}
     }
 }
 
+<% CASE '/list_android_tv' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "sendMessage": {
+        "text": "🔑  Выбрать и заказать Ключ",
+        "reply_markup" : {
+            "inline_keyboard": [
+                {{ FOR item IN ref( user.services.list_for_api( 'category', 'vpn-mz-tv' ) ) }}
+                {{ SWITCH item.status }}
+                  {{ CASE 'ACTIVE' }}
+                  {{ icon = '✅' }}
+                  {{ status = 'Работает' }}
+                  {{ CASE 'BLOCK' }}
+                  {{ icon = '❌' }}
+                  {{ status = 'Заблокирована' }}
+                  {{ CASE 'NOT PAID' }}
+                  {{ icon = '💰' }}
+                  {{ status = 'Ожидает оплаты' }}
+                  {{ CASE }}
+                  {{ icon = '⏳' }}
+                  {{ status = 'Обработка' }}
+                {{ END }}
+                [
+                    {
+                        "text": "{{ icon }} {{ status }} - {{ item.name }}. {{ user.full_name }} - ({{ item.user_service_id }})",
+                        {{ IF item.category != 'vpn-mz-tv' }}
+                        "callback_data": "/service {{ item.user_service_id }}"
+                        {{ ELSIF item.category == 'vpn-mz-tv' }}
+                        "callback_data": "/setup_android {{ item.user_service_id }}"
+                        {{ END }}
+                    }
+                ],
+                {{ END }}
+                [
+                    {
+                        "text": "🛒 Заказать Ключ",
+                        "callback_data": "/pricelist_android_tv"
+                    }
+                ],
+                [
+                    {
+                        "text": "⇦ Назад",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+
+<% CASE [ '/setup_android', '/setup_android_list' ] %>
+{{ us = user.services.list_for_api( 'usi', args.0 ) }}
+{
+    "editMessageText": {
+        "message_id": {{ message.message_id }},
+{{ TEXT = BLOCK }}
+🔒 Перед подключением Android TV ознакомьтесь с инструкцией 📖
+
+🎬 Подключение Android TV за 5 шагов:
+
+1️⃣ Ознакомьтесь с инструкцией 📖
+Перед подключением устройства обязательно ознакомьтесь с руководством. Это поможет избежать ошибок и настроить всё правильно с первого раза.
+
+2️⃣ Получите персональную ссылку 🔑
+Откройте браузер на вашем Android TV и введите вашу персональную ссылку. Это гарантирует правильную настройку устройства.
+📍 Ваша персональная ссылка:
+<b>{{ config.shmcustomlab.tv_domain }}/{{ us.settings.pin }}</b>
+
+3️⃣ Проверьте подключение 🛠️
+Убедитесь, что ваш Android TV подключён к сети Wi-Fi и что сигнал стабилен для корректной работы.
+
+4️⃣ Перезагрузите устройство 🔄
+После ввода ссылки и завершения настроек перезагрузите Android TV, чтобы изменения вступили в силу.
+
+5️⃣ Готово! 🎉
+Теперь наслаждайтесь всеми возможностями вашего Android TV. Приятного использования! 🌟
+{{ END }}          
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "parse_mode":"HTML",
+        "reply_markup" : {
+            "inline_keyboard": [
+                {{ IF us.status == 'ACTIVE' }}
+                [
+                    {
+                        "text": "Инструкция по подключению",
+                        "url": "https://telegra.ph/Podklyuchenie-Android-TV-za-5-shagov-01-22"
+                    }
+                ],
+                {{ END }}
+                {{ IF us.status == 'NOT PAID' || us.status == 'BLOCK' }}
+                [
+                    {
+                        "text": "💰 Оплатить {{ user.pays.forecast('blocked',1).total }} ₽",
+                        "web_app": {
+                        "url": "{{ config.api.url }}/shm/v1/public/tg_payments_webapp?format=html&user_id={{ user.id }}"
+                        }
+                    }
+                ],
+                {{ END }}
+                [
+                    {
+                        "text": "Чат с поддержкой",
+                        "url": "https://t.me/{{ config.shmcustomlab.support }}"
+                    }
+                ],                
+                [
+                    {
+                        "text": "Назад",
+                        "callback_data": "/list_android_tv"
+                    }
+                ]
+            ]
+        }
+    }
+}
+
 <% CASE 'admin:menu' %>
 {{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
 {{ TEXT = BLOCK }}
@@ -2270,12 +2628,6 @@ Telegram: {{ userData.settings.telegram.login }}
                 ],
 				[
                     {
-                        "text": "🎁 Управление бонусами",
-                        "callback_data": "admin:users:id:bonuses {{ userData.user_id }}"
-                    }
-                ],
-				[
-                    {
                         "text": "✉️ Написать пользователю 💬",
                         "callback_data": "admin:user:msg {{ user.settings.telegram.chat_id }}"
                     }
@@ -2521,20 +2873,12 @@ Telegram: {{ userData.settings.telegram.login }}
 <% CASE 'admin:subs:add' %>
 {{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
 {{
-    # Переменные
+    # Variables
     userData = user.id(args.0);
     servicesArray = ref(service.list_for_api).nsort('service_id');
-    last_offset = args.1 || 0;
 }}
-
 {{ TEXT = BLOCK }}
-➕ <b>Выберите услугу для пользователя</b>  
-👤 Имя: {{ userData.full_name.replace('"', '\"') }}  
-🆔 ID: {{ userData.user_id }}
-
-{{ IF servicesArray.size == 0 }}
-⚠️ <b>Нет доступных услуг для добавления.</b>
-{{ END }}
+➕ Выберите услугу для создания пользователю {{ userData.full_name.replace('"', '\"')  }} ({{ userData.user_id }})
 {{ END }}
 
 {
@@ -2556,13 +2900,13 @@ Telegram: {{ userData.settings.telegram.login }}
                 [
                     {
                         "text": "⬅️ Назад",
-                        "callback_data": "admin:users:id:subs {{ userData.user_id _' '_ args.1 }}"
+                         "callback_data": "admin:users:id:subs {{ userData.user_id _' '_ args.1 }}"
                     }
                 ],
                 [
                     {
                         "text": "⬅️ Информация о пользователе",
-                        "callback_data": "admin:users:id {{ userData.user_id _' '_ last_offset }}"
+                       "callback_data": "admin:users:id {{ userData.user_id _' '_ last_offset }}"
                     }
                 ]
             ]
@@ -2613,6 +2957,25 @@ Telegram: {{ userData.settings.telegram.login }}
         }
     }
 }
+{{ END }}
+
+
+<% CASE 'admin:subs:add:confirm' %>
+{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
+{{
+    userData = user.id(args.0);
+    createService = service.id(args.1);
+    user = user.switch(userData.user_id);
+    name = userData.full_name.replace('"', '\"');
+
+    IF args.2 == 'free';
+        ret = userData.us.create('service_id' = createService.service_id, 'cost' = 0, 'check_allow_to_order' = 0);
+    ELSE;
+        ret = userData.us.create('service_id' = createService.service_id, 'check_allow_to_order' = 0);
+    END;
+
+    sendAlert(errtext="✅ Подписка $createService.name успешно добавлена пользователю $name ($userData.user_id)", redirect="admin:users:id:subs $userData.user_id");
+}}
 {{ END }}
 
 <% CASE '/admusermsg' %>
@@ -3532,4 +3895,67 @@ ID начисления: {{ data.id }}
     }
 }
 {{ END }}
+
+
+<% CASE %>
+{{ IF message.reply_to_message.chat.id == tpl.settings.admin.chat_id }}
+{{ text = message.reply_to_message.caption || message.reply_to_message.text }}
+{{ chatid = text.split('#').1 }}
+{{ IF chatid }}
+{{ IF message.photo }}
+{
+    "sendPhoto": {
+        "chat_id": "{{ chatid }}",
+        "photo": "{{ message.photo.0.file_id }}",
+        "caption": "Сообщение от администрации:\n\n{{ message.caption }}."
+    }
+}
+{{ ELSIF message.text }}
+{
+    "sendMessage": {
+        "chat_id": "{{ chatid }}",
+        "text": "Сообщение от администрации:\n\n{{ message.text }}."
+    }
+}
+{{ ELSE }}
+{
+    "sendMessage": {
+        "chat_id": "{{ chatid }}",
+        "text": "Доступно только тестовые сообщении и отправка фото"
+    }
+}
+{{ END }}
+{{ ELSE }}
+{
+    "sendMessage": {
+        "chat_id": "{{ tpl.settings.admin.chat_id }}",
+        "text": "Не удалось найти пользователя или вы не ответили на сообщение"
+        }
+}
+{{ END }}
+{{ ELSE }}
+{{ IF message.photo }}
+{
+    "sendPhoto": {
+        "chat_id": "{{ tpl.settings.admin.chat_id }}",
+        "photo": "{{ message.photo.0.file_id }}",
+        "caption": "#{{ user.settings.telegram.chat_id }}#\n\n{{ message.caption }}."
+    }
+}
+{{ ELSIF message.text }}
+{
+    "sendMessage": {
+        "chat_id": "{{ tpl.settings.admin.chat_id }}",
+        "text": "#{{ user.settings.telegram.chat_id }}# \nСообщение от пользователя {{ user.full_name }}:\n\n{{ message.text }}"
+    }
+}
+{{ ELSE }}
+{
+    "sendMessage": {
+        "text": "Доступно только тестовые сообщении и отправка фото"
+    }
+}
+{{ END }}
+{{ END }}
+
 <% END %>
