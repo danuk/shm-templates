@@ -86,6 +86,26 @@
     }
 {{ END }}
 
+{{ MACRO notification BLOCK }}
+    {
+        "sendMessage": {
+            "parse_mode": "HTML",
+            "text": "{{ TEXT.replace('\n','\n') }}",
+            "reply_markup": {
+            {{ IF force == 1 }}
+                "force_reply": true,
+                "input_field_placeholder": "{{ placeholder }}"
+            {{ END }}
+            {{ IF BUTTONS }}
+                "inline_keyboard": [
+                    {{ BUTTONS }}
+                ]
+            {{ END }}
+            }
+        }
+    }
+{{ END }}
+
 <% SWITCH cmd %>
 <% CASE 'USER_NOT_FOUND' %>
 {
@@ -357,6 +377,83 @@
                     {
                         "text": "🔄 Обновить",
                         "callback_data": "/manage_services"
+                    }
+                ],
+                [
+                    {
+                        "text": "🏠 Вернуться в меню",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+
+<% CASE '/manage_users' %>
+{{ limit = 5 }}
+{{ offset = args.0 || 0 }}
+{{ offset = (offset < 0) ? 0 : offset }}
+
+{{ active_users = ref(user.list_for_api('filter', { 'status' => 'ACTIVE' }, 'limit', limit, 'offset', offset)) }}
+{{ blocked_users = ref(user.list_for_api('filter', { 'status' => 'BLOCKED' }, 'limit', limit, 'offset', offset)) }}
+
+{{ total_users = ref(user.list_for_api('count', { 'status' => 'ACTIVE' })) }}
+{{ total_blocked = ref(user.list_for_api('count', { 'status' => 'BLOCKED' })) }}
+
+{{ total_pages_active = Math.ceil(total_users / limit) }}
+{{ total_pages_blocked = Math.ceil(total_blocked / limit) }}
+
+{{ TEXT = BLOCK }}
+👤 <b>Управление пользователями</b>
+
+<b>✅ Активные пользователи:</b>
+{{ IF active_users.size > 0 }}
+{{ FOR user IN active_users }}
+- <b>{{ user.name }}</b> (ID: {{ user.id }})
+{{ END }}
+{{ ELSE }}
+<i>Нет активных пользователей.</i>
+{{ END }}
+
+<b>⛔ Заблокированные пользователи:</b>
+{{ IF blocked_users.size > 0 }}
+{{ FOR user IN blocked_users }}
+- <b>{{ user.name }}</b> (ID: {{ user.id }})
+{{ END }}
+{{ ELSE }}
+<i>Нет заблокированных пользователей.</i>
+{{ END }}
+
+<b>👉 Выберите действие:</b>
+{{ END }}
+
+{
+    "sendMessage": {
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "parse_mode": "HTML",
+        "reply_markup": {
+            "inline_keyboard": [
+                {{ IF offset > 0 || active_users.size == limit }}
+                [
+                    {{ IF offset > 0 }}
+                    {
+                        "text": "⬅️ Назад",
+                        "callback_data": "/manage_users {{ offset - limit }}"
+                    },
+                    {{ END }}
+                    {{ IF active_users.size == limit }}
+                    {
+                        "text": "➡️ Далее",
+                        "callback_data": "/manage_users {{ offset + limit }}"
+                    }
+                    {{ END }}
+                ],
+                {{ END }}
+                [
+                    {
+                        "text": "🔄 Обновить список",
+                        "callback_data": "/manage_users"
                     }
                 ],
                 [
@@ -1556,7 +1653,7 @@
 },
 
 {{
-    limit = 3;
+    limit = 5;
     offset = (args.0 || 0);
     referralsArray = ref(user.list_for_api('admin', 1, 'limit', limit, 'offset', offset, 'filter',{"partner_id" = user.id}));
 }}
@@ -1574,7 +1671,7 @@
 				[
                     {
                         "text": "👤 {{ item.full_name }} 🌟",
-                        "callback_data": "/ref_list {{ offset }}"
+                        "callback_data": "/ref_info {{ item.id }}"
                     }
                 ],
     {{ END }}
@@ -1595,6 +1692,43 @@
 				[
                     {
                         "text": "🔄 Обновить",
+                        "callback_data": "/ref_list"
+                    }
+                ],
+                [
+                    {
+                        "text": "🏠 Главное меню",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+
+<% CASE '/ref_info' %>
+
+{{
+    ref_user = user.id(args.0);
+}}
+{{ TEXT = BLOCK }}
+👤 <b>Информация о пользователе</b>
+
+<b>Имя:</b> {{ ref_user.full_name }}
+<b>ID:</b> {{ ref_user.id }}
+<b>Дата регистрации:</b> {{ ref_user.created_at }}
+<b>Статус:</b> {{ ref_user.status }}
+
+{{ END }}
+{
+    "sendMessage": {
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "parse_mode": "HTML",
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "⬅️ Назад к списку",
                         "callback_data": "/ref_list"
                     }
                 ],
@@ -2375,7 +2509,12 @@
 
 
 <% CASE 'admin:settings' %>
-{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
+{{
+    # Check for admin or moderator rights
+    PROCESS checkAdminRights;
+    # Check right for change settings
+    checkModeratorRights(right="settings");
+}}
 {{ TEXT = BLOCK }}
 <b>Конфигурация бота</b>
 
@@ -2416,7 +2555,6 @@
         }
     }
 }
-{{ END }}
 
 
 <% CASE 'admin:settings:change' %>
@@ -2554,6 +2692,7 @@
                         {{ END }}
                     ],
                 {{ END }}
+				 [{ "text": "🔎 Найти по ID", "callback_data": "admin:users:search" }],
                 [
                     {
                         "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); menuRole; }}",
@@ -2697,7 +2836,12 @@ Telegram: {{ userData.settings.telegram.login }}
 {{ END }}
 
 <% CASE 'admin:users:id:subs' %>
-{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
+{{
+    # Check for admin or moderator rights
+    PROCESS checkAdminRights;
+    # Check right for change settings
+    checkModeratorRights(right="listSubs");
+}}
 {{
     limit = 7;
     last_offset = (args.1 || 0);
@@ -2780,7 +2924,6 @@ Telegram: {{ userData.settings.telegram.login }}
         }
     }
 }
-{{ END }}
 
 <% CASE ['admin:users:id:subs'] %>
 {{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
@@ -2871,7 +3014,12 @@ Telegram: {{ userData.settings.telegram.login }}
 {{ END }}
 
 <% CASE 'admin:subs:add' %>
-{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
+{{
+    # Check for admin or moderator rights
+    PROCESS checkAdminRights;
+    # Check right for change settings
+    checkModeratorRights(right="addSubs");
+}}
 {{
     # Variables
     userData = user.id(args.0);
@@ -2913,10 +3061,14 @@ Telegram: {{ userData.settings.telegram.login }}
         }
     }
 }
-{{ END }}
 
 <% CASE 'admin:subs:add:free' %>
-{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
+{{
+    # Check for admin or moderator rights
+    PROCESS checkAdminRights;
+    # Check right for change settings
+    checkModeratorRights(right="addFreeSubs");
+}}
 {{
     # Variables
     userData = user.id(args.0);
@@ -2957,11 +3109,10 @@ Telegram: {{ userData.settings.telegram.login }}
         }
     }
 }
-{{ END }}
 
 
 <% CASE 'admin:subs:add:confirm' %>
-{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
+{{ PROCESS checkAdminRights }}
 {{
     userData = user.id(args.0);
     createService = service.id(args.1);
@@ -2989,7 +3140,12 @@ Telegram: {{ userData.settings.telegram.login }}
 }
 
 <% CASE 'admin:subs:id' %>
-{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
+{{
+    # Check for admin or moderator rights
+    PROCESS checkAdminRights;
+    # Check right for change settings
+    checkModeratorRights(right="listSubs");
+}}
 {{
     # Arguments:
         # 0 - ID of user service id 
@@ -3093,10 +3249,14 @@ ID списания: {{ userService.withdraw_id }}
         }
     }
 }
-{{ END }}
 
 <% CASE 'admin:subs:change:current' %>
-{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    # Check for admin or moderator rights
+    PROCESS checkAdminRights;
+    # Check right for change settings
+    checkModeratorRights(right="changeSubs");
+}}
 {{
     userService = ref(us.list_for_api('admin', 1, 'filter', {"user_service_id" = args.0})).first;
     userData = user.id(userService.user_id);
@@ -3142,10 +3302,9 @@ ID списания: {{ userService.withdraw_id }}
         }
     }
 }
-{{ END }}
 
 <% CASE 'admin:subs:change:current:confirm' %>
-{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{ PROCESS checkAdminRights }}
 {{
     nextService = args.1;
     data = ref(us.list_for_api('admin', 1, 'filter', {"user_service_id" = args.0})).first;
@@ -3173,7 +3332,12 @@ ID списания: {{ userService.withdraw_id }}
 
 
 <% CASE 'admin:subs:change:next' %>
-{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    # Check for admin or moderator rights
+    PROCESS checkAdminRights;
+    # Check right for change settings
+    checkModeratorRights(right="changeSubs");
+}}
 {{
     userService = ref(us.list_for_api('admin', 1, 'filter', {"user_service_id" = args.0})).first;
     userData = user.id(userService.user_id);
@@ -3223,10 +3387,9 @@ ID списания: {{ userService.withdraw_id }}
         }
     }
 }
-{{ END }}
 
 <% CASE 'admin:subs:change:next:confirm' %>
-{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{ PROCESS checkAdminRights }}
 {{
     nextService = args.1;
     data = ref(us.list_for_api('admin', 1, 'filter', {"user_service_id" = args.0})).first;
@@ -3251,10 +3414,15 @@ ID списания: {{ userService.withdraw_id }}
         "callback_data": "admin:subs:id {{ data.user_service_id }}"
     }
 }
-{{ END }}
+
 
 <% CASE 'admin:subs:change:status' %>
-{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    # Check for admin or moderator rights
+    PROCESS checkAdminRights;
+    # Check right for change settings
+    checkModeratorRights(right="changeSubs");
+}}
 {{
     data = ref(us.list_for_api('admin', 1, 'filter', {"user_service_id" = args.0})).first;
     userData = user.id(data.user_id);
@@ -3278,10 +3446,14 @@ ID списания: {{ userService.withdraw_id }}
         "callback_data": "admin:subs:id {{ data.user_service_id }}"
     }
 }
-{{ END }}
 
 <% CASE 'admin:subs:delete' %>
-{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    # Check for admin or moderator rights
+    PROCESS checkAdminRights;
+    # Check right for change settings
+    checkModeratorRights(right="deleteSubs");
+}}
 {{
     data = ref(us.list_for_api('admin', 1, 'filter', {"user_service_id" = args.0})).first;
     userData = user.id(data.user_id);
@@ -3303,10 +3475,15 @@ ID списания: {{ userService.withdraw_id }}
         "callback_data": "admin:users:id:subs {{ userData.user_id }}"
     }
 }
-{{ END }}
+
 
 <% CASE 'admin:users:id:pays' %>
-{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    # Check for admin or moderator rights
+    PROCESS checkAdminRights;
+    # Check right for change settings
+    checkModeratorRights(right="listPays");
+}}
 {{
     limit = 5;
     offset = args.1 || 0;
@@ -3374,10 +3551,14 @@ ID списания: {{ userService.withdraw_id }}
         }
     }
 }
-{{ END }}
 
 <% CASE 'admin:pays:id' %>
-{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    # Check for admin or moderator rights
+    PROCESS checkAdminRights;
+    # Check right for change settings
+    checkModeratorRights(right="listPays");
+}}
 {{
     userPay = ref(pay.list_for_api('admin', 1, 'filter', {"id" = args.0})).first;
     payData = userPay.comment.object;
@@ -3460,10 +3641,14 @@ ID кошелька: {{ payMethod.account_number }}
         }
     }
 }
-{{ END }}
 
 <% CASE 'admin:pays:add' %>
-{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    # Check for admin or moderator rights
+    PROCESS checkAdminRights;
+    # Check right for change settings
+    checkModeratorRights(right="addPays");
+}}
 {{
     userData = user.id(args.0);
 }}
@@ -3533,10 +3718,14 @@ ID кошелька: {{ payMethod.account_number }}
         }
     }
 }
-{{ END }}
 
 <% CASE 'admin:pays:add:manual' %>
-{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    # Check for admin or moderator rights
+    PROCESS checkAdminRights;
+    # Check right for change settings
+    checkModeratorRights(right="addPays");
+}}
 {{
     userData = user.id(args.0);
 
@@ -3547,11 +3736,17 @@ ID кошелька: {{ payMethod.account_number }}
 {{ TEXT = BLOCK }}
 💬 Введите сумму для пополнения баланса пользователя {{ userData.full_name.replace('"', '\"') }}
 {{ END }}
+{{ notification(TEXT=TEXT, force=1) }}
 
 
 
 <% CASE 'admin:pays:add:confirm' %>
-{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    # Check for admin or moderator rights
+    PROCESS checkAdminRights;
+    # Check right for change settings
+    checkModeratorRights(right="addPays");
+}}
 {{
     userData = user.id(args.0);
     name = userData.full_name.replace('"', '\"');
@@ -3564,10 +3759,15 @@ ID кошелька: {{ payMethod.account_number }}
         );
     END;
 }}
-{{ END }}
+
 
 <% CASE 'admin:users:id:bonuses' %>
-{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    # Check for admin or moderator rights
+    PROCESS checkAdminRights;
+    # Check right for change settings
+    checkModeratorRights(right="listBonus");
+}}
 {{
     limit = 5;
     offset = (args.1 || 0);
@@ -3637,10 +3837,14 @@ ID кошелька: {{ payMethod.account_number }}
         }
     }
 }
-{{ END }}
 
 <% CASE 'admin:bonuses:id' %>
-{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    # Check for admin or moderator rights
+    PROCESS checkAdminRights;
+    # Check right for change settings
+    checkModeratorRights(right="listBonus");
+}}
 {{
     offset = args.1;
     data = ref(bonus.list_for_api('admin', 1, 'limit', limit, 'offset', offset, 'filter', {"id" = args.0})).first;
@@ -3689,10 +3893,14 @@ ID начисления: {{ data.id }}
         }
     }
 }
-{{ END }}
 
 <% CASE 'admin:bonuses:add' %>
-{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
+{{
+    # Check for admin or moderator rights
+    PROCESS checkAdminRights;
+    # Check right for change settings
+    checkModeratorRights(right="addBonus");
+}}
 {{
     userData = user.id(args.0);
 }}
@@ -3770,50 +3978,35 @@ ID начисления: {{ data.id }}
         }
     }
 }
-{{ END }}
 
 <% CASE 'admin:bonuses:add:confirm' %>
 {{
-    userData = user.id(args.0);
-    amount = args.1;
+    # Check for admin or moderator rights
+    PROCESS checkAdminRights;
+    # Check right for change settings
+    checkModeratorRights(right="addBonus");
 }}
+{{
+    userData = user.id(args.0);
+    name = userData.full_name.replace('"', '\"');
+    amount = args.1;
 
-{{ IF amount < 0 }}
-    {{ ret = userData.set_bonus('bonus', amount, 'comment', {'msg' => 'Ручная корректировка от администратора'}); }}
-{{ ELSE }}
-    {{ ret = userData.set_bonus('bonus', amount, 'comment', {'msg' => 'Ручное начисление от администратора'}); }}
-    {
-        "sendMessage": {
-            "chat_id": {{ userData.settings.telegram.chat_id }},
-            "text": "🎁 Вам начислено {{ amount }} бонусов на счет от администратора",
-            "parse_mode": "HTML",
-            "reply_markup": {
-                "inline_keyboard": [
-                    [
-                        {
-                            "text": "👤 Личный кабинет",
-                            "callback_data": "cabinet"
-                        }
-                    ]
-                ]
-            }
-        }
-    },
-{{ END }}
+    IF amount < 0;
+        ret = userData.set_bonus('bonus', amount, 'comment', {'msg' => 'Ручная корректировка от администратора'});
+    ELSE;
+        IF (ret = userData.set_bonus('bonus', amount, 'comment', {'msg' => 'Ручное начисление от администратора'}));
+            notification(
+                chat_id="$userData.settings.telegram.chat_id",
+                TEXT="🎁 Вам начислено $amount бонусов на счет от администратора"
+            ); ",";
+        END;
+    END;
 
-{
-    "answerCallbackQuery": {
-         "callback_query_id": {{ callback_query.id }},
-         "parse_mode":"HTML",
-         "text": "Баланс бонусов пользователя {{ userData.full_name.replace('"', '\"')  }} ({{ userData.user_id }}) пополнен на {{ amount }} руб. Текущий баланс - {{ userData.get_bonus }}",
-         "show_alert": true
-     }
-},
-{
-    "shmRedirectCallback": {
-        "callback_data": "admin:bonuses:add {{ userData.user_id }}"
-    }
-}
+    sendAlert(
+        errtext="✅ Баланс бонусов пользователя $name ($userData.user_id) изменен на $amount руб.\nТекущий баланс $userData.get_bonus руб.",
+        redirect="admin:bonuses:add $userData.user_id"
+    );
+}}
 
 <% CASE 'admin:withdraws:id' %>
 {{
@@ -3869,6 +4062,16 @@ ID начисления: {{ data.id }}
     }
 }
 
+<% CASE 'admin:users:search' %>
+{{
+    # Set state for user
+    ret = user.set_settings({'state' => 'awaiting_search'});
+}}
+{{ TEXT = BLOCK }}
+💬 <b>Введите ID пользователя</b>
+{{ END }}
+{{ notification(TEXT=TEXT, force=1) }}
+
 <% CASE '/admuserblock_toggle' %>
 {{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
 {{
@@ -3896,66 +4099,76 @@ ID начисления: {{ data.id }}
 }
 {{ END }}
 
+<% CASE DEFAULT %>
 
-<% CASE %>
-{{ IF message.reply_to_message.chat.id == tpl.settings.admin.chat_id }}
-{{ text = message.reply_to_message.caption || message.reply_to_message.text }}
-{{ chatid = text.split('#').1 }}
-{{ IF chatid }}
-{{ IF message.photo }}
-{
-    "sendPhoto": {
-        "chat_id": "{{ chatid }}",
-        "photo": "{{ message.photo.0.file_id }}",
-        "caption": "Сообщение от администрации:\n\n{{ message.caption }}."
-    }
-}
-{{ ELSIF message.text }}
-{
-    "sendMessage": {
-        "chat_id": "{{ chatid }}",
-        "text": "Сообщение от администрации:\n\n{{ message.text }}."
-    }
-}
-{{ ELSE }}
-{
-    "sendMessage": {
-        "chat_id": "{{ chatid }}",
-        "text": "Доступно только тестовые сообщении и отправка фото"
-    }
-}
-{{ END }}
-{{ ELSE }}
-{
-    "sendMessage": {
-        "chat_id": "{{ tpl.settings.admin.chat_id }}",
-        "text": "Не удалось найти пользователя или вы не ответили на сообщение"
+{{ IF user.settings.state == 'awaiting_search'}}
+    {{
+        temp = message.message_id - 1;
+        delete(msgID=[message.message_id, temp]);
+        IF message.text.match('^[1-9]\d*$');
+            searchString = message.text;
+            ret = user.set_settings({'state' => ''});
+            ret = ref(user.list_for_api('admin', 1, 'filter', {"user_id" = searchString} ));
+
+            IF (ret.size > 0);
+                resultID = ret.first.user_id;
+                redirect(callback="admin:users:id $resultID");
+            ELSE;
+                TEXT = "⭕️ Пользователь с ID $searchString не найден!";
+            END;
+
+        ELSE;
+            ret = user.set_settings({'state' => ''});
+            TEXT = "❌ <b>Ошибка:</b> ID может содержать только положительное число!";
+        END;
+
+        notification(TEXT=TEXT);
+    }}
+
+
+{{ ELSIF user.settings.state == 'awaiting_amount' AND user.settings.bot.switchUser }}
+    {{
+        userData = user.id(user.settings.bot.switchUser);
+        IF message.text.match('^-?\d+(\.\d+)?$');
+            amount = message.text;
+
+            IF (ret = userData.payment('money', amount, 'pay_system_id', 'manual'));
+                TEXT = "✅ <b>Баланс пользователя $userData.user_id пополнен на $amount руб.</b>\nТекущий баланс: $userData.balance руб.";
+            ELSE;
+                TEXT = "⭕️ Ошибка пополнения. Повторите попытку.";
+            END;
+
+            ret = user.set_settings({'state' => ''});
+            ret = user.set_settings({'bot' => {'switchUser' => ''} });
+        ELSE;
+            TEXT = "⭕️ Ошибка пополнения. Повторите попытку.";
+        END;
+    }}
+
+        {
+            "editMessageText": {
+                "message_id": {{ message.message_id }},
+                "parse_mode": "HTML",
+                "text": "{{ TEXT.replace('\n','\n') }}",
+                "reply_markup": {
+                    "inline_keyboard": [
+                        [
+                            {"text": "ℹ️ Информация о пользователе", "callback_data": "admin:users:id {{ userData.user_id }}"}
+                        ],
+                        [
+                            {"text": "🏠 Главное меню", "callback_data": "/menu"}
+                        ]
+                    ]
+                }
+            }
         }
-}
-{{ END }}
+{{ notification(TEXT=TEXT, force=1) }}
 {{ ELSE }}
-{{ IF message.photo }}
-{
-    "sendPhoto": {
-        "chat_id": "{{ tpl.settings.admin.chat_id }}",
-        "photo": "{{ message.photo.0.file_id }}",
-        "caption": "#{{ user.settings.telegram.chat_id }}#\n\n{{ message.caption }}."
-    }
-}
-{{ ELSIF message.text }}
-{
-    "sendMessage": {
-        "chat_id": "{{ tpl.settings.admin.chat_id }}",
-        "text": "#{{ user.settings.telegram.chat_id }}# \nСообщение от пользователя {{ user.full_name }}:\n\n{{ message.text }}"
-    }
-}
-{{ ELSE }}
-{
-    "sendMessage": {
-        "text": "Доступно только тестовые сообщении и отправка фото"
-    }
-}
-{{ END }}
+    {{ 
+        ret = user.set_settings({'bot' => {'switchUser' => ''} });
+        ret = user.set_settings({'state' => ''});
+        delete(msgID=[message.message_id]);
+    }}
 {{ END }}
 
 <% END %>
