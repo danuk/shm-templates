@@ -262,6 +262,7 @@
 
                     for (const pay_system of data) {
                         let btn_container = document.createElement('div');
+                        btn_container.id = pay_system.name;
                         btn_container.className = "button-container";
                         document.getElementById("main_section").appendChild(btn_container);
 
@@ -272,10 +273,9 @@
 
                         if (pay_system.recurring) {
                             let btn_remove = document.createElement('button');
-                            btn_remove.id = pay_system.paysystem;
                             btn_remove.className = "remove";
                             btn_remove.innerHTML = "X";
-                            btn_remove.onclick = function(){ ShmPayApp.removePayment(pay_system.pay_system) };
+                            btn_remove.onclick = function(){ ShmPayApp.removePayment(pay_system.paysystem,pay_system.name) };
                             btn_container.appendChild(btn_remove);
                         }
                     }
@@ -332,11 +332,11 @@
                 Telegram.WebApp.close();
             }
         },
-        removePayment(id) {
+        removePayment(id,name) {
             Telegram.WebApp.showConfirm('Отвязать сохраненный способ оплаты?', function(confirmed) {
                 if (!confirmed) return;
 
-                document.getElementById(id).style.display = 'none';
+                document.getElementById(name).style.display = 'none';
 
                 let xhrURL = new URL('{{ config.api.url }}/shm/v1/user/autopayment');
                 xhrURL.searchParams.set('pay_system', id );
