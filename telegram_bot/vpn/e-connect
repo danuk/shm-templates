@@ -3145,4 +3145,5 @@ ID начисления: {{ data.id }}
         delete(msgID=[message.message_id]);
     }}
 {{ END }}
-<% END %>
+
+<% END %> 
