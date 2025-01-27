@@ -47,8 +47,8 @@
     {{
         messageType =
             (cmd == '/start') ? 'sendMessage' :
-            (cmd == 'menu' && mainMenuCmd == 'menu') ? 'editMessageText' :
-            (mainMenuCmd == 'start' || cmd == 'start') ? 'sendMessage' :
+            (cmd == '/menu' && mainMenuCmd == '/menu') ? 'editMessageText' :
+            (mainMenuCmd == '/start' || cmd == '/start') ? 'sendMessage' :
             (edit == 0) ? 'sendMessage' :
             (edit == 1) ? 'editMessageText' :
             (defaultMessageType == 'editMessageText' ) ? 'editMessageText' :
@@ -3047,7 +3047,6 @@ Telegram: {{ userData.settings.telegram.login }}
 
     sendAlert(errtext="✅ Подписка $createService.name успешно добавлена пользователю $name ($userData.user_id)", redirect="admin:users:id:subs $userData.user_id");
 }}
-{{ END }}
 
 <% CASE '/admusermsg' %>
 {
