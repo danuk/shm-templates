@@ -24,7 +24,12 @@
     {{ STOP }}
 {{ END }}
 
-
+{{
+    # Get data from storage
+    storageMessageType = user.id(1).storage.read('name', 'bot_configuration').messageType;
+    storageMenuCmd = user.id(1).storage.read('name', 'bot_configuration').menuCmd;
+    storageCheckNotPaidServices = user.id(1).storage.read('name', 'bot_configuration').checkNotPaidServices;
+}}
 
 <%# Check for admin rights from user settings %>
 <%# for use admin menu, set role = "admin" or "moderator" %>
@@ -249,6 +254,14 @@
                 {{ END }} ,
                 [
                     {
+                        "text": "💚 Статус серверов",
+                        "web_app": {
+                            "url": "{{ config.uptime.url }}"
+                        }
+                    }
+                ],
+                [
+                    {
                         "text": "🔄 Обновить меню",
                         "callback_data": "/menu"
                     }
@@ -330,13 +343,15 @@
     }
 }
 
-
 <% CASE '/manage_services' %>
 {{ active_services = user.services.list_for_api('filter', { 'status' => 'ACTIVE' }) }}
 {{ expired_services = user.services.list_for_api('filter', { 'status' => 'NOT PAID' }) }}
 {{ TEXT = BLOCK }}
 🚀 <b>Управление услугами</b>
 
+{{ IF active_services.size == 0 && expired_services.size == 0 }}
+<i>Нет доступных услуг для управления.</i>
+{{ ELSE }}
 <b>✅ Активные услуги:</b>
 {{ IF active_services.size > 0 }}
 {{ FOR service IN active_services }}
@@ -346,7 +361,7 @@
 <i>Нет активных услуг.</i>
 {{ END }}
 
-<b>❗ Неоплаченные услуги:</b>
+<b>❗️ Неоплаченные услуги:</b>
 {{ IF expired_services.size > 0 }}
 {{ FOR service IN expired_services }}
 - <b>{{ service.name }}</b> (истёк {{ service.expire }})
@@ -354,6 +369,10 @@
 {{ ELSE }}
 <i>Нет неоплаченных услуг.</i>
 {{ END }}
+{{ END }}
+
+{{ render_services(active_services, '✅ Активные услуги:', 'Нет активных услуг.') }}
+{{ render_services(expired_services, '❗ Неоплаченные услуги:', 'Нет неоплаченных услуг.') }}
 
 <b>👉 Выберите действие:</b>
 {{ END }}
@@ -364,16 +383,13 @@
         "parse_mode": "HTML",
         "reply_markup": {
             "inline_keyboard": [
+                {{ IF active_services.size > 0 || expired_services.size > 0 }}
                 {{
                     limit = 5;
                     offset = args.0 || 0;
                     offset = (offset < 0) ? 0 : offset;
                     active_services = ref(user.services.list_for_api('filter', { 'status' => 'ACTIVE' }, 'limit', limit, 'offset', offset));
                     expired_services = ref(user.services.list_for_api('filter', { 'status' => 'NOT PAID' }, 'limit', limit, 'offset', offset));
-                    total_services = ref(user.services.list_for_api('count', { 'status' => 'ACTIVE' }));
-                    total_expired = ref(user.services.list_for_api('count', { 'status' => 'NOT PAID' }));
-                    total_pages_active = total_services / limit;
-                    total_pages_expired = total_expired / limit;
                 }}
                 {{ IF offset > 0 || active_services.size == limit }}
                 [
@@ -390,6 +406,7 @@
                     }
                     {{ END }}
                 ],
+                {{ END }}
                 {{ END }}
                 [
                     {
@@ -1199,7 +1216,6 @@ ID кошелька: {{ payMethod.account_number }}
     }
 }
 
-
 <% CASE '/notifications_block' %>
 {{ item = us.id( args.0 ) }}
 {{ subscription_url = storage.read('name','vpn_mrzb_' _ args.0 ).subscription_url }}
@@ -1569,7 +1585,7 @@ ID кошелька: {{ payMethod.account_number }}
     limit = 7;
     offset = (args.0 || 0);
     users = ref(user.list_for_api('admin', 1, 'limit', limit, 'offset', offset, 'filter',{"gid" = 0}));
-    getCountUsers = ref(user.list_for_api('admin', 1, filter, {"gid" = 0})).size;
+    getCountUsers = ref(user.list_for_api('admin', 1, 'limit', 0, filter, {"gid" = 0})).size;
 }}
 {{ TEXT = BLOCK }}
 👨‍💻 Пользователи
@@ -3145,5 +3161,4 @@ ID начисления: {{ data.id }}
         delete(msgID=[message.message_id]);
     }}
 {{ END }}
-
-<% END %> 
+<% END %>
