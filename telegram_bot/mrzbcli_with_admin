@@ -775,6 +775,7 @@
 }
 
 <% CASE '/list' %>
+{{ item = us.id(args.0) }}
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
@@ -814,7 +815,7 @@
                     {
                         "text": "#{{ item.user_service_id }} - {{ item.name }} - {{ icon }} {{ status }}",
                         {{ IF item.status == 'NOT PAID' }}
-                        "callback_data": "/profile {{ item.user_service_id }}"
+                        "callback_data": "/service {{ item.user_service_id }}"
                         {{ ELSIF item.category != 'vpn-mz-tv' }}
                         "callback_data": "/service {{ item.user_service_id }}"
                         {{ ELSIF item.category == 'vpn-mz-tv' }}
@@ -893,12 +894,8 @@
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
-{{ # Variables
-    us = user.services.list_for_api('usi', args.0);
-
-    # Plugins
-    USE date;
-}}
+{{ item = us.id(args.0) }}
+{{ us = user.services.list_for_api( 'usi', args.0 ) }}
 {{ EXPIRE = BLOCK }}
     {{ USE date }}
     {{ now = date.now }}
@@ -917,11 +914,11 @@
         {{ minutes = remaining DIV 60 }}
         {{ seconds = remaining MOD 60 }}
         {{ IF years > 0 }}
-            {{ "📅 Осталось: " _ years _ " г " _ months _ " мес." }}
+            {{ "Осталось " _ years _ " г " _ months _ " мес." }}
         {{ ELSIF months > 0 }}
-            {{ "📅 Осталось: " _ months _ " мес " _ days _ " дн " _ hours _ " ч " _ minutes _ " мин " _ seconds _ " с" }}
+            {{ "Осталось " _ months _ " мес " _ days _ " дн " _ hours _ " ч " _ minutes _ " мин " _ seconds _ " с" }}
         {{ ELSE }}
-            {{ "📅 Осталось: " _ days _ " дн " _ hours _ " ч " _ minutes _ " мин " _ seconds _ " с" }}
+            {{ "Осталось " _ days _ " дн " _ hours _ " ч " _ minutes _ " мин " _ seconds _ " с" }}
         {{ END }}
     {{ ELSE }}
         Услуга истекла.
@@ -936,37 +933,34 @@
         {{ SWITCH us.status }}
   {{ CASE 'ACTIVE' }}
   {{ icon = '✅' }}
-  {{ status = ' Работает' }}
+  {{ status = 'Работает' }}
   {{ CASE 'BLOCK' }}
   {{ icon = '🚫' }}
-  {{ status = ' Заблокирована' }}
+  {{ status = 'Заблокирована' }}
   {{ CASE 'NOT PAID' }}
   {{ icon = '💳' }}
-  {{ status = ' Ожидает оплаты' }}
+  {{ status = 'Ожидает оплаты' }}
   {{ CASE }}
   {{ icon = '⏳' }}
-  {{ status = ' Обработка' }}
+  {{ status = 'Обработка' }}
 {{ END }}
 {{ TEXT = BLOCK }}
-<b>🔑 Услуга: #id <b>{{ us.user_service_id }}</b> - <code>{{ us.name }}</code></b>
+<b>Услуга</b>: {{ us.name }}
     {{ IF us.expire }}
-<b>🗓️ Оплачена до</b>: {{ date.format(us.expire, '%d.%m.%Y') }}
+<b>🗓️ Оплачена до</b>: {{ us.expire }}
     {{ END }}
-<b>📊 Статус</b>: {{ icon }} {{ status }}
-{{ IF us.next != us.service_id && us.next > 0 }}
-<b>Следующий тариф ключа</b>: {{ service.id(us.next).name }}
-{{ END }}
+<b>📊 Статус</b>: {{ icon}} {{ status }}
     {{ IF mb == 0 }}
     {{ ELSE}}
         {{ IF gb >= 1 }}
-📈 Израсходовано трафика: <b>{{ gb }} Gb.{{ mb }} Mb</b>
+📈 Израсходовано трафика: {{ gb }} Gb.{{ mb }} Mb
         {{ ELSE }}
-📈 Израсходовано трафика: <b>{{ mb }} Mb</b>
+📈 Израсходовано трафика: {{ mb }} Mb
         {{ END }}
     {{ END }}
 {{ END }}
         "photo": "https://i.ibb.co/6csKNZS7/DALL-E-2025-01-28-20-25-12-A-modern-and-sleek-logo-for-Mrzb-CLI-Service-using-the-Butler-font.png",
-        "caption": "{{ TEXT.replace('\n','\n') }}\n <b>{{ EXPIRE }}</b>",
+        "caption": "{{ TEXT.replace('\n','\n') }}\n📅 Осталось: <b>{{ EXPIRE }}</b>",
         "parse_mode": "HTML",
         "reply_markup": {
             "inline_keyboard": [
@@ -1145,7 +1139,7 @@
         {
             "sendAlert": {
                 "errtext": "⭕️ У вас имеется неоплаченный ключ\n🔑 #{{ notPaid.user_service_id }} - {{ notPaid.name }}\nОплатите, либо удалите его для покупки нового.",
-                "redirect": "/list {{ notPaid.user_service_id }}"
+                "redirect": "/service {{ notPaid.user_service_id }}"
             }
         },
         {{ STOP }}
