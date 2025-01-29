@@ -133,6 +133,19 @@
 }
 {{ STOP }}
 {{ END }}
+{{ BLOCK send }}
+{
+    "sendMessage": {
+        "parse_mode": "HTML",
+        "text": "{{ text.replace('\n','\n') }}",
+        "reply_markup": {
+            "inline_keyboard": [
+                {{ buttons }}
+            ]
+        }
+    }
+}
+{{ END }}
 
 <% SWITCH cmd %>
 <% CASE 'cancel_registration' %>
@@ -216,13 +229,7 @@
 🔒 Ваши данные в безопасности.
 📱 Доступ с любого устройства.</i>
 {{ END }}
-{
-    "sendPhoto": {
-        "photo": "{{ config.logo.url }}",
-        "caption": "{{ TEXT.replace('\n','\n') }}",
-        "parse_mode": "HTML",
-        "reply_markup": {
-            "inline_keyboard": [
+{{ buttons = BLOCK }}
                 {{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
                 [
                     {
@@ -277,10 +284,8 @@
                         "callback_data": "/menu"
                     }
                 ]
-            ]
-        }
-    }
-}
+{{ END }}
+{{ process send text=TEXT buttons=buttons }}
 
 <% CASE '/profile' %>
 {{
@@ -311,12 +316,15 @@
 <b>👉 Выберите действие:</b>
 {{ END }}
 
-{
-    "sendMessage": {
-        "text": "{{ TEXT.replace('\n','\n') }}",
-        "parse_mode": "HTML",
-        "reply_markup": {
-            "inline_keyboard": [
+{{ buttons = BLOCK }}
+				{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
+                [
+                    {
+                        "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'Администратора' : 'Модератора'); menuRole; }}",
+                        "callback_data": "admin:menu"
+                    }
+                ],
+                {{ END }}
                 [
                     {
                         "text": "💳 Пополнить баланс",
@@ -334,24 +342,16 @@
                     {
                         "text": "🚀 Управление услугами",
                         "callback_data": "/manage_services"
-                    },
-                    {
-                        "text": "🏠 Вернуться в меню",
-                        "callback_data": "/menu"
                     }
                 ],
-                {{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
                 [
                     {
-                        "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'Администратора' : 'Модератора'); menuRole; }}",
-                        "callback_data": "admin:menu"
+                        "text": "👨‍💻 Меню",
+                        "callback_data": "/menu"
                     }
                 ]
-                {{ END }}
-            ]
-        }
-    }
-}
+{{ END }}
+{{ process send text=TEXT buttons=buttons }}
 
 <% CASE '/manage_services' %>
 {{ active_services = ref(user.services.list_for_api('filter', { 'status' => 'ACTIVE' })) }}
@@ -390,12 +390,7 @@
 <b>👉 Выберите действие:</b>
 {{ END }}
 
-{
-    "sendMessage": {
-        "text": "{{ TEXT.replace('\n','\n') }}",
-        "parse_mode": "HTML",
-        "reply_markup": {
-            "inline_keyboard": [
+{{ buttons = BLOCK }}
                 {{ IF active_services.size > 0 || expired_services.size > 0 }}
                 {{
                     limit = 1;
@@ -437,87 +432,8 @@
                         "callback_data": "/menu"
                     }
                 ]
-            ]
-        }
-    }
-}
-
-<% CASE '/manage_users' %>
-{{ limit = 5 }}
-{{ offset = args.0 || 0 }}
-{{ offset = (offset < 0) ? 0 : offset }}
-
-{{ active_users = ref(user.list_for_api('filter', { 'status' => 'ACTIVE' }, 'limit', limit, 'offset', offset)) }}
-{{ blocked_users = ref(user.list_for_api('filter', { 'status' => 'BLOCKED' }, 'limit', limit, 'offset', offset)) }}
-
-{{ total_users = ref(user.list_for_api('count', { 'status' => 'ACTIVE' })) }}
-{{ total_blocked = ref(user.list_for_api('count', { 'status' => 'BLOCKED' })) }}
-
-{{ total_pages_active = Math.ceil(total_users / limit) }}
-{{ total_pages_blocked = Math.ceil(total_blocked / limit) }}
-
-{{ TEXT = BLOCK }}
-👤 <b>Управление пользователями</b>
-
-<b>✅ Активные пользователи:</b>
-{{ IF active_users.size > 0 }}
-{{ FOR user IN active_users }}
-- <b>{{ user.name }}</b> (ID: {{ user.id }})
 {{ END }}
-{{ ELSE }}
-<i>Нет активных пользователей.</i>
-{{ END }}
-
-<b>⛔ Заблокированные пользователи:</b>
-{{ IF blocked_users.size > 0 }}
-{{ FOR user IN blocked_users }}
-- <b>{{ user.name }}</b> (ID: {{ user.id }})
-{{ END }}
-{{ ELSE }}
-<i>Нет заблокированных пользователей.</i>
-{{ END }}
-
-<b>👉 Выберите действие:</b>
-{{ END }}
-
-{
-    "sendMessage": {
-        "text": "{{ TEXT.replace('\n','\n') }}",
-        "parse_mode": "HTML",
-        "reply_markup": {
-            "inline_keyboard": [
-                {{ IF offset > 0 || active_users.size == limit }}
-                [
-                    {{ IF offset > 0 }}
-                    {
-                        "text": "⬅️ Назад",
-                        "callback_data": "/manage_users {{ offset - limit }}"
-                    },
-                    {{ END }}
-                    {{ IF active_users.size == limit }}
-                    {
-                        "text": "➡️ Далее",
-                        "callback_data": "/manage_users {{ offset + limit }}"
-                    }
-                    {{ END }}
-                ],
-                {{ END }}
-                [
-                    {
-                        "text": "🔄 Обновить список",
-                        "callback_data": "/manage_users"
-                    }
-                ],
-                [
-                    {
-                        "text": "🏠 Вернуться в меню",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}
+{{ process send text=TEXT buttons=buttons }}
 
 
 <% CASE '/balance' %>
@@ -588,13 +504,7 @@
 💵 <b>Необходимо оплатить:</b> <b>{{ user.pays.forecast('blocked',1).total }} ₽</b>
 {{ END }}
 
-{
-    "sendPhoto": {
-        "photo": "{{ config.logo.url }}",
-        "caption": "{{ TEXT.replace('\n','\n') }}",
-        "parse_mode": "HTML",
-        "reply_markup": {
-            "inline_keyboard": [
+{{ buttons = BLOCK }}
                 [
                     {
                         "text": "✚ Пополнить баланс",
@@ -622,23 +532,17 @@
                         "callback_data": "{{ mainMenuCmd }}"
                     }
                 ]
-            ]
-        }
-    }
-}
-
+{{ END }}
+{{ process send text=TEXT buttons=buttons }}
 
 <% CASE '/pays' %>
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
-{
-    "sendPhoto": {
-        "photo": "{{ config.logo.url }}",
-        "caption": "☰ <b>История платежей</b>",
-        "parse_mode": "HTML",
-        "reply_markup": {
-            "inline_keyboard": [
+{{ TEXT = BLOCK }}
+☰ <b>История платежей</b>
+{{ END }
+{{ buttons = BLOCK }}
                 {{
                     limit = 7;
                     offset = args.0 || 0;
@@ -688,10 +592,8 @@
                         "callback_data": "/menu"
                     }
                 ]
-            ]
-        }
-    }
-}
+{{ END }}
+{{ process send text=TEXT buttons=buttons }}
 
 <% CASE '/checkpay' %>
 {
@@ -752,11 +654,7 @@
 
 {{ END }}
 
-{
-    "sendMessage": {
-        "text": "{{ TEXT.replace('\n','\n') }}\n",
-        "reply_markup": {
-            "inline_keyboard": [
+{{ buttons = BLOCK }}
                 [
                     {
                         "text": "🔄 Обновить",
@@ -769,10 +667,8 @@
                         "callback_data": "/pays"
                     }
                 ]
-            ]
-        }
-    }
-}
+{{ END }}
+{{ process send text=TEXT buttons=buttons }}
 
 <% CASE '/list' %>
 {{ item = us.id(args.0) }}
@@ -2620,6 +2516,7 @@
         "text": "{{ TEXT.replace('\n','\n') }}",
         "reply_markup": {
             "inline_keyboard": [
+			[{ "text": "🔎 Найти по ID", "callback_data": "admin:users:search" }],
                 {{ FOR item IN users }}
                     {{ status = (item.block == 0 ? "🟢" : "🔴") }}
                     [
@@ -2645,7 +2542,6 @@
                         {{ END }}
                     ],
                 {{ END }}
-				 [{ "text": "🔎 Найти по ID", "callback_data": "admin:users:search" }],
                 [
                     {
                         "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); menuRole; }}",
