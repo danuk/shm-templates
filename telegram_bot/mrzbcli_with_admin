@@ -354,8 +354,14 @@
 }
 
 <% CASE '/manage_services' %>
-{{ active_services = user.services.list_for_api('filter', { 'status' => 'ACTIVE' }) }}
-{{ expired_services = user.services.list_for_api('filter', { 'status' => 'NOT PAID' }) }}
+{{ active_services = ref(user.services.list_for_api('filter', { 'status' => 'ACTIVE' })) }}
+{{ expired_services = ref(user.services.list_for_api('filter', { 'status' => 'NOT PAID' })) }}
+{{ # Variables
+    active_services = user.services.list_for_api('usi', args.0);
+
+    # Plugins
+    USE date;
+}}
 {{ TEXT = BLOCK }}
 🚀 <b>Управление услугами</b>
 
@@ -365,7 +371,7 @@
 <b>✅ Активные услуги:</b>
 {{ IF active_services.size > 0 }}
 {{ FOR service IN active_services }}
-- <b>{{ service.name }}</b> (до {{ service.expire }})
+- <b>{{ service.name }}</b> (до {{ date.format(service.expire, '%d.%m.%Y') }})
 {{ END }}
 {{ ELSE }}
 <i>Нет активных услуг.</i>
@@ -374,15 +380,12 @@
 <b>❗️ Неоплаченные услуги:</b>
 {{ IF expired_services.size > 0 }}
 {{ FOR service IN expired_services }}
-- <b>{{ service.name }}</b> (истёк {{ service.expire }})
+- <b>{{ service.name }}</b> (истёк {{ date.format(service.expire, '%d.%m.%Y') }})
 {{ END }}
 {{ ELSE }}
 <i>Нет неоплаченных услуг.</i>
 {{ END }}
 {{ END }}
-
-{{ render_services(active_services, '✅ Активные услуги:', 'Нет активных услуг.') }}
-{{ render_services(expired_services, '❗ Неоплаченные услуги:', 'Нет неоплаченных услуг.') }}
 
 <b>👉 Выберите действие:</b>
 {{ END }}
@@ -395,13 +398,13 @@
             "inline_keyboard": [
                 {{ IF active_services.size > 0 || expired_services.size > 0 }}
                 {{
-                    limit = 5;
+                    limit = 1;
                     offset = args.0 || 0;
                     offset = (offset < 0) ? 0 : offset;
                     active_services = ref(user.services.list_for_api('filter', { 'status' => 'ACTIVE' }, 'limit', limit, 'offset', offset));
                     expired_services = ref(user.services.list_for_api('filter', { 'status' => 'NOT PAID' }, 'limit', limit, 'offset', offset));
                 }}
-                {{ IF offset > 0 || active_services.size == limit }}
+                {{ IF offset > 0 || active_services.size == limit || expired_services.size == limit }}
                 [
                     {{ IF offset > 0 }}
                     {
@@ -409,7 +412,7 @@
                         "callback_data": "/manage_services {{ offset - limit }}"
                     },
                     {{ END }}
-                    {{ IF active_services.size == limit }}
+                    {{ IF active_services.size == limit || expired_services.size == limit }}
                     {
                         "text": "➡️ Далее",
                         "callback_data": "/manage_services {{ offset + limit }}"
