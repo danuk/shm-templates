@@ -24,7 +24,12 @@
     {{ STOP }}
 {{ END }}
 
-
+{{
+    # Get data from storage
+    storageMessageType = user.id(1).storage.read('name', 'bot_configuration').messageType;
+    storageMenuCmd = user.id(1).storage.read('name', 'bot_configuration').menuCmd;
+    storageCheckNotPaidServices = user.id(1).storage.read('name', 'bot_configuration').checkNotPaidServices;
+}}
 
 <%# Check for admin rights from user settings %>
 <%# for use admin menu, set role = "admin" or "moderator" %>
@@ -119,47 +124,70 @@
 },
 {{ END }}
 
-<% SWITCH cmd %>
-<% CASE 'USER_NOT_FOUND' %>
-{
-    "deleteMessage": { "message_id": "{{ message.message_id }}" }
-},
+{{ MACRO cancelRegistration BLOCK }}
 {
     "sendMessage": {
-        "text": "Привет! Меня зовут <b>{{ config.company.name }}</b>. Я сделаю твой интернет более доступным и открытым.\n\n- 🔒 Абсолютно безопасный доступ к любым социальным сетям\n- 🌐 Обход региональных ограничений\n- 🔓 Устойчивость к блокировкам\n- 🔑 Двойное шифрование данных\n- 💳 Оплата российскими картами\n\n<b>Принять соглашение:</b>",
-        "parse_mode": "HTML",
-        "photo": "{{ config.logo.url }}",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "Соглашение",
-                        "web_app": {
-                            "url": "https://sogl.mrzbcli.ru/privacy_policy.html"
-                        }
-                    }
-                ],
-                [
-                    {
-                        "text": "✅ Да",
-                        "callback_data": "/register {{ args.0 }}"
-                    }
-                ]
-            ]
-        }
+        "text": "❌ Вы отменили регистрацию. Если хотите начать заново, нажмите /start.",
+        "parse_mode": "HTML"
     }
 }
+{{ STOP }}
+{{ END }}
 
-<% CASE '/register' %>
+<% SWITCH cmd %>
+<% CASE 'cancel_registration' %>
 {
-    "deleteMessage": { "message_id": "{{ message.message_id }}" }
+        "deleteMessage": { "message_id": "{{ message.message_id }}" }
 },
-{
-    "shmRegister": {
-        "partner_id": "{{ args.0 }}",
-        "callback_data": "/start",
-        "error": "ОШИБКА: Логин {{ message.chat.username }} или chat_id {{ message.chat.id }} уже существует"
+    {
+        "sendMessage": {
+            "text": "❌ Вы отменили регистрацию. Если хотите начать заново, нажмите /start.",
+            "parse_mode": "HTML"
+        }
     }
+    <% CASE 'USER_NOT_FOUND' %>
+    {
+        "deleteMessage": { "message_id": "{{ message.message_id }}" }
+    },
+    {
+        "sendMessage": {
+            "text": "Привет! Меня зовут <b>{{ config.company.name }}</b>. Я сделаю твой интернет более доступным и открытым.\n\n- 🔒 Абсолютно безопасный доступ к любым социальным сетям\n- 🌐 Обход региональных ограничений\n- 🔓 Устойчивость к блокировкам\n- 🔑 Двойное шифрование данных\n- 💳 Оплата российскими картами\n\n<b>Принять соглашение:</b>",
+            "parse_mode": "HTML",
+            "photo": "{{ config.logo.url }}",
+            "reply_markup": {
+                "inline_keyboard": [
+                    [
+                        {
+                            "text": "Соглашение",
+                            "web_app": {
+                                "url": "https://sogl.mrzbcli.ru/privacy_policy.html"
+                            }
+                        }
+                    ],
+                    [
+                        {
+                            "text": "✅ Да",
+                            "callback_data": "/register {{ args.0 }}"
+                        },
+                        {
+                            "text": "❌ Нет",
+                            "callback_data": "cancel_registration"
+                        }
+                    ]
+                ]
+            }
+        }
+    }
+<% CASE '/register' %>
+    {
+        "deleteMessage": { "message_id": "{{ message.message_id }}" }
+    },
+    {
+        "shmRegister": {
+            "partner_id": "{{ args.0 }}",
+            "callback_data": "/start",
+            "error": "ОШИБКА: Логин {{ message.chat.username }} или chat_id {{ message.chat.id }} уже существует"
+        }
 }
 
 <% CASE ['/start', '/menu', '🌍 Главное Меню', '🔄 Обновить'] %>
@@ -352,6 +380,9 @@
 <i>Нет неоплаченных услуг.</i>
 {{ END }}
 {{ END }}
+
+{{ render_services(active_services, '✅ Активные услуги:', 'Нет активных услуг.') }}
+{{ render_services(expired_services, '❗ Неоплаченные услуги:', 'Нет неоплаченных услуг.') }}
 
 <b>👉 Выберите действие:</b>
 {{ END }}
@@ -909,7 +940,7 @@
         {{ END }}
     {{ END }}
 {{ END }}
-        "photo": "https://vpnbot.pro/images/DALL-E-2024-11-30-19-58.jpg",
+        "photo": "https://i.ibb.co/6csKNZS7/DALL-E-2025-01-28-20-25-12-A-modern-and-sleek-logo-for-Mrzb-CLI-Service-using-the-Butler-font.png",
         "caption": "{{ TEXT.replace('\n','\n') }}\n <b>{{ EXPIRE }}</b>",
         "parse_mode": "HTML",
         "reply_markup": {
