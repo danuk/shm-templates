@@ -772,11 +772,10 @@
 }
 
 <% CASE '/list' %>
-{{ hasnotpaidus = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'NOT PAID' } )).size }}
-{{ hasblocked = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'BLOCK' } )).size }}
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
+{{ services = user.services.list_for_api('category', '%') }}
 {{ TEXT = BLOCK }}
 ⭐️ <b>Ваш ID:</b> {{ user.id }} ⭐️
 
@@ -786,31 +785,33 @@
 
 🔑 <b>Ваши текущие ключи:</b>
 {{ END }}
+
+{{ IF services.size > 0 }}
 {
     "sendMessage": {
-        "text": "{{ TEXT.replace('\n','\n') }}\n",
+        "text": "{{ TEXT.replace('\n','\n') }}",
         "reply_markup" : {
             "inline_keyboard": [
-                {{ FOR item IN ref( user.services.list_for_api( 'category', '%' ) ) }}
+                {{ FOR item IN services }}
                 {{ SWITCH item.status }}
-                  {{ CASE 'ACTIVE' }}
-                  {{ icon = '✅' }}
-                  {{ status = 'Работает' }}
-                  {{ CASE 'BLOCK' }}
-                  {{ icon = '❌' }}
-                  {{ status = 'Заблокирована' }}
-                  {{ CASE 'NOT PAID' }}
-                  {{ icon = '💰' }}
-                  {{ status = 'Ожидает оплаты' }}
-                  {{ CASE }}
-                  {{ icon = '⏳' }}
-                  {{ status = 'Обработка' }}
+                    {{ CASE 'ACTIVE' }}
+                        {{ icon = '✅' }}
+                        {{ status = 'Работает' }}
+                    {{ CASE 'BLOCK' }}
+                        {{ icon = '❌' }}
+                        {{ status = 'Заблокирована' }}
+                    {{ CASE 'NOT PAID' }}
+                        {{ icon = '💵' }}
+                        {{ status = 'Ожидает оплаты' }}
+                    {{ CASE }}
+                        {{ icon = '⏳' }}
+                        {{ status = 'Обработка' }}
                 {{ END }}
                 [
                     {
-                        "text": "{{ icon }} {{ status }} - {{ item.name }}. {{ user.full_name }} - ({{ item.user_service_id }})",
+                        "text": "#{{ item.user_service_id }} - {{ item.name }} - {{ icon }} {{ status }}",
                         {{ IF item.status == 'NOT PAID' }}
-                        "callback_data": "/balance {{ item.user_service_id }}"
+                        "callback_data": "/profile {{ item.user_service_id }}"
                         {{ ELSIF item.category != 'vpn-mz-tv' }}
                         "callback_data": "/service {{ item.user_service_id }}"
                         {{ ELSIF item.category == 'vpn-mz-tv' }}
@@ -821,12 +822,8 @@
                 {{ END }}
                 [
                     {
-                        "text": "🛒 Купить новый ключ 🛒",
-                        {{ IF hasnotpaidus > 0 || hasblocked > 0 }}
-                            "callback_data": "/hint"
-                        {{ ELSE }}
-                            "callback_data": "/pricelist"
-                        {{ END }}
+                        "text": "✚ Купить новый ключ",
+                        "callback_data": "/pricelist"
                     }
                 ],
 				[
@@ -837,7 +834,7 @@
                 ],
                 [
                     {
-                        "text": "⇦ Назад в меню ⇦",
+                        "text": "🏠 Главное меню",
                         "callback_data": "/menu"
                     }
                 ]
@@ -845,6 +842,30 @@
         }
     }
 }
+{{ ELSE }}
+{
+    "sendMessage": {
+        "text": "❌ У вас нет активных или неоплаченных ключей.",
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "✚ Купить ключ",
+                        "callback_data": "/pricelist"
+                    }
+                ],
+                [
+                    {
+                        "text": "🏠 Главное меню",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+{{ END }}
+
 
 <% CASE '/hint' %>
 {
@@ -869,9 +890,10 @@
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
-{{ item = us.id(args.0) }}
-{{ 
+{{ # Variables
     us = user.services.list_for_api('usi', args.0);
+
+    # Plugins
     USE date;
 }}
 {{ EXPIRE = BLOCK }}
@@ -946,90 +968,53 @@
         "reply_markup": {
             "inline_keyboard": [
                 {{ IF us.status == 'ACTIVE' }}
-                {{ subscription_url = storage.read('name', 'vpn_mrzb_' _ args.0).subscription_url }}
-                {{ IF us.category.grep('^(vpn-mz-main)').first }}
-                {{ IF subscription_url.grep('^https:').first }}
-                [
-                    {
-                        "text": "🔗 Подключиться",
-                        "web_app": {
-                            "url": "{{ config.api.url }}/shm/v1/template/subscriptions_link?format=html&session_id={{ user.gen_session.id }}&uid={{ user.id }}&us_id={{ args.0 }}"
+                    {{ subscription_url = storage.read('name', 'vpn_mrzb_' _ us.user_service_id).subscription_url }}
+                    {{ IF us.category.grep('^vpn-mz-').first && subscription_url.grep('^https:').first }}
+                        [
+                            {
+                                "text": "🔗 Подключиться",
+                                "web_app": {
+                                    "url": "{{ config.api.url }}/shm/v1/template/subscriptions_link?format=html&session_id={{ user.gen_session.id }}&uid={{ user.id }}&us_id={{ args.0 }}"
+                                }
+                            }
+                        ],
+                        [
+                            {
+                                "text": "🌐 Показать ссылку подписки",
+                                "callback_data": "/show_subscription_link {{ us.user_service_id }}"
+                            }
+                        ],
+                    {{ ELSE }}
+                        [
+                            {
+                                "text": "😢 Ошибка: подключение не найдено",
+                                "callback_data": "/menu"
+                            }
+                        ],
+                    {{ END }}
+                {{ ELSIF us.status == 'NOT PAID' || us.status == 'BLOCK' }}
+                    [
+                        {
+                            "text": "💳 Оплатить",
+                            "callback_data": "/profile {{ us.user_service_id }}"
                         }
-                    }
-                ],
-				[
-                    {
-                        "text": "🔄 Сменить тариф",
-                        "callback_data": "/change {{ args.0 }}"
-                    }
-                ],
-                {{ ELSE }}
-                [
-                    {
-                        "text": "⚠️ ОШИБКА: настройте SSL для Marzban",
-                        "callback_data": "/menu"
-                    }
-                ],
-                {{ END }}
-                {{ ELSE }}
-                [
-                    {
-                        "text": "🗝 Скачать ключ",
-                        "callback_data": "/download_qr {{ args.0 }}"
-                    },
-                    {
-                        "text": "👁 Показать QR код",
-                        "callback_data": "/show_qr {{ args.0 }}"
-                    }
-                ],
-                {{ END }}
-                {{ END }}
-				{{ IF us.next == '-1' }}
-                [
-                    {
-                        "text": "❌ Авто-продление выключено",
-                        "callback_data": "/renewal {{args.0}}"
-                    }
-                ],
-				{{ ELSE }}
-                [
-                    {
-                        "text": "✅ Авто-продление включено",
-                        "callback_data": "/renewal {{args.0}}"
-                    }
-                ],
-                {{ END }}
-                {{ IF us.status == 'NOT PAID' || us.status == 'BLOCK' }}
-                [
-                    {
-                        "text": "💳 Оплатить сейчас",
-                        "callback_data": "/balance {{ user.pays.forecast('blocked', 1).total }}"
-                    }
-                ],
-				[
-                    {
-                        "text": "🔄 Сменить тариф",
-                        "callback_data": "/change {{ args.0 }}"
-                    }
-                ],
-                {{ END }}
-                {{ IF us.status != 'PROGRESS' }}
-                [
-                    {
-                        "text": "🗑 Удалить услугу",
-                        "callback_data": "/delete {{ args.0 }}"
-                    }
-                ],
+                    ],
+                    [
+                        {
+                            "text": "🗑️ Удалить ключ",
+                            "callback_data": "/delete {{ us.user_service_id }}"
+                        }
+                    ],
                 {{ END }}
                 [
                     {
-                        "text": "🔍 Инструкция по VPN",
-                        "callback_data": "/xray"
+                        "text": "♻️ Сменить тариф",
+                        "callback_data": "/change {{ us.user_service_id }}"
                     }
                 ],
                 [
                     {
-                        "text": "🔄 Обновить список",
+                        "text": "🔄 Обновить информацию",
                         "callback_data": "/service {{ args.0 }}"
                     }
                 ],
@@ -1151,9 +1136,6 @@
 }
 
 <% CASE '/pricelist' %>
-{{ hasnotpaidus = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'NOT PAID' } )).size }}
-{{ hasblocked = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'BLOCK' } )).size }}
-
 {{ IF checkNotPaidServices == 1 }}
     {{ notPaid = user.services.list_for_api('filter', { 'status' => 'NOT PAID' }, 'limit', 1) }}
     {{ IF ref(notPaid).size == 1 }}
@@ -1182,11 +1164,7 @@
                 [
                     {
                         "text": "{{ item.name }} - {{ item.cost }} руб/мес.",
-                        {{ IF hasnotpaidus > 0 || hasblocked > 0 }}
-                            "callback_data": "/hint"
-                        {{ ELSE }}
-                            "callback_data": "/serviceorder {{ item.service_id }}"
-                        {{ END }}
+                        "callback_data": "/serviceorder {{ item.service_id }}"
                     }
                 ],
                 {{ END }}
@@ -1200,7 +1178,6 @@
         }
     }
 }
-
 
 <% CASE '/pricelist_android_tv' %>
 {{ hasnotpaidus = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'NOT PAID' } )).size }}
@@ -1265,7 +1242,7 @@
         "service_id": "{{ args.0 }}",
         "check_exists_unpaid": 1,
         "callback_data": "/pocessing",
-        "cb_not_enough_money": "/balance",
+        "cb_not_enough_money": "/profile",
         "error": "ОШИБКА"
     }
 }
@@ -1349,7 +1326,7 @@
                 [
                     {
                         "text": "💳 Оплатить сейчас",
-                        "callback_data": "/balance {{ user.pays.forecast('blocked', 1).total }}"
+                        "callback_data": "/profile {{ user.pays.forecast('blocked', 1).total }}"
                     }
                 ],
                 {{ END }}
