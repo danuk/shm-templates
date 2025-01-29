@@ -981,7 +981,7 @@
                         [
                             {
                                 "text": "🌐 Показать ссылку подписки",
-                                "callback_data": "/show_subscription_link {{ us.user_service_id }}"
+                                "callback_data": "/show_mz_keys {{ us.user_service_id }}"
                             }
                         ],
                     {{ ELSE }}
@@ -1142,7 +1142,7 @@
         {
             "sendAlert": {
                 "errtext": "⭕️ У вас имеется неоплаченный ключ\n🔑 #{{ notPaid.user_service_id }} - {{ notPaid.name }}\nОплатите, либо удалите его для покупки нового.",
-                "redirect": "user:keys:id {{ notPaid.user_service_id }}"
+                "redirect": "/list {{ notPaid.user_service_id }}"
             }
         },
         {{ STOP }}
