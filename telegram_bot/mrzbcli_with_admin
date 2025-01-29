@@ -898,31 +898,28 @@
 {{ us = user.services.list_for_api( 'usi', args.0 ) }}
 {{ EXPIRE = BLOCK }}
     {{ USE date }}
-    {{ now = date.now }}
-    {{ created = date.format(us.created, '%s') }}
-    {{ expire = date.format(us.expire, '%s') }}
-    {{ remaining = expire - now }}
-    {{ IF remaining > 0 }}
-        {{ years = remaining DIV (365 * 24 * 60 * 60) }}
-        {{ remaining = remaining MOD (365 * 24 * 60 * 60) }}
-        {{ months = remaining DIV (30 * 24 * 60 * 60) }}
-        {{ remaining = remaining MOD (30 * 24 * 60 * 60) }}
-        {{ days = remaining DIV (24 * 60 * 60) }}
-        {{ remaining = remaining MOD (24 * 60 * 60) }}
-        {{ hours = remaining DIV (60 * 60) }}
-        {{ remaining = remaining MOD (60 * 60) }}
-        {{ minutes = remaining DIV 60 }}
-        {{ seconds = remaining MOD 60 }}
-        {{ IF years > 0 }}
-            {{ "Осталось " _ years _ " г " _ months _ " мес." }}
-        {{ ELSIF months > 0 }}
-            {{ "Осталось " _ months _ " мес " _ days _ " дн " _ hours _ " ч " _ minutes _ " мин " _ seconds _ " с" }}
+    {{ date_sec = date.now }}
+    {{ expire_sec = date.format(us.expire, '%s') }}
+    {{ days_left = (expire_sec - date_sec) div 86400 }}
+    {{ months = days_left div 30 }}
+    {{ days = days_left % 30 }}
+        {{ IF months == 0 }}
+            {{ IF days == 1 }} 1 день
+            {{ ELSIF days == 2 or days == 3 or days == 4 }} {{ days }} дня
+            {{ ELSE }} {{ days }} дней
+            {{ END }}
         {{ ELSE }}
-            {{ "Осталось " _ days _ " дн " _ hours _ " ч " _ minutes _ " мин " _ seconds _ " с" }}
+            {{ IF months == 1 }}1 месяц - 
+            {{ ELSIF months == 2 or months == 3 or months == 4 }}{{ months }} месяца - 
+            {{ ELSE }}{{ months }} месяцев - 
+            {{ END }}
+            {{ IF days > 0 }}
+                {{ IF days == 1 }} 1 день
+                {{ ELSIF days == 2 or days == 3 or days == 4 }} {{ days }} дня
+                {{ ELSE }} {{ days }} дней
+                {{ END }}
+            {{ END }}
         {{ END }}
-    {{ ELSE }}
-        Услуга истекла.
-    {{ END }}
 {{ END }}
 {{ sub_url = storage.read('name','vpn_mrzb_' _ args.0 ).subscription_url }}
 {{ bytes = http.get("$sub_url/info").used_traffic }}
