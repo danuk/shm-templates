@@ -205,101 +205,88 @@
 }
 
 <% CASE ['/start', '/menu', '🌍 Главное Меню', '🔄 Обновить'] %>
-
 {{   # variables
-    messageType = (cmd == '/menu') ? 1 : 0;
+     messageType = (cmd == '/menu') ? 1 : 0;
 }}
-
 {
     "deleteMessage": { 
         "message_id": {{ message.message_id }} 
-    },
-}
-
+    }
+},
 {{ user_services = ref(user.services.list_for_api('filter', { 'category' => '%', status => 'ACTIVE' } )) }}
-
 {{ TEXT = BLOCK }}
-🚀 Добро пожаловать в <b>{{ config.company.name }}</b>!  
-<i>
-✨ Откройте для себя удобство и простоту с нашим ботом — вашим верным помощником!
+🚀 Добро пожаловать в <b>{{ config.company.name }}</b>!
+<i>✨ Откройте для себя удобство и простоту с нашим ботом — вашим верным помощником!
 
-🛠 Функционал:  
-🔑 Управление доступами за пару кликов.  
-💳 Удобные платежи: поддержка СБП и T-PAY.  
-📊 Статистика и отчёты в удобном формате.  
-🔄 Смена тарифов без админа.  
+🛠 Функционал:
+🔑 Управление доступами за пару кликов.
+💳 Удобные платежи: поддержка СБП и T-PAY.
+📊 Статистика и отчёты в удобном формате.
+🔄 Смена тарифов без админа.
 📡 Настройка VPN: TLS и др.
 
-💡 Почему стоит попробовать?  
-🕒 Экономьте время — всё под рукой.  
-🔒 Ваши данные в безопасности.  
-📱 Доступ с любого устройства.
-</i>
+💡 Почему стоит попробовать?
+🕒 Экономьте время — всё под рукой.
+🔒 Ваши данные в безопасности.
+📱 Доступ с любого устройства.</i>
 {{ END }}
-
 {{ buttons = BLOCK }}
-    {{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
-    [
-        {
-            "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); menuRole }}",
-            "callback_data": "admin:menu"
-        }
-    ],
-    {{ END }}
-
-    [
-        {
-            "text": "🪪 Профиль: {{ user.balance }} ₽",
-            "callback_data": "/profile"
-        },
-        {
-            "text": "➕ Пополнить баланс",
-            "web_app": {
-                "url": "{{ config.api.url }}/shm/v1/public/tg_payments_webapp?format=html&user_id={{ user.id }}"
-            }
-        }
-    ],
-
-    [
-        {
-            "text": "🛒 Купить",
-            "callback_data": "/pricelist"
-        },
-        {
-            "text": "🔑 Мои ключи",
-            "callback_data": "/list"
-        }
-    ],
-
-    [
-        {
-            "text": "🤝 Реферальная программа",
-            "callback_data": "/referrals"
-        },
-        {
-            "text": "📖 Помощь и поддержка",
-            "callback_data": "/help"
-        }
-    ],
-
-    [
-        {
-            "text": "💚 Статус серверов",
-            "web_app": {
-                "url": "{{ config.uptime.url }}"
-            }
-        }
-    ],
-
-    [
-        {
-            "text": "🔄 Обновить меню",
-            "callback_data": "/menu"
-        }
-    ]
+                {{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
+                [
+                    {
+                        "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); menuRole }}",
+                        "callback_data": "admin:menu"
+                    }
+                ],
+                {{ END }}
+                [
+                    {
+                        "text": "🪪 Профиль: {{ user.balance }} ₽",
+                        "callback_data": "/profile"
+                    },
+                    {
+                        "text": "➕ Пополнить баланс",
+                        "web_app": {
+                            "url": "{{ config.api.url }}/shm/v1/public/tg_payments_webapp?format=html&user_id={{ user.id }}"
+                        }
+                    }
+                ],
+                [
+                    {
+                        "text": "🛒 Купить",
+                        "callback_data": "/pricelist"
+                    },
+                    {
+                        "text": "🔑 Мои ключи",
+                        "callback_data": "/list"
+                    }
+                ],
+                [
+                    {
+                        "text": "🤝 Реферальная программа",
+                        "callback_data": "/referrals"
+                    },
+                    {
+                        "text": "📖 Помощь и поддержка",
+                        "callback_data": "/help"
+                    }
+                ],
+                [
+                    {
+                        "text": "💚 Статус серверов",
+                        "web_app": {
+                            "url": "{{ config.uptime.url }}"
+                        }
+                    }
+                ],
+                [
+                    {
+                        "text": "🔄 Обновить меню",
+                        "callback_data": "/menu"
+                    }
+                ]
 {{ END }}
 {{ process send text=TEXT buttons=buttons }}
-
 
 <% CASE '/profile' %>
 {{
@@ -551,12 +538,10 @@
 
 <% CASE '/pays' %>
 {
-    "deleteMessage": { "message_id": {{ message.message_id }} }
-},
-{{ TEXT = BLOCK }}
-☰ <b>История платежей</b>
-{{ END }
-{{ buttons = BLOCK }}
+    "sendMessage": {
+        "text": "☰ <b>История платежей</b>",
+        "reply_markup": {
+            "inline_keyboard": [
                 {{
                     limit = 7;
                     offset = args.0 || 0;
@@ -565,13 +550,9 @@
                 }}
                 {{ IF pays.size > 0 }}
                     {{ FOR item in pays }}
-                    {{ TEXT = BLOCK }}
-					  📅 Дата: {{ USE date }}{{ date.format(item.date, '%d.%m.%Y') }}
-					  💰 Сумма: {{ item.money }} ₽
-                    {{ END }}
                     [
                         {
-                            "text": "{{ TEXT.replace('\n',' ') }}",
+                            "text": "📅 Дата: {{ item.date }} | 💰 {{ item.money }} руб.",
                             "callback_data": "/checkpay {{ item.id }}"
                         }
                     ],
@@ -606,8 +587,10 @@
                         "callback_data": "/menu"
                     }
                 ]
-{{ END }}
-{{ process send text=TEXT buttons=buttons }}
+            ]
+        }
+    }
+}
 
 <% CASE '/checkpay' %>
 {
@@ -647,28 +630,32 @@
 <blockquote> 🆔 <b>ID в системе:</b> {{ payData.id }}
 📊 <b>Статус:</b> {{ payData.status }}
 {{ IF payCard }}
-💳 Тип карты: {{ payCard.card_type }}
-🔢 Номер карты: {{ payCard.first6 }}******{{ payCard.last4 }}
-🏦 Банк: {{ payCard.issuer_name }}
-🌍 Страна банка: {{ payCard.issuer_country }}
-📅 Срок действия: {{ payCard.expiry_month }}/{{ payCard.expiry_year }}
+Тип карты: {{ payCard.card_type }}
+Номер карты: {{ payCard.first6 }}******{{ payCard.last4 }}
+Банк: {{ payCard.issuer_name }}
+Страна банка: {{ payCard.issuer_country }}
+Срок действия: {{ payCard.expiry_month }}/{{ payCard.expiry_year }}
 {{ END }}
 {{ IF payMethod.type == 'sbp' }}
-🏦 Тип оплаты: СБП
-🔢 Номер операции в СБП: {{ payMethod.sbp_operation_id }}
-🏦 Бик Банка: {{ payMethod.payer_bank_details.bic }}
+Тип оплаты: СБП
+Номер операции в СБП: {{ payMethod.sbp_operation_id }}
+Бик Банка: {{ payMethod.payer_bank_details.bic }}
 {{ END }}
 
 {{ IF payMethod.title.match('YooMoney') }}
-💰 Кошелек YooMoney: {{ payMethod.title }}
-🆔 ID кошелька: {{ payMethod.account_number }}
+Кошелек YooMoney: {{ payMethod.title }}
+ID кошелька: {{ payMethod.account_number }}
 {{ END }}
 </blockquote>
 {{ END }}
 
 {{ END }}
 
-{{ buttons = BLOCK }}
+{
+    "sendMessage": {
+        "text": "{{ TEXT.replace('\n','\n') }}\n",
+        "reply_markup": {
+            "inline_keyboard": [
                 [
                     {
                         "text": "🔄 Обновить",
@@ -681,8 +668,10 @@
                         "callback_data": "/pays"
                     }
                 ]
-{{ END }}
-{{ process send text=TEXT buttons=buttons }}
+            ]
+        }
+    }
+}
 
 <% CASE '/list' %>
 {{ item = us.id(args.0) }}
