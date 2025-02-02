@@ -4475,8 +4475,10 @@ ID платежа: {{ PaymentID }}
             "inline_keyboard": [
                 [
                     {
-                        "text": "Подтвердить оплату",
-                        "url": "{{ config.api.url }}/shm/v1/public/HTML_payment?uid={{ user.id }}&telegram={{ user.settings.telegram.login }}&services={{ con }}&cost={{ AmmountToPay }}&serviceNumber={{ item.user_service_id }}&serviceStatus={{ encoded_status }}&PaymentID={{ PaymentID }}&format=html"
+                        "text": "✅ Подтвердить оплату",
+                        "web_app": {
+                            "url": "{{ config.api.url }}/shm/v1/public/HTML_payment?uid={{ user.id }}&telegram={{ user.settings.telegram.login }}&services={{ con }}&cost={{ AmmountToPay }}&serviceNumber={{ item.user_service_id }}&serviceStatus={{ encoded_status }}&PaymentID={{ PaymentID }}&format=html"
+                        }
                     }
                 ]
             ]
