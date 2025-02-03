@@ -276,6 +276,12 @@
                     }
                 ],
                 {{ END }}
+		[
+					{
+                        "text": "📜 Отправить квитанцию",
+                        "callback_data": "/topup"
+                    }
+                ],
                 [
                     {
                         "text": "💳 Пополнить баланс",
@@ -303,6 +309,45 @@
                 ]
 {{ END }}
 {{ process send text=TEXT buttons=buttons }}
+
+<% CASE '/topup' %>
+{
+    "sendMessage": {
+        "message_id": {{ message.message_id }},
+        "parse_mode": "HTML",
+        "disable_web_page_preview": true,
+        "text": "Для пополнения баланса, пожалуйста, воспользуйтесь одним из предложенных способов оплаты:\n\n<a href=\"https://www.tinkoff.ru/rm/\"><b>Тинькофф</b></a>\n\nЕсли вы используете другой банк, выполните перевод по номеру телефона:\n<code>+79789028077</code> Тинькофф (Павел П.)\n\nПосле оплаты, сохраните скриншот платежа и нажмите кнопку <b>\"Я оплатил\"</b>.\n\nНеобходимо оплатить: <b>{{ user.pays.forecast('blocked',1).total }}</b> рублей.",
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "Я оплатил",
+                        "callback_data": "/sendreceipt {{ amount }}"
+                    }
+                ],
+                [
+                    {
+                        "text": "Назад",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
+}
+<% CASE '/sendreceipt' %>
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "sendMessage": {
+        "text": "<b>Отправьте квитанцию об оплате</b>",
+        "parse_mode": "HTML",
+        "reply_markup": {
+            "force_reply": true
+        }
+    }
+}
 
 <% CASE '/manage_services' %>
 {{ active_services = ref(user.services.list_for_api('filter', { 'status' => 'ACTIVE' })) }}
@@ -3005,11 +3050,128 @@ ID начисления: {{ data.id }}
     ]
 {{ END }}
 {{ notification(TEXT=TEXT, BUTTONS=BUTTONS) }}
+
+{{ ELSIF message.document OR message.photo }}
+{
+    "forwardMessage": {
+        "chat_id": {{ config.shmcustomlab.payment_group }},
+        "from_chat_id": {{ message.chat.id }},
+        "message_id": {{ message.message_id }}
+    }
+},
+{{ TEXT = BLOCK }}
+✅ Спасибо, что выбрали {{ config.shmcustomlab.service_name }}
+
+⏳ В ближайшее время ваш платеж будет проверен.
+📩 Как только проверка завершится, вы получите уведомление от бота.
+
+Если хочешь другие эмодзи или изменения, скажи! 🚀
+{{ END }}
+{{ AmmountToPay = user.pays.forecast('blocked',1).total }}
+{
+    "deleteMessage": { "message_id": {{ message.message_id }} }
+},
+{
+    "deleteMessage": { "message_id": {{ message.message_id - 1 }} }
+},
+{
+    "sendMessage": {
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "reply_markup" : {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "Главное меню",
+                        "callback_data": "/menu"
+                    }
+                ] 
+            ]
+        }
+    }
+},
+{{ PERL }}
+    use Core::Utils qw(
+        passgen
+    );
+    my $passgen = passgen(10);
+    $stash->set('pass', $passgen);
+{{ END }}
+{{ PaymentID = pass }}
+{{ ret = user.set_settings({ $PaymentID => 0 }) }}
+{{ item = ref(user.services.list_for_api( 'category', 'vpn-%' )).first }}
+{{ con = ref(user.services.list_for_api( 'category', 'vpn-mz%' )).size }}
+                {{ FOR env IN ref( user.services.list_for_api( 'category', '%' ) ) }}
+                {{ SWITCH item.status }}
+                  {{ CASE 'ACTIVE' }}
+                  {{ icon = '✅ ' }}
+                  {{ status = 'Активная' }}
+                  {{ CASE 'BLOCK' }}
+                  {{ icon = '❌ ' }}
+                  {{ status = 'Заблокирована' }}
+                  {{ CASE 'NOT PAID' }}
+                  {{ icon = '💰 ' }}
+                  {{ status = 'Ожидает оплаты' }}
+                  {{ CASE }}
+                  {{ icon = '⏳ ' }}
+                  {{ status = 'Обработка' }}
+                {{ END }}
+                {{ END }}
+{{ TEXT = BLOCK }}
+💰 Поступил запрос на прием платежа
+
+👤 Пользователь: ({{ user.id }})
+📛 Имя: {{ user.full_name }}
+💬 Телеграм: @{{ user.settings.telegram.login }}
+📦 Количество услуг: {{ con }}
+
+🆔 ID платежа: {{ PaymentID }}
+💵 Сумма к оплате: {{ AmmountToPay }}
+
+🔎 Проверьте квитанцию и подтвердите оплату с помощью кнопки внизу.
+✏️ При необходимости скорректируйте сумму платежа перед подтверждением.
+{{ END }}
+{{ encoded_status = status FILTER uri }}
+{{ encoded_name = user.full_name FILTER uri }}
+{{ encoded_plan = item.name FILTER uri }}
+{
+    "sendMessage": {
+        "chat_id": {{ config.shmcustomlab.payment_group }},
+        "text": "{{ TEXT.replace('\n','\n') }}",
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "💳 Подтвердить оплату",
+                        "url": "{{ config.api.url }}/shm/v1/public/HTML_payment?uid={{ user.id }}&telegram={{ user.settings.telegram.login }}&services={{ con }}&cost={{ AmmountToPay }}&serviceNumber={{ item.user_service_id }}&serviceStatus={{ encoded_status }}&PaymentID={{ PaymentID }}&format=html"
+                    }
+                ]
+            ]
+        }
+    }
+}
 {{ ELSE }}
-    {{ 
-        ret = user.set_settings({'bot' => {'switchUser' => ''} });
-        ret = user.set_settings({'state' => ''});
-        delete(msgID=[message.message_id]);
-    }}
+{
+    "forwardMessage": {
+        "chat_id": {{ config.shmcustomlab.admin_group }},
+        "from_chat_id": {{ message.chat.id }},
+        "message_id": {{ message.message_id }}
+    }
+},
+{
+    "sendMessage": {
+        "text": "❌ ОШИБКА! Не понимаю, что вы мне прислали. 📩 Если у вас есть вопросы, пишите в чат поддержки.",
+        "reply_to_message_id": {{ message.message_id }},
+        "reply_markup": {
+            "inline_keyboard": [
+                [
+                    {
+                        "text": "💡 Чат поддержки",
+                        "url": "https://t.me/{{ config.shmcustomlab.support }}"
+                    }
+                ]
+            ]
+        }
+    }
+}
 {{ END }}
 <% END %>
