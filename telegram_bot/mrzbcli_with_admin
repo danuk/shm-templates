@@ -326,16 +326,18 @@
                     }
                 ],
                 {{ END }}
+				[
+					{
+                        "text": "📜 Отправить квитанцию",
+                        "callback_data": "/topup"
+                    }
+                ],
                 [
                     {
                         "text": "💳 Пополнить баланс",
                         "web_app": {
                             "url": "{{ config.api.url }}/shm/v1/public/tg_payments_webapp?format=html&user_id={{ user.id }}"
                         }
-                    },
-					{
-                        "text": "📜 Отправить квитанцию",
-                        "callback_data": "/topup"
                     },
                     {
                         "text": "📜 История операций",
@@ -435,106 +437,6 @@
                     {
                         "text": "🏠 Вернуться в меню",
                         "callback_data": "/menu"
-                    }
-                ]
-{{ END }}
-{{ process send text=TEXT buttons=buttons }}
-
-
-<% CASE '/balance' %>
-{
-    "deleteMessage": { "message_id": {{ message.message_id }} }
-},
-{{ userlogs = user.services.list_for_api('usi', {}) }}
-{{
-    limit = 5;
-    offset = args.1 || 0;
-    userData = user.id(args.0);
-    payData = userPay.comment.object;
-    payMethod = payData.payment_method;
-    payCard = payMethod.card;
-    userPays = ref(userData.pays.list_for_api('limit', limit, 'offset', offset ));
-}}
-{{ last_payment = user.payments.last() }}
-{{ forecast = user.pays.forecast }}
-{{ user_services = ref(user.services.list_for_api('category', '%')) }}
-{{ blocked_services = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'BLOCK' })) }}
-{{ expired_services = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'NOT PAID' })) }}
-{{ active_services = ref(user.services.list_for_api('category', '%', 'filter', { 'status' => 'ACTIVE' })) }}
-{{ USE date }}
-{{ TEXT = BLOCK }}
-💰 <b>Баланс:</b> {{ user.balance }} ₽  
-🎁 <b>Бонусы:</b> {{ user.get_bonus }} ₽  
-🔖 <b>Скидка:</b> {{ user.discount }}%  
-👥 <b>Приглашено друзей:</b> {{ user.referrals_count }}  
-💳 <b>Общий доход от рефералов:</b> {{ user.get_bonus }} ₽  
-
-⏳ <b>Следующее продление:</b> 
-{{ IF userlogs.expire }} 
-  <i>{{ date.format(userlogs.expire, '%H:%M %d.%m.%Y') }}</i> 
-{{ ELSE }} 
-  <i>неизвестно</i> 
-{{ END }}  
-
-💵 <b>Ожидаемая оплата:</b> <i>{{ forecast.total }} ₽</i>  
-
-<b>🔒 Заблокированные сервисы:</b>
-{{ IF blocked_services.size > 0 }}
-    {{ FOR service IN blocked_services }}
-    - {{ service.name }}
-    {{ END }}
-{{ ELSE }}
-    Нет заблокированных сервисов.
-{{ END }}
-
-
-<b>❗ Неоплаченные сервисы:</b>
-{{ IF expired_services.size > 0 }}
-    {{ FOR service IN expired_services }}
-    - {{ service.name }}
-    {{ END }}
-{{ ELSE }}
-    Нет неоплаченных сервисов.
-{{ END }}
-
-<b>✅ Активные услуги:</b>
-{{ IF active_services.size > 0 }}
-    {{ FOR service IN active_services }}
-    - {{ service.name }} (до {{ date.format(service.expire, '%H:%M %d.%m.%Y') }})
-    {{ END }}
-{{ ELSE }}
-    Нет активных услуг.
-{{ END }}
-
-💵 <b>Необходимо оплатить:</b> <b>{{ user.pays.forecast('blocked',1).total }} ₽</b>
-{{ END }}
-
-{{ buttons = BLOCK }}
-                [
-                    {
-                        "text": "✚ Пополнить баланс",
-                        "web_app": {
-                            "url": "{{ config.api.url }}/shm/v1/public/tg_payments_webapp?format=html&user_id={{ user.id }}"
-                        }
-                    }
-                ],
-				 [{ "text": "🏷️ Ввести промокод", "callback_data": "promocode" }, { "text": "🏷️ Web", "web_app": { "url": "{{ config.api.url }}/shm/v1/public/promo?format=html&user_id={{ user.id }}" }}],
-                [
-                    {
-                        "text": "☰ История платежей",
-                        "callback_data": "/pays {{ userData.user_id }} {{ offset - limit }}"
-                    }
-                ],
-                [
-                    {
-                        "text": "🔄 Обновить",
-                        "callback_data": "/balance"
-                    }
-                ],
-                [
-                    {
-                        "text": "⇦ Назад",
-                        "callback_data": "{{ mainMenuCmd }}"
                     }
                 ]
 {{ END }}
@@ -4400,9 +4302,12 @@ ID начисления: {{ data.id }}
     }
 },
 {{ TEXT = BLOCK }}
-<b>Спасибо, что выбрали {{ config.shmcustomlab.service_name }}</b>
+✅ Спасибо, что выбрали {{ config.shmcustomlab.service_name }}
 
-В ближайшее время ваш платеж будет проверен. Как только проверка завершится, вы получите уведомление от бота
+⏳ В ближайшее время ваш платеж будет проверен.
+📩 Как только проверка завершится, вы получите уведомление от бота.
+
+Если хочешь другие эмодзи или изменения, скажи! 🚀
 {{ END }}
 {{ AmmountToPay = user.pays.forecast('blocked',1).total }}
 {
@@ -4454,15 +4359,18 @@ ID начисления: {{ data.id }}
                 {{ END }}
                 {{ END }}
 {{ TEXT = BLOCK }}
-<b>Поступил запрос на прием платежа</b>
-Пользователь: ({{ user.id }})
-Имя: {{ user.full_name }}, телеграм: @{{ user.settings.telegram.login }}
-Колличество услуг у него: {{ con }}
-ID платежа: {{ PaymentID }}
-Сумма к оплате {{ AmmountToPay }}
+💰 Поступил запрос на прием платежа
 
-Проверьте квитанцию и подтвердите оплату с помощью кнопки внизу
-При необходимости скорректируйте сумму платежа перед подтверждением
+👤 Пользователь: ({{ user.id }})
+📛 Имя: {{ user.full_name }}
+💬 Телеграм: @{{ user.settings.telegram.login }}
+📦 Количество услуг: {{ con }}
+
+🆔 ID платежа: {{ PaymentID }}
+💵 Сумма к оплате: {{ AmmountToPay }}
+
+🔎 Проверьте квитанцию и подтвердите оплату с помощью кнопки внизу.
+✏️ При необходимости скорректируйте сумму платежа перед подтверждением.
 {{ END }}
 {{ encoded_status = status FILTER uri }}
 {{ encoded_name = user.full_name FILTER uri }}
@@ -4475,10 +4383,8 @@ ID платежа: {{ PaymentID }}
             "inline_keyboard": [
                 [
                     {
-                        "text": "✅ Подтвердить оплату",
-                        "web_app": {
-                            "url": "{{ config.api.url }}/shm/v1/public/HTML_payment?uid={{ user.id }}&telegram={{ user.settings.telegram.login }}&services={{ con }}&cost={{ AmmountToPay }}&serviceNumber={{ item.user_service_id }}&serviceStatus={{ encoded_status }}&PaymentID={{ PaymentID }}&format=html"
-                        }
+                        "text": "💳 Подтвердить оплату",
+                        "url": "{{ config.api.url }}/shm/v1/public/HTML_payment?uid={{ user.id }}&telegram={{ user.settings.telegram.login }}&services={{ con }}&cost={{ AmmountToPay }}&serviceNumber={{ item.user_service_id }}&serviceStatus={{ encoded_status }}&PaymentID={{ PaymentID }}&format=html"
                     }
                 ]
             ]
@@ -4495,7 +4401,7 @@ ID платежа: {{ PaymentID }}
 },
 {
     "sendMessage": {
-        "text": "ОШИБКА! Не понимаю, что вы мне прислали. Если у Вас есть вопросы, пишите в чат поддержки",
+        "text": "❌ ОШИБКА! Не понимаю, что вы мне прислали. 📩 Если у вас есть вопросы, пишите в чат поддержки.",
         "reply_to_message_id": {{ message.message_id }},
         "reply_markup": {
             "inline_keyboard": [
