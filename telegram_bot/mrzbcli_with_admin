@@ -31,8 +31,6 @@
     storageCheckNotPaidServices = user.id(1).storage.read('name', 'bot_configuration').checkNotPaidServices;
 }}
 
-<%# Check for admin rights from user settings %>
-<%# for use admin menu, set role = "admin" or "moderator" %>
 {{ BLOCK checkAdminRights }}
     {{ IF user.settings.role != "admin" && user.settings.role != "moderator" }}
         {{ sendAlert(code=403, errtext='⭕️ Раздел закрыт', redirect=mainMenuCmd) }}
@@ -40,7 +38,6 @@
 {{ END }}
 
 
-<%# Check for moderator rights %>
 {{ MACRO checkModeratorRights BLOCK }}
     {{ IF user.settings.role == "moderator" && user.settings.moderate.$right != 1 }}
         {{ sendAlert(code=403, errtext="⭕️ Доступ запрещён!", redirect=mainMenuCmd) }}
@@ -124,15 +121,6 @@
 },
 {{ END }}
 
-{{ MACRO cancelRegistration BLOCK }}
-{
-    "sendMessage": {
-        "text": "❌ Вы отменили регистрацию. Если хотите начать заново, нажмите /start.",
-        "parse_mode": "HTML"
-    }
-}
-{{ STOP }}
-{{ END }}
 {{ BLOCK send }}
 {
     "sendPhoto": {
@@ -289,6 +277,11 @@
 {{ process send text=TEXT buttons=buttons }}
 
 <% CASE '/profile' %>
+{
+    "deleteMessage": { 
+        "message_id": {{ message.message_id }} 
+    }
+},
 {{
     limit = 5;
     offset = args.1 || 0;
@@ -318,49 +311,43 @@
 {{ END }}
 
 {{ buttons = BLOCK }}
-				{{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
-                [
-                    {
-                        "text": "👨‍💻 Меню {{ menuRole = (user.settings.role == 'admin' ? 'Администратора' : 'Модератора'); menuRole; }}",
-                        "callback_data": "admin:menu"
-                    }
-                ],
-                {{ END }}
-				[
-					{
-                        "text": "📜 Отправить квитанцию",
-                        "callback_data": "/topup"
-                    }
-                ],
-                [
-                    {
-                        "text": "💳 Пополнить баланс",
-                        "web_app": {
-                            "url": "{{ config.api.url }}/shm/v1/public/tg_payments_webapp?format=html&user_id={{ user.id }}"
-                        }
-                    },
-                    {
-                        "text": "📜 История операций",
-                        "callback_data": "/pays {{ userData.id }} {{ offset - limit }}"
-                    }
-                ],
-        [{ "text": "🏷️ Ввести промокод", "callback_data": "promocode" }, { "text": "🏷️ Web", "web_app": { "url": "{{ config.api.url }}/shm/v1/public/promo?format=html&user_id={{ user.id }}" }}],
-                [
-                    {
-                        "text": "🚀 Управление услугами",
-                        "callback_data": "/manage_services"
-                    }
-                ],
-                [
-                    {
-                        "text": "👨‍💻 Меню",
-                        "callback_data": "/menu"
-                    }
-                ]
+			 {{ IF user.settings.role == 'moderator' || user.settings.role == 'admin' }}
+    [
+        {
+            "text": "👨‍💻 Меню {{ user.settings.role == 'admin' ? 'Администратора' : 'Модератора' }}",
+            "callback_data": "admin:menu"
+        }
+    ],
+    {{ END }}
+    [
+        { "text": "📜 Отправить квитанцию", "callback_data": "/topup" }
+    ],
+    [
+        {
+            "text": "💳 Пополнить баланс",
+            "web_app": { "url": "{{ config.api.url }}/shm/v1/public/tg_payments_webapp?format=html&user_id={{ user.id }}" }
+        },
+        { "text": "📜 История операций", "callback_data": "/pays {{ userData.id }} {{ offset - limit }}" }
+    ],
+    [
+        { "text": "🏷️ Ввести промокод", "callback_data": "promocode" },
+        { "text": "🏷️ Web", "web_app": { "url": "{{ config.api.url }}/shm/v1/public/promo?format=html&user_id={{ user.id }}" }}
+    ],
+    [
+        { "text": "🚀 Управление услугами", "callback_data": "/manage_services" }
+    ],
+    [
+        { "text": "👨‍💻 Меню", "callback_data": "/menu" }
+    ]
 {{ END }}
 {{ process send text=TEXT buttons=buttons }}
 
 <% CASE '/manage_services' %>
+{
+    "deleteMessage": { 
+        "message_id": {{ message.message_id }} 
+    }
+},
 {{ active_services = ref(user.services.list_for_api('filter', { 'status' => 'ACTIVE' })) }}
 {{ expired_services = ref(user.services.list_for_api('filter', { 'status' => 'NOT PAID' })) }}
 {{ # Variables
@@ -398,31 +385,6 @@
 {{ END }}
 
 {{ buttons = BLOCK }}
-                {{ IF active_services.size > 0 || expired_services.size > 0 }}
-                {{
-                    limit = 1;
-                    offset = args.0 || 0;
-                    offset = (offset < 0) ? 0 : offset;
-                    active_services = ref(user.services.list_for_api('filter', { 'status' => 'ACTIVE' }, 'limit', limit, 'offset', offset));
-                    expired_services = ref(user.services.list_for_api('filter', { 'status' => 'NOT PAID' }, 'limit', limit, 'offset', offset));
-                }}
-                {{ IF offset > 0 || active_services.size == limit || expired_services.size == limit }}
-                [
-                    {{ IF offset > 0 }}
-                    {
-                        "text": "⬅️ Назад",
-                        "callback_data": "/manage_services {{ offset - limit }}"
-                    },
-                    {{ END }}
-                    {{ IF active_services.size == limit || expired_services.size == limit }}
-                    {
-                        "text": "➡️ Далее",
-                        "callback_data": "/manage_services {{ offset + limit }}"
-                    }
-                    {{ END }}
-                ],
-                {{ END }}
-                {{ END }}
                 [
                     {
                         "text": "🛒 Купить услугу",
@@ -443,6 +405,11 @@
 {{ process send text=TEXT buttons=buttons }}
 
 <% CASE '/pays' %>
+{
+    "deleteMessage": { 
+        "message_id": {{ message.message_id }} 
+    }
+},
 {
     "sendMessage": {
         "text": "☰ <b>История платежей</b>",
@@ -580,11 +547,9 @@ ID кошелька: {{ payMethod.account_number }}
 }
 
 <% CASE '/list' %>
-{{ item = us.id(args.0) }}
 {
     "deleteMessage": { "message_id": {{ message.message_id }} }
 },
-{{ services = user.services.list_for_api('category', '%') }}
 {{ TEXT = BLOCK }}
 ⭐️ <b>Ваш ID:</b> {{ user.id }} ⭐️
 
@@ -594,47 +559,42 @@ ID кошелька: {{ payMethod.account_number }}
 
 🔑 <b>Ваши текущие ключи:</b>
 {{ END }}
-
-{{ IF services.size > 0 }}
 {
     "sendMessage": {
         "text": "{{ TEXT.replace('\n','\n') }}",
         "reply_markup" : {
             "inline_keyboard": [
-                {{ FOR item IN services }}
+                {{ FOR item IN ref( user.services.list_for_api( 'category', '%' ) ) }}
                 {{ SWITCH item.status }}
-                    {{ CASE 'ACTIVE' }}
-                        {{ icon = '✅' }}
-                        {{ status = 'Работает' }}
-                    {{ CASE 'BLOCK' }}
-                        {{ icon = '❌' }}
-                        {{ status = 'Заблокирована' }}
-                    {{ CASE 'NOT PAID' }}
-                        {{ icon = '💵' }}
-                        {{ status = 'Ожидает оплаты' }}
-                    {{ CASE }}
-                        {{ icon = '⏳' }}
-                        {{ status = 'Обработка' }}
+                  {{ CASE 'ACTIVE' }}
+                  {{ icon = '✅' }}
+                  {{ status = 'Работает' }}
+                  {{ CASE 'BLOCK' }}
+                  {{ icon = '❌' }}
+                  {{ status = 'Заблокирована' }}
+                  {{ CASE 'NOT PAID' }}
+                  {{ icon = '💰' }}
+                  {{ status = 'Ожидает оплаты' }}
+                  {{ CASE }}
+                  {{ icon = '⏳' }}
+                  {{ status = 'Обработка' }}
                 {{ END }}
-                [
-                    {
-                        "text": "#{{ item.user_service_id }} - {{ item.name }} - {{ icon }} {{ status }}",
-                        {{ IF item.status == 'NOT PAID' }}
-                        "callback_data": "/service {{ item.user_service_id }}"
-                        {{ ELSIF item.category != 'vpn-mz-tv' }}
-                        "callback_data": "/service {{ item.user_service_id }}"
-                        {{ ELSIF item.category == 'vpn-mz-tv' }}
-                        "callback_data": "/setup_android {{ item.user_service_id }}"
-                        {{ END }}
-                    }
-                ],
-                {{ END }}
-                [
-                    {
-                        "text": "✚ Купить новый ключ",
-                        "callback_data": "/pricelist"
-                    }
-                ],
+					[
+						{
+							"text": "#{{ item.user_service_id }} - {{ item.name }} - {{ icon }} {{ status }}",
+							"callback_data": 
+							{{ IF item.status == 'NOT PAID' }}
+								"/service {{ item.user_service_id }}"
+							{{ ELSE }}
+								{{ IF item.category == 'vpn-mz-tv' }}
+									"/setup_android {{ item.user_service_id }}"
+								{{ ELSE }}
+									"/service {{ item.user_service_id }}"
+								{{ END }}
+							{{ END }}
+						}
+					],
+					{{ END }}
 				[
                     {
                         "text": "🔄 Обновить список 🔄",
@@ -651,30 +611,6 @@ ID кошелька: {{ payMethod.account_number }}
         }
     }
 }
-{{ ELSE }}
-{
-    "sendMessage": {
-        "text": "❌ У вас нет активных или неоплаченных ключей.",
-        "reply_markup": {
-            "inline_keyboard": [
-                [
-                    {
-                        "text": "✚ Купить ключ",
-                        "callback_data": "/pricelist"
-                    }
-                ],
-                [
-                    {
-                        "text": "🏠 Главное меню",
-                        "callback_data": "/menu"
-                    }
-                ]
-            ]
-        }
-    }
-}
-{{ END }}
-
 
 <% CASE '/hint' %>
 {
@@ -2334,35 +2270,119 @@ ID кошелька: {{ payMethod.account_number }}
     }
 }
 
-<% CASE '/topup' %>
+<% CASE '/status'%>
+{{ kuma = http.get('https://uptime.mrzbcli.ru/api/push/figbobVrIK?status=up&msg=OK&ping=') }}
+
+<% CASE '/reminder' %>
 {{ TEXT = BLOCK }}
-Для пополнения баланса, пожалуйста, воспользуйтесь одним из предложенных способов оплаты:
-<a href=\"https://www.tinkoff.ru/rm/\"><b>Тинькофф</b></a>
+Завершите настройку {{ config.shmcustomlab.service_name }}!
 
-Если вы используете другой банк, выполните перевод по номеру телефона:
-<code>+79789028077</code> Тинькофф (Павел П.)
+Мы заметили, что вы еще не активировали ваш пробный ключ, а время не ждет! 🙂
 
-После оплаты, сохраните скриншот платежа и нажмите кнопку <b>\"Я оплатил\"</b>.
+Нажмите кнопку <code>Настроить подключение</code> и выполните два простых шага чтобы завершить настройку
 
-Необходимо оплатить: <b>{{ user.pays.forecast('blocked',1).total }}</b> рублей.
+Если у вас возникли сложности или есть вопросы - напишите в <b>Поддержку</b>
 {{ END }}
+{{ subscription_url = storage.read('name','vpn_mrzb_' _ args.0 ).subscription_url }}
 {
-    "editMessageText": {
-        "message_id": {{ message.message_id }},
-        "parse_mode": "HTML",
-        "disable_web_page_preview": "True",
-        "text": "{{ TEXT.replace('\n','\n') }}",
-        "reply_markup" : {
-            "inline_keyboard": [
+    "sendMessage": {
+                "parse_mode": "HTML",
+                "text": "{{ TEXT.replace('\n','\n') }}",
+                "reply_markup" : {
+                "inline_keyboard": [
+                [
+                        {
+                        "text": "🔧 Настроить подключение",
+                        "web_app": {
+                            "url": "{{ subscription_url }}"
+                        }
+                        }
+                ],
                 [
                     {
-                        "text": "Я оплатил",
-                        "callback_data": "/sendreceipt {{ amount }}"
+                        "text": "💡 Чат поддержки",
+                        "url": "https://t.me/{{ config.shmcustomlab.support }}"
+                    }
+                ],                
+                [
+                    {
+                        "text": "◄ Назад",
+                        "callback_data": "/menu2"
+                    }
+                ]
+            ]
+        }
+    }
+},
+{
+    "sendMessage": {
+        "chat_id": {{ config.shmcustomlab.admin_group }},
+        "parse_mode":"HTML",
+        "text": "<b>Chat-id</b>: {{ user.login }}\n<b>Chat-username</b>: {{ user.settings.telegram.login }}\nполучил напоминание о необходимости завершить настройку подписки {{ args.0 }}"
+    }
+}
+<% CASE '/activation_notify' %>
+{{ TEXT = BLOCK }}
+Завершена настройка услуги
+Устройство: {{ args.1 }}
+
+Пользователь: {{ user.login }} ({{ user.id }})
+Имя: {{ user.full_name }}
+Телеграм: @{{ user.settings.telegram.login }}
+{{ IF user.partner_id }}
+Партнер: {{ user.id( user.partner_id).full_name }} ({{ user.partner_id }}){{ END }}
+{{ END }}
+{
+    "sendMessage": {
+        "chat_id": {{ config.shmcustomlab.admin_group }},
+        "parse_mode":"HTML",
+        "text": "{{ TEXT.replace('\n','\n') }}"
+    }
+},
+{{ TEXT = BLOCK }}
+<b>Готово! Вы великолепны!</b>
+
+Настройка подключения завершена, видим вас 🙂
+
+<b>Что еще можно сделать сейчас?</b>
+
+  ─ <i>выбрать выгодный тариф (пробный период продолжит действовать)</i>
+  
+  ─ <i>пополнить баланс заранее</i>
+
+Если у вас возникли сложности или есть вопросы - напишите в <b> чат поддержки</b>
+
+Все нужные кнопки ниже ↓
+{{ END }}
+{
+    "sendMessage": {
+                "parse_mode": "HTML",
+                "text": "{{ TEXT.replace('\n','\n') }}",
+                "reply_markup" : {
+                "inline_keyboard": [
+                [
+                    {
+                        "text": "♻️ Сменить тариф",
+                        "callback_data": "/servicechange {{ args.0 }}"
                     }
                 ],
                 [
                     {
-                        "text": "Назад",
+                        "text": "✚ Пополнить баланс",
+                        "web_app": {
+                        "url": "{{ config.api.url }}/shm/v1/template/tg_payments?format=html&session_id={{ user.gen_session.id }}"
+                        }
+                    }
+                ],                
+                [
+                    {
+                        "text": "💡 Чат поддержки",
+                        "url": "https://t.me/{{ config.shmcustomlab.support }}"
+                    }
+                ],                
+                [
+                    {
+                        "text": "◄ Назад",
                         "callback_data": "/menu"
                     }
                 ]
@@ -2370,21 +2390,72 @@ ID кошелька: {{ payMethod.account_number }}
         }
     }
 }
-<% CASE '/sendreceipt' %>
-{
-    "deleteMessage": { "message_id": {{ message.message_id }} }
+
+<% CASE '/notpay' %>
+{{ item = us.id( args.0 ) }}
+{{ us = user.services.list_for_api('usi', args.0) }}
+
+{{ amount = user.pays.forecast('blocked',1).total }}
+{{ last_digit = amount % 10 }}
+{{ last_two_digits = amount % 100 }}
+
+{{ IF last_two_digits >= 11 && last_two_digits <= 19 }}
+{{ rubles = 'рублей' }}
+{{ ELSIF last_digit == 1 }}
+{{ rubles = 'рубль' }}
+{{ ELSIF last_digit >= 2 && last_digit <= 4 }}
+{{ rubles = 'рубля' }}
+{{ ELSE }}
+{{ rubles = 'рублей' }}
+{{ END }}
+
+{{ TEXT = BLOCK }}  
+🚨 Мы заметили, что ты ещё не оплатил подписку на MrzbCLI.  
+
+📌 Услуга: <code>🔑 #<b>{{ item.user_service_id }} - {{ item.name }}</b></code>
+
+💰 К оплате: <b>{{ amount }}</b> {{ rubles }}  
+
+✅ Сделать это можно по кнопке ниже 👇🏻  
+{{ END }}  
+
+
+  {
+    "sendMessage": {
+                "parse_mode": "HTML",
+                "text": "{{ TEXT.replace('\n','\n') }}",
+                "reply_markup" : {
+                "inline_keyboard": [
+               [
+                    {
+                        "text": "Оплатить",
+                        "callback_data": "/profile"
+                    }
+                ],
+                [
+                    {
+                        "text": "⇦ В меню ",
+                        "callback_data": "/menu"
+                    }
+                ]
+            ]
+        }
+    }
 },
 {
     "sendMessage": {
-        "text": "<b>Отправьте квитанцию об оплате</b>",
-        "parse_mode": "HTML",
-        "reply_markup": {
-            "force_reply": true
-        }
+        "chat_id": "{{ 1242405987 }}",
+        "parse_mode":"HTML",
+        "text": "<b>Напоминание об оплате отправлено!</b>\n<b>Username:</b> @{{ user.settings.telegram.username }}\n\nПользователь получил напоминание о необходимости оплатить подписку №{{ args.0 }}\n\n<i>Chat ID: <code>{{ user.settings.telegram.user_id }}</code></i>\n<i>User ID: <code>{{ user.id }}</code></i>"
     }
 }
 
 <% CASE 'admin:menu' %>
+{
+    "deleteMessage": { 
+        "message_id": {{ message.message_id }} 
+    }
+},
 {{ TEXT = BLOCK }}
 〠 <b>Меню {{ role = (user.settings.role == 'admin' ? 'администратора' : 'модератора'); role; }}</b>
 
@@ -2427,6 +2498,11 @@ ID кошелька: {{ payMethod.account_number }}
 }
 
 <% CASE 'admin:settings' %>
+{
+    "deleteMessage": { 
+        "message_id": {{ message.message_id }} 
+    }
+},
 {{
     # Check for admin or moderator rights
     PROCESS checkAdminRights;
@@ -2476,6 +2552,11 @@ ID кошелька: {{ payMethod.account_number }}
 }
 
 <% CASE 'admin:settings:change' %>
+{
+    "deleteMessage": { 
+        "message_id": {{ message.message_id }} 
+    }
+},
 {{
     # Check for admin or moderator rights
     PROCESS checkAdminRights;
@@ -2500,6 +2581,11 @@ ID кошелька: {{ payMethod.account_number }}
 
 
 <% CASE 'admin:users:list' %>
+{
+    "deleteMessage": { 
+        "message_id": {{ message.message_id }} 
+    }
+},
 {{
     limit = 7;
     offset = (args.0 || 0);
@@ -2558,6 +2644,11 @@ ID кошелька: {{ payMethod.account_number }}
 }
 
 <% CASE 'admin:users:id' %>
+{
+    "deleteMessage": { 
+        "message_id": {{ message.message_id }} 
+    }
+},
 {{ IF user.settings.role == 'moderator' || user.settings.role == 'admin'; }}
 {{ user = user.switch(args.0) }}
 {{
@@ -2658,6 +2749,7 @@ Telegram: {{ userData.settings.telegram.login }}
 }
 
 <% CASE 'admin:users:block' %>
+
 {{
     # Check for admin or moderator rights
     PROCESS checkAdminRights;
