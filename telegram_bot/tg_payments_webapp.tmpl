@@ -213,6 +213,7 @@
 
             let urlParams = new URLSearchParams(window.location.search);
             let user_id = urlParams.get('user_id');
+            let profile = urlParams.get('profile');
             let amount = urlParams.get('amount');
             let email = urlParams.get('email');
             let ack_email = urlParams.get('ack_email');
@@ -226,6 +227,7 @@
 
             let xhrURL = new URL('{{ config.api.url }}/shm/v1/telegram/webapp/auth');
             xhrURL.searchParams.set('uid', user_id );
+            xhrURL.searchParams.set('profile', profile );
             xhrURL.searchParams.set('initData', Telegram.WebApp.initData);
 
             let xhr = new XMLHttpRequest();
@@ -271,7 +273,7 @@
                         btn_payment.onclick = function(){ ShmPayApp.makePayment(pay_system.shm_url, pay_system.recurring) };
                         btn_container.appendChild(btn_payment);
 
-                        if (pay_system.recurring) {
+                        if (pay_system.allow_deletion) {
                             let btn_remove = document.createElement('button');
                             btn_remove.className = "remove";
                             btn_remove.innerHTML = "X";
