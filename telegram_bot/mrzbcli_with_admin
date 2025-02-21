@@ -712,6 +712,7 @@ ID кошелька: {{ payMethod.account_number }}
 {{ TEXT = BLOCK }}
 <b>Подписка:</b>
 <b>├ Текущая услуга</b>: <code>{{ us.name }}</code>
+<b>├ Описание</b>: <code>{{ us.descr }}</code>
 <b>├ Идентификатор услуга</b>: <code>{{ args.0 }}</code>
 <b>├ Статус</b>: {{ icon }} {{ status }}
     {{ IF us.status != 'PREGRESS' }}
@@ -3091,7 +3092,6 @@ Telegram: {{ userData.settings.telegram.login }}
         }
     }
 }
-
 
 <% CASE 'admin:subs:add:confirm' %>
 {{ PROCESS checkAdminRights }}
