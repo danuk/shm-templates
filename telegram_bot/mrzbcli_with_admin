@@ -631,115 +631,154 @@ ID кошелька: {{ payMethod.account_number }}
     }
 }
 
-<% CASE '/service' %>
-{
-    "deleteMessage": { "message_id": {{ message.message_id }} }
-},
-{{ item = us.id(args.0) }}
+<% CASE [ '/service', '/active_service' ] %>
 {{ us = user.services.list_for_api( 'usi', args.0 ) }}
+{{ user_data = storage.read('name','vpn_mrzb_' _ args.0 ) }}
+{{ SWITCH us.status }}
+    {{ CASE 'ACTIVE' }}
+    {{ icon = '✅' }}
+    {{ status = 'Работает' }}
+    {{ CASE 'BLOCK' }}
+    {{ icon = '❌' }}
+    {{ status = 'Заблокирована' }}
+    {{ CASE 'NOT PAID' }}
+    {{ icon = '💰' }}
+    {{ status = 'Ожидает оплаты' }}
+    {{ CASE }}
+    {{ icon = '⏳' }}
+    {{ status = 'Обработка' }}
+{{ END }}
+{{ TRAFFIC = BLOCK }}
+{{ bytes = http.get("$user_data.subscription_url/info").used_traffic }}
+{{ limit_gb = http.get("$user_data.subscription_url/info").data_limit div 1073741824 FILTER format("%.0f") }}
+{{ gb = bytes div 1073741824 }}
+{{ mb = (bytes % 1073741824) div 1048576 }}
+{{ gb2 = gb FILTER format("%.0f") }}
+{{ mb2 =  mb FILTER format("%.0f") }}
+{{ gb_mb = gb2 _ '.' _ mb2 }}
+{{ percent = (bytes / (limit_gb * 1073741824)) * 100 FILTER format("%.2f") }}
+{{ filled = (bytes * 20 / (limit_gb * 1073741824)) }}
+{{ filled = filled < 1 && gb > 0 ? 1 : filled }}
+{{ empty = 20 - filled }}
+{{ bar = '' }}
+    {{ FOR i IN [1 .. filled] }}
+{{ bar = bar _ '█' }}
+    {{ END }}
+    {{ FOR i IN [1 .. empty] }}
+{{ bar = bar _ '▒' }}
+    {{ END }}
+    {{ IF mb }}
+<b>├ Использование трафика</b>: <code>{{ gb_mb }}</code> ГБ / <code>{{ limit_gb }}</code> ГБ
+└ {{ bar }} {{ percent }} %
+    {{ END }}
+{{ END }}
 {{ EXPIRE = BLOCK }}
     {{ USE date }}
-    {{ date_sec = date.now }}
-    {{ expire_sec = date.format(us.expire, '%s') }}
-    {{ days_left = (expire_sec - date_sec) div 86400 }}
-    {{ months = days_left div 30 }}
-    {{ days = days_left % 30 }}
-        {{ IF months == 0 }}
-            {{ IF days == 1 }} 1 день
-            {{ ELSIF days == 2 or days == 3 or days == 4 }} {{ days }} дня
-            {{ ELSE }} {{ days }} дней
-            {{ END }}
+    {{ now = date.now }}
+    {{ created = date.format(us.created, '%s') }}
+    {{ expire = date.format(us.expire, '%s') }}
+    {{ remaining = expire - now }}
+    {{ IF remaining > 0 }}
+        {{ years = remaining DIV (365 * 24 * 60 * 60) }}
+        {{ remaining = remaining MOD (365 * 24 * 60 * 60) }}
+        {{ months = remaining DIV (30 * 24 * 60 * 60) }}
+        {{ remaining = remaining MOD (30 * 24 * 60 * 60) }}
+        {{ days = remaining DIV (24 * 60 * 60) }}
+        {{ remaining = remaining MOD (24 * 60 * 60) }}
+        {{ hours = remaining DIV (60 * 60) }}
+        {{ remaining = remaining MOD (60 * 60) }}
+        {{ minutes = remaining DIV 60 }}
+        {{ output = "" }}
+        {{ IF years > 0 }}
+            {{ output = output _ years _ " г " }}
+            {{ IF months > 0 }}{{ output = output _ months _ " мес." }}{{ END }}
+        {{ ELSIF months > 0 }}
+            {{ output = output _ months _ "мес " }}
+            {{ IF days > 0 }}{{ output = output _ days _ "дн " }}{{ END }}
+        {{ ELSIF days > 0 }}
+            {{ output = output _ days _ "дн " }}
+            {{ IF hours > 0 }}{{ output = output _ hours _ "ч " }}{{ END }}
+        {{ ELSIF hours > 0 }}
+            {{ output = output _ hours _ "ч " }}
+            {{ IF minutes > 0 }}{{ output = output _ minutes _ "мин " }}{{ END }}
         {{ ELSE }}
-            {{ IF months == 1 }}1 месяц - 
-            {{ ELSIF months == 2 or months == 3 or months == 4 }}{{ months }} месяца - 
-            {{ ELSE }}{{ months }} месяцев - 
-            {{ END }}
-            {{ IF days > 0 }}
-                {{ IF days == 1 }} 1 день
-                {{ ELSIF days == 2 or days == 3 or days == 4 }} {{ days }} дня
-                {{ ELSE }} {{ days }} дней
-                {{ END }}
-            {{ END }}
+            {{ output = output _ minutes _ "мин " }}
         {{ END }}
-{{ END }}
-{{ sub_url = storage.read('name','vpn_mrzb_' _ args.0 ).subscription_url }}
-{{ bytes = http.get("$sub_url/info").used_traffic }}
-{{ gb = bytes / 1073741824 FILTER format("%.0f") }}
-{{ mb = (bytes % 1073741824) / 1048576 FILTER format("%.0f") }}
-{
-    "sendPhoto": {
-        {{ SWITCH us.status }}
-  {{ CASE 'ACTIVE' }}
-  {{ icon = '✅' }}
-  {{ status = 'Работает' }}
-  {{ CASE 'BLOCK' }}
-  {{ icon = '🚫' }}
-  {{ status = 'Заблокирована' }}
-  {{ CASE 'NOT PAID' }}
-  {{ icon = '💳' }}
-  {{ status = 'Ожидает оплаты' }}
-  {{ CASE }}
-  {{ icon = '⏳' }}
-  {{ status = 'Обработка' }}
+        {{ output }}
+    {{ ELSE }}
+Услуга истекла.
+    {{ END }}
 {{ END }}
 {{ TEXT = BLOCK }}
-<b>Услуга</b>: {{ us.name }}
-    {{ IF us.expire }}
-<b>🗓️ Оплачена до</b>: {{ us.expire }}
-    {{ END }}
-<b>📊 Статус</b>: {{ icon}} {{ status }}
-    {{ IF mb == 0 }}
-    {{ ELSE}}
-        {{ IF gb >= 1 }}
-📈 Израсходовано трафика: {{ gb }} Gb.{{ mb }} Mb
-        {{ ELSE }}
-📈 Израсходовано трафика: {{ mb }} Mb
-        {{ END }}
+<b>Подписка:</b>
+<b>├ Текущая услуга</b>: <code>{{ us.name }}</code>
+<b>├ Идентификатор услуга</b>: <code>{{ args.0 }}</code>
+<b>├ Статус</b>: {{ icon }} {{ status }}
+    {{ IF us.status != 'PREGRESS' }}
+{{ IF us.expire }}
+<b>├ Действует до: {{ USE date }}<code>{{ date.format( us.expire, '%d.%m.%Y %H:%M') }}</code></b>
+{{ END }}
+<b>├ Осталось</b>: <code>{{ EXPIRE }}</code>
+<b>├ Трафик на 1 месяц</b>: <code>{{ limit_gb }}</code> ГБ
+{{ TRAFFIC }}
+
+
+🔧 Для настройки нажмите  на кнопку
+<b>📲 Настроить VPN</b>
+
+📱 В открывшемся окне выберите устройство и приложение для использования.
+
     {{ END }}
 {{ END }}
-        "photo": "https://i.ibb.co/6csKNZS7/DALL-E-2025-01-28-20-25-12-A-modern-and-sleek-logo-for-Mrzb-CLI-Service-using-the-Butler-font.png",
-        "caption": "{{ TEXT.replace('\n','\n') }}\n📅 Осталось: <b>{{ EXPIRE }}</b>",
-        "parse_mode": "HTML",
+{
+{{ IF cmd == '/active_service' }}
+    "sendMessage": {
+{{ ELSE }}
+    "editMessageText": {
+        "message_id": {{ message.message_id }},
+{{ END }}
+        "parse_mode":"HTML",
+        "text": "{{ TEXT.replace('\n','\n') }}",
         "reply_markup": {
             "inline_keyboard": [
                 {{ IF us.status == 'ACTIVE' }}
-                    {{ subscription_url = storage.read('name', 'vpn_mrzb_' _ us.user_service_id).subscription_url }}
-                    {{ IF us.category.grep('^vpn-mz-').first && subscription_url.grep('^https:').first }}
+                    {{ IF user_data.subscription_url.grep('^https:').first }}
                         [
                             {
-                                "text": "🔗 Подключиться",
+                                "text": "📲 Настроить VPN",
                                 "web_app": {
                                     "url": "{{ config.api.url }}/shm/v1/template/subscriptions_link?format=html&session_id={{ user.gen_session.id }}&uid={{ user.id }}&us_id={{ args.0 }}"
                                 }
                             }
                         ],
-                        [
-                            {
-                                "text": "🌐 Показать ссылку подписки",
-                                "callback_data": "/show_mz_keys {{ us.user_service_id }}"
-                            }
-                        ],
                     {{ ELSE }}
                         [
                             {
-                                "text": "😢 Ошибка: подключение не найдено",
+                                "text": "ОШИБКА: Напишите администратору",
                                 "callback_data": "/menu"
                             }
                         ],
                     {{ END }}
-                {{ ELSIF us.status == 'NOT PAID' || us.status == 'BLOCK' }}
-                    [
-                        {
-                            "text": "💳 Оплатить",
-                            "callback_data": "/profile {{ us.user_service_id }}"
-                        }
-                    ],
-                    [
-                        {
-                            "text": "🗑️ Удалить ключ",
-                            "callback_data": "/delete {{ us.user_service_id }}"
-                        }
-                    ],
+                {{ END }}
+                {{ IF us.status == 'NOT PAID' || us.status == 'BLOCK' }}
+                [
+                    {
+                        "text": "💰 Оплатить",
+                        "callback_data": "/balance"
+                    }
+                ],
+                {{ END }}
+                {{ IF us.status != 'PROGRESS' }}
+                [
+                    {
+                        "text": "❌ Удалить ключ",
+                        "callback_data": "/delete {{ args.0 }}"
+                    },
+                    {
+                        "text": "🔄 Сменить тариф",
+                        "callback_data": "/change {{ args.0 }}"
+                    }
+                ],
                 {{ END }}
 				{{ IF us.next == '-1' }}
                 [
@@ -758,20 +797,12 @@ ID кошелька: {{ payMethod.account_number }}
                 {{ END }}
                 [
                     {
-                        "text": "♻️ Сменить тариф",
-                        "callback_data": "/change {{ us.user_service_id }}"
-                    }
-                ],
-                [
+                        "text": "◀️ Главное меню",
+                        "callback_data": "/menu"
+                    },
                     {
-                        "text": "🔄 Обновить информацию",
+                        "text": "♻️ Обновить информацию об услуге",
                         "callback_data": "/service {{ args.0 }}"
-                    }
-                ],
-                [
-                    {
-                        "text": "↩️ Назад к списку услуг",
-                        "callback_data": "/list"
                     }
                 ]
             ]
@@ -4301,33 +4332,6 @@ ID начисления: {{ data.id }}
 
         notification(TEXT=TEXT);
     }}
-	
-{{ ELSIF user.settings.state == 'awaiting_user_message' }}
-{{
-    temp = message.message_id - 1;
-    delete(msgID=[message.message_id, temp]);
-
-    IF message.text.length > 0;
-        userID = user.settings.temp_user_id;
-        messageText = message.text;
-        
-        # Очистка состояния
-        ret = user.set_settings({'state' => '', 'temp_user_id' => ''});
-
-        # Отправка сообщения пользователю
-        notification(
-            TEXT="📩 Сообщение от администратора:\n\n<blockquote>$messageText</blockquote>",
-            user_id=userID
-        );
-
-        TEXT = "✅ Сообщение отправлено пользователю #$userID!";
-    ELSE;
-        ret = user.set_settings({'state' => ''});
-        TEXT = "❌ <b>Ошибка:</b> Сообщение не может быть пустым!";
-    END;
-
-    notification(TEXT=TEXT);
-}}
 
 
 {{ ELSIF user.settings.state == 'awaiting_promocode' }}
