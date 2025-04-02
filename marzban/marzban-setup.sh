@@ -48,13 +48,13 @@ mkdir -p $DIR
 if [[ ! -f "$DIR/fullchain.pem" ]]; then
     curl -s https://get.acme.sh | sh -s email=$EMAIL_FOR_CERTIFICATE_ISSUE
 
-    #Сертификат будет обновляться каждые 60 дней по умолчанию. После обновления сертификата marzban будет автоматически перезагружен. 
+    #Сертификат будет обновляться каждые 60 дней по умолчанию. После обновления сертификата marzban будет автоматически перезагружен.
     ~/.acme.sh/acme.sh \
         --set-default-ca \
         --server letsencrypt \
         --issue \
         --standalone \
-        -d $SUBSCRIPTION_DOMAIN
+        -d $SUBSCRIPTION_DOMAIN || true
 
    ~/.acme.sh/acme.sh \
         -d $SUBSCRIPTION_DOMAIN \
