@@ -9,7 +9,7 @@
     <meta name="HandheldFriendly" content="True"/>
     <meta name="robots" content="noindex,nofollow"/>
     <title></title>
-    <script src="https://cdn.myshm.ru/telegram/telegram-web-app-56.js"></script>
+    <script src="https://cdn.myshm.ru/telegram/telegram-web-app-56-min.js"></script>
     <style>
         body {
             --bg-color: var(--tg-theme-bg-color, #fff);
