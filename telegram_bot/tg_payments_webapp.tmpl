@@ -270,7 +270,7 @@
 
                         let btn_payment = document.createElement('button');
                         btn_payment.innerHTML = pay_system.name;
-                        btn_payment.onclick = function(){ ShmPayApp.makePayment(pay_system.shm_url, pay_system.recurring) };
+                        btn_payment.onclick = function(){ ShmPayApp.makePayment(pay_system.shm_url, pay_system.recurring || pay_system.internal) };
                         btn_container.appendChild(btn_payment);
 
                         if (pay_system.allow_deletion) {
@@ -294,7 +294,7 @@
             text_amount.value ||= amount;
         },
 
-        makePayment(shm_url, recurring) {
+        makePayment(shm_url, internal) {
             var amount = document.getElementById('text_amount').value;
             if ( amount < 1 ) {
                 Telegram.WebApp.showAlert("Ошибка: Некоректная сумма к оплате");
@@ -310,7 +310,7 @@
                 }
             }
 
-            if ( recurring == '1' ) {
+            if ( internal ) {
                 Telegram.WebApp.MainButton.showProgress();
                 document.getElementById('main_section').style.display = 'none';
 
