@@ -322,6 +322,8 @@
                     Telegram.WebApp.MainButton.hideProgress();
                     if (xhr.status === 200) {
                         Telegram.WebApp.showAlert( "Платеж проведен успешно" );
+                    } else if (xhr.status === 204) {
+                        // Успешно, закрываем окно без сообщения
                     } else {
                         var jsonResponse = xhr.response;
                         Telegram.WebApp.showAlert( "Ошибка: " + ( jsonResponse.msg_ru || jsonResponse.msg ) );
